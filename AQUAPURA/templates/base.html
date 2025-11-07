@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AquaPura{% endblock %}</title>
+    <link rel="stylesheet" href="../static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="site-header">
+        <div class="top-bar">
+            <input type="text" placeholder="O que você está buscando?">
+            <div class="icon">
+                <img src="static/img/logo1.png" alt="Logo">
+            </div>
+            <h1 class="logo">AQUAPURA</h1>
+            <div class="cart">🛒 (0)</div>
+        </div>
+
+        <nav class="main-nav">
+            <ul>
+                <li><a href="#">GARRAFAS</a></li>
+                <li><a href="#">COPOS</a></li>
+                <li><a href="#">ACESSÓRIOS</a></li>
+                <li><a href="#">LANÇAMENTOS</a></li>
+            </ul>
+        </nav>
+
+        <div class="shipping-info">
+            Frete Grátis em compras acima de R$129,90 para Santa Catarina
+        </div>
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-top">
+            <div>
+                <i>💬</i>
+                <a href="https://wa.me/5547992315501?text=Olá!%20Gostaria%20de%20saber%20mais%20sobre%20os%20produtos%20da%20AquaPura."
+                   target="_blank" rel="noopener noreferrer">
+                   Fale Conosco
+                </a>
+              </div>
+              
+            <div><i>🔄</i> Política de Troca</div>
+            <div><i>🔒</i> Política de Privacidade</div>
+        </div>
+
+        <div class="footer-bottom">
+            <div class="footer-col">
+                <h4>Siga-nos</h4>
+                <p>📸 Instagram</p>
+            </div>
+            <div class="footer-col">
+                <h4>Navegação</h4>
+                <ul>
+                    <li>Início</li>
+                    <li>Política de Privacidade</li>
+                    <li>Termos de Uso</li>
+                    <li>Política de Troca</li>
+                    <li>Produtos</li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Entre em contato</h4>
+                <p>+55 47 99999-9999</p>
+                <p>contato@aquapura.com.br</p>
+            </div>
+            <div class="footer-col">
+                <h4>Assine nossa newsletter</h4>
+                <form>
+                    <input type="email" placeholder="E-mail">
+                    <button type="submit">Enviar</button>
+                </form>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
