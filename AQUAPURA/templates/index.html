@@ -1,22 +1,49 @@
 {% extends "base.html" %}
 {% block title %}Página Inicial - AquaPura{% endblock %}
 {% block content %}
-    <section class="banner">
-        <img src="../static/img/banner-promocao.png" alt="Promoção AQUAPURA">
-    </section>
+<!-- ===== Carrossel de Promoções ===== -->
+<section class="promocoes">
+    <div class="carousel">
+      <div class="slides">
+        <div class="slide active">
+          <img src="{{ url_for('static', filename='img/banner-promocao.png') }}" alt="Promoção 1">
+        </div>
+        <div class="slide">
+          <img src="{{ url_for('static', filename='img/banner.png') }}" alt="Promoção 2">
+        </div>
+        <div class="slide">
+          <img src="{{ url_for('static', filename='img/promo3.png') }}" alt="Promoção 3">
+        </div>
+      </div>
+  
+      <!-- Botões -->
+      <button class="prev">&#10094;</button>
+      <button class="next">&#10095;</button>
+  
+      <!-- Indicadores -->
+      <div class="dots">
+        <span class="dot active"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+      </div>
+    </div>
+  </section>
+  
 
-    <section class="categorias">
-        <div class="categoria">
-            <img src="../static/img/garrafas.png" alt="Garrafas">
-            <h3>Garrafas</h3>
-        </div>
-        <div class="categoria">
-            <img src="../static/img/copos.png" alt="Copos">
-            <h3>Copos</h3>
-        </div>
-        <div class="categoria">
-            <img src="../static/img/acessorios.png" alt="Acessórios">
-            <h3>Acessórios</h3>
-        </div>
-    </section>
+<!-- ===== Seção de Categorias ===== -->
+<section class="categorias">
+    <div class="categoria">
+        <img src="{{ url_for('static', filename='img/garrafas.png') }}" alt="Garrafas">
+        <h3>Garrafas</h3>
+    </div>
+    <div class="categoria">
+        <img src="{{ url_for('static', filename='img/copos.png') }}" alt="Copos">
+        <h3>Copos</h3>
+    </div>
+    <div class="categoria">
+        <img src="{{ url_for('static', filename='img/acessorios.png') }}" alt="Acessórios">
+        <h3>Acessórios</h3>
+    </div>
+</section>
+
 {% endblock %}

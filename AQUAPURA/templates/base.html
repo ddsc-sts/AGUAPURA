@@ -4,25 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}AquaPura{% endblock %}</title>
-    <link rel="stylesheet" href="../static/style.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
     <header class="site-header">
         <div class="top-bar">
-            <input type="text" placeholder="O que você está buscando?">
-            <div class="icon">
-                <img src="static/img/logo1.png" alt="Logo">
+            <div class="logo-container">
+                <a href="{{ url_for('home') }}">
+                    <img src="{{ url_for('static', filename='img/logo1.png') }}" alt="Logo AquaPura" class="logo-img">
+                </a>
             </div>
-            <h1 class="logo">AQUAPURA</h1>
+        
+            <input type="text" placeholder="O que você está buscando?">
+        
             <div class="cart">🛒 (0)</div>
         </div>
-
+        
         <nav class="main-nav">
             <ul>
-                <li><a href="#">GARRAFAS</a></li>
-                <li><a href="#">COPOS</a></li>
-                <li><a href="#">ACESSÓRIOS</a></li>
+                <li><a href="{{ url_for('garrafas') }}">GARRAFAS</a></li>
+                <li><a href="{{ url_for('copos') }}">COPOS</a></li>
+                <li><a href="{{ url_for('acessorios') }}">ACESSÓRIOS</a></li>
                 <li><a href="#">LANÇAMENTOS</a></li>
             </ul>
         </nav>
@@ -44,8 +47,7 @@
                    target="_blank" rel="noopener noreferrer">
                    Fale Conosco
                 </a>
-              </div>
-              
+            </div>
             <div><i>🔄</i> Política de Troca</div>
             <div><i>🔒</i> Política de Privacidade</div>
         </div>
@@ -79,5 +81,7 @@
             </div>
         </div>
     </footer>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+
 </body>
 </html>

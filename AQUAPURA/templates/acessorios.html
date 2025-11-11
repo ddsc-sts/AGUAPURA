@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Acessórios - AquaPura{% endblock %}
+{% block content %}
+
+<section class="produtos">
+    <h2>Acessórios</h2>
+    <p>Complete sua experiência AquaPura com acessórios de qualidade e design moderno.</p>
+
+    <div class="grid-produtos">
+        <div class="produto">
+            <img src="{{ url_for('static', filename='img/acessorios.png') }}" alt="Acessório térmico">
+            <h3>Tampa Extra de Silicone</h3>
+            <p>R$29,90</p>
+            <button>Adicionar ao carrinho 🛒</button>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
