@@ -1,30 +1,45 @@
-<script>
-let currentIndex = 0;
-const slides = document.querySelectorAll('.slide');
-const dots = document.querySelectorAll('.dot');
-const totalSlides = slides.length;
-
-function showSlide(index) {
+document.addEventListener('DOMContentLoaded', () => {
   const slidesContainer = document.querySelector('.slides');
-  slidesContainer.style.transform = `translateX(-${index * 100}%)`;
-  
-  dots.forEach(dot => dot.classList.remove('active'));
-  dots[index].classList.add('active');
-}
+  const slides = document.querySelectorAll('.slide');
+  const prev = document.querySelector('.prev');
+  const next = document.querySelector('.next');
+  const dotsContainer = document.querySelector('.dots');
 
-function nextSlide() {
-  currentIndex = (currentIndex + 1) % totalSlides;
-  showSlide(currentIndex);
-}
+  let currentSlide = 0;
 
-function prevSlide() {
-  currentIndex = (currentIndex - 1 + totalSlides) % totalSlides;
-  showSlide(currentIndex);
-}
+  slides.forEach((_, i) => {
+    const dot = document.createElement('span');
+    dot.classList.add('dot');
+    if (i === 0) dot.classList.add('active');
+    dot.addEventListener('click', () => goToSlide(i));
+    dotsContainer.appendChild(dot);
+  });
 
-document.querySelector('.next').addEventListener('click', nextSlide);
-document.querySelector('.prev').addEventListener('click', prevSlide);
+  const dots = document.querySelectorAll('.dot');
 
-// muda automaticamente a cada 5s
-setInterval(nextSlide, 5000);
-</script>
+  function updateCarousel() {
+    slidesContainer.style.transform = `translateX(-${currentSlide * 100}%)`;
+    dots.forEach(dot => dot.classList.remove('active'));
+    dots[currentSlide].classList.add('active');
+  }
+
+  function nextSlide() {
+    currentSlide = (currentSlide + 1) % slides.length;
+    updateCarousel();
+  }
+
+  function prevSlide() {
+    currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+    updateCarousel();
+  }
+
+  function goToSlide(index) {
+    currentSlide = index;
+    updateCarousel();
+  }
+
+  next.addEventListener('click', nextSlide);
+  prev.addEventListener('click', prevSlide);
+
+  setInterval(nextSlide, 5000);
+});
