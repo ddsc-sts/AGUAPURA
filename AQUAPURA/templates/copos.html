@@ -5,7 +5,7 @@
 <section class="produtos">
     <h2>Copos Térmicos</h2>
     <p>Encontre o copo ideal para manter sua bebida na temperatura perfeita por muito mais tempo.</p>
-
+    
     <div class="grid-produtos">
         <div class="produto">
             <img src="{{ url_for('static', filename='img/copos.png') }}" alt="Copo térmico">
@@ -15,6 +15,11 @@
         </div>
         <!-- pode duplicar esse bloco para mais produtos -->
     </div>
+    <label class="switch">
+        <input type="checkbox" id="theme-toggle">
+        <span class="slider"></span>
+      </label>
+      
 </section>
 
 {% endblock %}
