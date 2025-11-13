@@ -12,12 +12,19 @@
         <div class="top-bar">
             <div class="logo-container">
                 <a href="{{ url_for('home') }}">
-                    <img src="{{ url_for('static', filename='img/logo1.png') }}" alt="Logo AquaPura" class="logo-img">
-                </a>
+                    <img 
+  src="{{ url_for('static', filename='img/logo1.png') }}" 
+  alt="Logo AquaPura" 
+  class="logo-img" 
+  id="site-logo"
+  data-light="{{ url_for('static', filename='img/logo1.png') }}"
+  data-dark="{{ url_for('static', filename='img/logo-dark.png') }}"
+>
+                    </a>
             </div>
         
             <input type="text" placeholder="O que você está buscando?">
-            <button class="theme-btn" aria-label="Alternar tema">🌙</button>
+            <button id="theme-toggle" class="theme-btn" aria-label="Alternar tema">🌙</button>
             <div class="cart">🛒 (0)</div>
         </div>
         
