@@ -30,6 +30,10 @@ def politica_troca():
 def politica_privacidade():
     return render_template("politica_privacidade.html")
 
+@app.route("/carrinho")
+def carrinho():
+    return render_template("carrinho.html")
+
 
 if __name__ == '__main__':
     app.run(debug=True)

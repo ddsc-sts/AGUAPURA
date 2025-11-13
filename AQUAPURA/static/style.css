@@ -686,3 +686,149 @@ input:checked + .slider:before {
     margin: 10px 0 10px 20px;
     list-style-type: disc;
 }
+
+/* ===== Carrinho ===== */
+
+.carrinho-container {
+    width: 90%;
+    max-width: 900px;
+    margin: 40px auto;
+    background: var(--card-bg);
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px var(--shadow);
+    border: 1px solid var(--border);
+}
+
+.titulo-carrinho {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 2rem;
+    color: var(--texto);
+}
+
+/* Lista de itens */
+.lista-carrinho {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Card do item */
+.item-carrinho {
+    display: flex;
+    align-items: center;
+    background: var(--card-bg);
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px var(--shadow);
+    border: 1px solid var(--border);
+    gap: 20px;
+}
+
+.item-carrinho img {
+    width: 110px;
+    height: 110px;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.info-item h3 {
+    color: var(--texto);
+    font-size: 1.1rem;
+}
+
+.info-item p {
+    color: var(--texto);
+    opacity: 0.8;
+    margin: 5px 0;
+    font-weight: 500;
+}
+
+/* Quantidade */
+.quantidade {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.quantidade button {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: var(--azul);
+    color: var(--card-bg);
+    cursor: pointer;
+    font-size: 1rem;
+    transition: 0.3s;
+}
+
+.quantidade button:hover {
+    background: var(--texto);
+}
+
+/* Botão remover */
+.remove-item {
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1.3rem;
+    color: var(--texto);
+    opacity: 0.6;
+    transition: 0.3s;
+}
+
+.remove-item:hover {
+    opacity: 1;
+    color: var(--azul);
+}
+
+/* Resumo */
+.resumo-carrinho {
+    margin-top: 30px;
+    padding: 20px;
+    border-radius: 10px;
+    background: var(--cinza);
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 6px var(--shadow);
+}
+
+.resumo-carrinho h3 {
+    margin-bottom: 10px;
+    color: var(--texto);
+}
+
+.resumo-carrinho p {
+    display: flex;
+    justify-content: space-between;
+    margin: 6px 0;
+    font-size: 1rem;
+    color: var(--texto);
+}
+
+.resumo-carrinho .total {
+    font-size: 1.2rem;
+    margin-top: 10px;
+}
+
+/* Botão finalizar */
+.finalizar {
+    width: 100%;
+    background: var(--azul);
+    border: none;
+    padding: 12px;
+    border-radius: 20px;
+    color: var(--card-bg);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: 0.3s;
+}
+
+.finalizar:hover {
+    background: var(--texto);
+    color: var(--fundo);
+}

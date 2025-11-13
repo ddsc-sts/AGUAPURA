@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="carrinho-container">
+
+    <h2 class="titulo-carrinho">Seu Carrinho</h2>
+
+    <div class="lista-carrinho">
+
+        <!-- Exemplo de item no carrinho -->
+        <div class="item-carrinho">
+            <img src="{{ url_for('static', filename='img/exemplo.jpg') }}" alt="Produto">
+
+            <div class="info-item">
+                <h3>Copo Térmico Azul 500ml</h3>
+                <p>R$ 89,90</p>
+
+                <div class="quantidade">
+                    <button>-</button>
+                    <span>1</span>
+                    <button>+</button>
+                </div>
+            </div>
+
+            <button class="remove-item">✖</button>
+        </div>
+
+        <!-- Adicione mais itens depois dinamicamente -->
+
+    </div>
+
+    <div class="resumo-carrinho">
+        <h3>Resumo do Pedido</h3>
+        <p>Subtotal: <span>R$ 89,90</span></p>
+        <p>Frete: <span>R$ 12,00</span></p>
+
+        <hr>
+
+        <p class="total"><strong>Total:</strong> <span>R$ 101,90</span></p>
+
+        <button class="finalizar">Finalizar Compra</button>
+    </div>
+
+</div>
+
+{% endblock %}
