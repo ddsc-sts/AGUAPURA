@@ -34,7 +34,7 @@
                 <li><a href="{{ url_for('copos') }}">COPOS</a></li>
                 <li><a href="{{ url_for('acessorios') }}">ACESSÓRIOS</a></li>
                 <li><a href="#">LANÇAMENTOS</a></li>
-                <li><a href="#">SOBRE</a></li>
+                <li><a href="{{ url_for('sobre') }}">SOBRE</a></li>
             </ul>
         </nav>
 
@@ -56,8 +56,14 @@
                    Fale Conosco
                 </a>
             </div>
-            <div><i>🔄</i> Política de Troca</div>
-            <div><i>🔒</i> Política de Privacidade</div>
+            <div>
+            <i>🔄</i> 
+            <a href="{{ url_for('politica_troca') }}">Política de Troca</a>
+            
+            </div>
+            <div><i>🔒</i> 
+                <a href="{{ url_for('politica_privacidade') }}">Política de Privacidade</a>
+            </div>
         </div>
 
         <div class="footer-bottom">

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Sobre a AquaPura{% endblock %}
+
+{% block content %}
+<section class="sobre">
+  <h1>Sobre a AquaPura 💧</h1>
+  <p>A AquaPura nasceu com o propósito de unir sustentabilidade e estilo, trazendo produtos de alta qualidade para quem valoriza o meio ambiente e a praticidade no dia a dia.</p>
+
+  <h2>Nossa História</h2>
+  <p>Fundada por jovens empreendedores apaixonados por inovação, a AquaPura surgiu da ideia de reduzir o consumo de plástico e incentivar o uso de garrafas reutilizáveis e copos sustentáveis.</p>
+
+  <h2>Missão</h2>
+  <p>Promover o consumo consciente e oferecer produtos duráveis que acompanhem você em todos os momentos.</p>
+
+  <h2>Os Criadores</h2>
+  <div class="criadores">
+    <div class="criador">
+      <img src="{{ url_for('static', filename='img/team1.jpg') }}" alt="Fundador 1">
+      <p><strong>Lucas Andrade</strong><br>Fundador e Designer de Produto</p>
+    </div>
+    <div class="criador">
+      <img src="{{ url_for('static', filename='img/team2.jpg') }}" alt="Fundador 2">
+      <p><strong>Mariana Silva</strong><br>Co-Fundadora e Marketing</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

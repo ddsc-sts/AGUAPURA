@@ -610,3 +610,79 @@ input:checked + .slider:before {
 .slider:hover {
     box-shadow: 0 3px 8px var(--shadow);
 }
+
+/* Estilo da página Sobre Nós */
+
+.sobre {
+    max-width: 900px;
+    margin: 50px auto;
+    padding: 20px;
+    text-align: center;
+  }
+  
+  .sobre h1, .sobre h2 {
+    color: var(--text-primary);
+    margin-bottom: 10px;
+  }
+  
+  .sobre p {
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+  
+  .criadores {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+  }
+  
+  .criador img {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 50%;
+  }
+  
+  .criador p {
+    margin-top: 10px;
+  }
+  
+
+/*Sytle da Politica de troca */
+.politica-container {
+    max-width: 900px;
+    margin: 50px auto;
+    padding: 40px;
+    background-color: var(--cinza);
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.08);
+    line-height: 1.7;
+    color: var(--texto);
+    transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+.politica-container h1 {
+    font-size: 2rem;
+    color: var(--azul);
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.politica-container h2 {
+    font-size: 1.3rem;
+    color: var(--texto);
+    margin-top: 25px;
+}
+
+.politica-container p,
+.politica-container li {
+    color: var(--texto);
+    font-size: 1rem;
+}
+
+.politica-container ul {
+    margin: 10px 0 10px 20px;
+    list-style-type: disc;
+}

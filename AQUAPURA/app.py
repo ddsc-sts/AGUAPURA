@@ -18,5 +18,18 @@ def garrafas():
 def acessorios():
     return render_template('acessorios.html')
 
+@app.route('/sobre')
+def sobre():
+    return render_template('sobre.html')
+
+@app.route('/politica_troca')
+def politica_troca():
+    return render_template('politica_troca.html')
+
+@app.route("/politica-privacidade")
+def politica_privacidade():
+    return render_template("politica_privacidade.html")
+
+
 if __name__ == '__main__':
     app.run(debug=True)

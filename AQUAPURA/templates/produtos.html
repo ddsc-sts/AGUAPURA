@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Produtos - AquaPura{% endblock %}
+
+{% block content %}
+<section class="produtos">
+  <h2>Nossos Produtos</h2>
+  <p>Escolha o produto que mais combina com você 💧</p>
+
+  <div class="grid-produtos">
+    {% for product in produtos %}
+      <div class="produto">
+        <a href="{{ url_for('produto_detalhe', produto_id=product.id) }}">
+          {% if product.image_url %}
+            {% if product.image_url.startswith('http') %}
+              <img src="{{ product.image_url }}" alt="{{ product.name }}">
+            {% else %}
+              <img src="{{ url_for('static', filename='img/' + product.image_url) }}" alt="{{ product.name }}">
+            {% endif %}
+          {% else %}
+            <img src="{{ url_for('static', filename='img/default_product.png') }}" alt="Sem imagem">
+          {% endif %}
+        </a>
+        <h3>{{ product.name }}</h3>
+        <p>R$ {{ '%.2f'|format(product.price) }}</p>
+        <a href="{{ url_for('produto_detalhe', produto_id=product.id) }}" class="btn">Ver Detalhes</a>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
