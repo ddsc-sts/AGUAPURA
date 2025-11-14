@@ -6,5 +6,13 @@ alinhar o cabeçalho
 criar novas imagens para o carrossel
 criar novas imagens para os produtos
 painel do adm com crud
-adcionar método de pagamento no carrinho
+adcionar método de pagamento no carrinho e finalização de compra
 adcionar gestão de pedidos no painel do adm
+ao tentar adcionar mais de um produto ao carrinho vai somente 1
+carrinho nao respeitando o limite em estoque
+adcionar mais opçoes nas paginas individuais com base no site https://share.google/fvV3bgIeJvWXF7Tjd
+
+documentação:
+
+documentação do usuario
+documentação da empresa
