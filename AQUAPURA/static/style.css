@@ -131,7 +131,23 @@ body {
 .main-nav {
     background-color: var(--cinza);
     border-top: 1px solid var(--border);
+
+    display: flex;
+    justify-content: center;   /* Mantém as categorias NO CENTRO */
+    align-items: center;
+    gap: 20px;
+    position: relative;        /* Para posicionar o bloco da direita */
 }
+
+/* Container dos botões / usuário na direita */
+.main-nav .nav-right {
+    position: absolute;
+    right: 20px;               /* Encosta na direita */
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
 
 .main-nav ul {
     list-style: none;
@@ -195,7 +211,68 @@ body {
     font-weight: 500;
     color: var(--texto);
 }
+/* Container dos botões (login/cadastro ou nome/logout) */
+.main-nav .auth-buttons {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
 
+/* Nome do usuário */
+.usuario-nome {
+    font-weight: 600;
+    margin-right: 12px;
+}
+
+/* Botão logout */
+.btn-logout {
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: #ff4747;
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    transition: 0.25s ease;
+}
+
+.btn-logout:hover {
+    background: #d93636;
+}
+
+/* Mantém os estilos que já fizemos */
+.btn-login,
+.btn-cadastro {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    border: none;
+    transition: 0.25s ease;
+    text-decoration: none;
+}
+
+/* Login */
+.btn-login {
+    background: transparent;
+    color: #0077ff;
+    border: 2px solid #0077ff;
+}
+
+.btn-login:hover {
+    background: #0077ff;
+    color: white;
+}
+
+/* Cadastro */
+.btn-cadastro {
+    background: #0077ff;
+    color: white;
+}
+
+.btn-cadastro:hover {
+    background: #005fcc;
+}
 /* ===== Rodapé ===== */
 .site-footer {
     background-color: var(--cinza);
@@ -442,33 +519,37 @@ body {
     box-shadow: 0 3px 12px var(--shadow);
     position: relative;
     border: 1px solid var(--border);
+    height: 250px; /* força altura fixa do bloco */
 }
 
 .carousel {
     position: relative;
     width: 100%;
+    height: 100%; /* acompanha a altura da caixa */
     overflow: hidden;
 }
 
 .slides {
     display: flex;
+    height: 100%;
     transition: transform 0.8s ease-in-out;
 }
 
 .slide {
     min-width: 100%;
+    height: 100%;
 }
 
 .slide img {
     width: 100%;
-    height: auto;
-    max-height: 250px;
-    object-fit: cover;
+    height: 100%;
+    object-fit: cover; /* sem bordas, sem cortes errados */
     display: block;
 }
 
 /* Botões de navegação */
-.prev, .next {
+.prev,
+.next {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
@@ -482,13 +563,19 @@ body {
     transition: all 0.3s ease;
 }
 
-.prev:hover, .next:hover {
+.prev:hover,
+.next:hover {
     background-color: var(--azul);
     transform: translateY(-50%) scale(1.1);
 }
 
-.prev { left: 10px; }
-.next { right: 10px; }
+.prev {
+    left: 10px;
+}
+
+.next {
+    right: 10px;
+}
 
 /* Bolinhas (indicadores) */
 .dots {
@@ -522,16 +609,15 @@ body {
     .promocoes {
         width: 95%;
         max-width: 100%;
+        height: 180px; /* altura reduzida no celular */
     }
 
-    .slide img {
-        max-height: 180px;
-    }
-
-    .prev, .next {
+    .prev,
+    .next {
         font-size: 1.2rem;
     }
 }
+
 
 /* ===== Botão de Tema ===== */
 .theme-btn {
@@ -710,6 +796,7 @@ input:checked + .slider:before {
     height: 35px;
 }
 
+/* Contador do carrinho */
 .cart-count {
     background: var(--azul);
     color: white;
@@ -717,7 +804,15 @@ input:checked + .slider:before {
     font-size: 0.78rem;
     border-radius: 20px;
     font-weight: 600;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 22px;
+    height: 22px;
 }
+
 
 
 
@@ -1007,125 +1102,437 @@ input:checked + .slider:before {
     color: white;
 }
 
-/* BOTÃO ABRIR */
-.sidebar-open-btn {
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    padding: 10px 14px;
-    background: var(--azul);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    z-index: 999;
-}
-
-/* SIDEBAR */
+/* Silide bar de menu */
+/* ===== SIDEBAR (menu lateral) ===== */
 .sidebar {
-    position: fixed;
-    top: 0;
-    left: -280px;
-    width: 260px;
-    height: 100%;
-    background: var(--cinza);
-    color: var(--texto);
-    padding: 20px;
-    box-shadow: 3px 0 8px rgba(0,0,0,0.3);
-    transition: 0.3s ease;
-    z-index: 998;
+    position: absolute !important;    /* TRAVA o menu para não acompanhar o scroll */
+    top: 60px !important;      
+    left: -280px; /* começa escondida */
+    width: 280px;
+    height: 100vh;
+
+    background: var(--sidebar-bg);
+    box-shadow: 3px 0 12px rgba(0,0,0,0.25);
+
+    padding: 40px 20px;
+    transition: left 0.3s ease;
+
+    z-index: 99998;
 }
 
 .sidebar.open {
     left: 0;
 }
 
-/* HEADER */
-.sidebar-header {
-    text-align: center;
-    margin-bottom: 30px;
-}
-
-.sidebar-header .avatar {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    border: 2px solid var(--azul);
-}
-
-.sidebar-header .user-name {
-    margin-top: 10px;
-    font-size: 1.1rem;
-}
-
-/* LISTA */
-.menu-list {
-    list-style: none;
-    padding: 0;
-}
-
-.menu-list li {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px;
-    margin-bottom: 8px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: 0.2s;
-}
-
-.menu-list li:hover {
-    background: var(--azul);
-    color: white;
-}
-
-/* ÍCONES */
-.menu-list i {
-    width: 20px;
-    height: 20px;
-}
-
-/* DARK MODE */
-[data-theme="dark"] .sidebar {
-    background: #0e1a28;
-    color: #d8e6f3;
-}
-
-[data-theme="dark"] .menu-list li:hover {
-    background: #0055c4;
-}
-
-/* MENU LATERAL */
-/* MENU LATERAL */
-.sidebar {
-    position: fixed;
-    top: 0;
-    left: -260px; /* escondido */
-    width: 260px;
-    height: 100%;
-    background: #ffffff;
-    box-shadow: 4px 0 15px rgba(0,0,0,0.2);
-    transition: 0.3s ease;
-    z-index: 1001; /* menu acima do overlay */
-}
-
-.sidebar.open {
-    left: 0;
-}
-
-/* OVERLAY */
-.sidebar-overlay {
-    position: fixed;
+/* ===== OVERLAY (fundo escuro) ===== */
+#sidebar-overlay {
+    position: fixed !important;  /* overlay SEMPRE fica fixo */
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     background: rgba(0,0,0,0.45);
     display: none;
-    z-index: 1000; /* abaixo do menu mas acima do site todo */
+    z-index: 99997;
 }
 
-.sidebar-overlay.show {
+#sidebar-overlay.show {
     display: block;
 }
+
+/* ===== LISTA INTERNA DO MENU ===== */
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar ul li {
+    margin-bottom: 18px;
+}
+
+.sidebar ul li a {
+    text-decoration: none;
+    font-size: 17px;
+    color: var(--sidebar-text);
+    font-weight: 500;
+
+    padding: 10px 12px;
+    border-radius: 8px;
+
+    display: block;
+    background: var(--sidebar-item-bg);
+
+    transition: 0.25s ease;
+}
+
+.sidebar ul li a:hover {
+    background: var(--sidebar-item-hover);
+    color: var(--sidebar-accent);
+    padding-left: 16px;
+}
+
+
+/* ===== TEMA CLARO (azul claro) ===== */
+:root[data-theme="light"] {
+    --sidebar-bg: #ffffff;
+    --sidebar-text: #1c1c1c;
+
+    /* Azul claro premium */
+    --sidebar-accent: #2a75ff;
+
+    /* Itens */
+    --sidebar-item-bg: #f3f6ff;
+    --sidebar-item-hover: #e4ecff;
+}
+
+/* ===== TEMA ESCURO (azul escuro) ===== */
+:root[data-theme="dark"] {
+    --sidebar-bg: #0d1b2a; /* azul bem escuro */
+    --sidebar-text: #e8f1ff;
+
+    /* Azul escuro vibrante */
+    --sidebar-accent: #4da3ff;
+
+    /* Itens */
+    --sidebar-item-bg: #14273d;
+    --sidebar-item-hover: #1d3557;
+}
+
+
+
+/* ===== Página de Produto Individual ===== */
+.produto-pagina {
+    padding: 40px 5%;
+}
+
+.produto-container {
+    max-width: 1100px;
+    margin: auto;
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+    padding: 30px;
+    background: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px var(--shadow);
+    border: 1px solid var(--border);
+}
+
+.produto-imagem img {
+    width: 160px;
+    max-width: 450px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px var(--shadow);
+}
+
+.produto-info {
+    flex: 1;
+    color: var(--texto);
+}
+
+.produto-titulo {
+    margin-bottom: 10px;
+    font-size: 2rem;
+}
+
+.produto-preco {
+    font-size: 1.7rem;
+    color: var(--azul);
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+
+.produto-descricao {
+    opacity: 0.8;
+    margin-bottom: 25px;
+}
+
+/* BOTÕES */
+.btn-personalizar,
+.btn-add-carrinho {
+    background: var(--azul);
+    border: none;
+    padding: 12px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    color: var(--card-bg);
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 10px;
+    transition: 0.3s;
+}
+
+.btn-personalizar:hover,
+.btn-add-carrinho:hover {
+    background: var(--texto);
+    color: var(--fundo);
+}
+
+/* PERSONALIZAÇÃO */
+.personalizar-box {
+    margin-top: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.personalizar-box input {
+    padding: 8px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--texto);
+    outline: none;
+}
+
+.personalizar-box input:focus {
+    border-color: var(--azul);
+}
+
+/* RESPONSIVO */
+@media (max-width: 768px) {
+    .produto-container {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .produto-imagem img {
+        width: 100%;
+        max-width: 350px;
+        margin: auto;
+    }
+}
+
+/* CADASTRO E LOGIN */
+
+.user-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: 10px;
+}
+
+.user-btn {
+    padding: 6px 12px;
+    background: #0077ff;
+    color: white;
+    border-radius: 6px;
+    font-size: 14px;
+    text-decoration: none;
+    transition: 0.2s ease;
+}
+
+.user-btn:hover {
+    background: #005fcc;
+}
+
+.user-name {
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+/* ============================================
+   LOGIN E CADASTRO - COMPATÍVEL COM DARK MODE
+   (versão corrigida para data-theme="dark")
+=============================================== */
+
+/* CONTAINER DO FORM */
+.form-container {
+    width: 100%;
+    max-width: 420px;
+    background: var(--bg-card, #ffffff);
+    padding: 30px;
+    margin: 50px auto;
+    border-radius: 14px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.12);
+}
+
+/* --- MODO ESCURO --- */
+:root[data-theme="dark"] .form-container {
+    background: #111a25;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+}
+
+/* TÍTULO */
+.form-container h2 {
+    text-align: center;
+    font-size: 26px;
+    margin-bottom: 22px;
+    color: var(--text, #0d1b2a);
+}
+
+:root[data-theme="dark"] .form-container h2 {
+    color: #e6e6e6;
+}
+
+/* LABELS */
+.form-container label {
+    font-weight: 600;
+    margin-top: 12px;
+    color: var(--text, #0d1b2a);
+}
+
+:root[data-theme="dark"] .form-container label {
+    color: #e6e6e6;
+}
+
+/* INPUTS */
+.form-container input {
+    width: 100%;
+    padding: 12px;
+    margin: 6px 0 14px;
+    border-radius: 8px;
+    border: 1px solid #cccccc;
+    font-size: 15px;
+    background: var(--input-bg, #ffffff);
+    color: var(--text, #0d1b2a);
+}
+
+/* Inputs no modo escuro */
+:root[data-theme="dark"] .form-container input {
+    background: #0d1b2a;
+    border: 1px solid #1e2d3d;
+    color: #e6e6e6;
+}
+
+/* INPUT FOCUS */
+.form-container input:focus {
+    outline: none;
+    border-color: #0077ff;
+    box-shadow: 0 0 4px rgba(0, 119, 255, 0.4);
+}
+
+:root[data-theme="dark"] .form-container input:focus {
+    border-color: #3399ff;
+    box-shadow: 0 0 6px rgba(51, 153, 255, 0.3);
+}
+
+/* BOTÃO SUBMIT */
+.btn-submit {
+    width: 100%;
+    padding: 12px;
+    cursor: pointer;
+    background: #0077ff;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 17px;
+    transition: 0.3s;
+}
+
+.btn-submit:hover {
+    background: #005fcc;
+}
+
+/* TEXTO ALTERNATIVO (login <-> cadastro) */
+.alt-text {
+    margin-top: 16px;
+    text-align: center;
+    color: var(--text, #0d1b2a);
+}
+
+:root[data-theme="dark"] .alt-text {
+    color: #e6e6e6;
+}
+
+.alt-text a {
+    color: #0077ff;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.alt-text a:hover {
+    text-decoration: underline;
+}
+
+/*MENSAGENS*/
+
+.mensagens {
+    margin: 20px auto;
+    max-width: 450px;
+}
+
+.msg {
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    font-weight: 600;
+    text-align: center;
+    transition: opacity 0.6s ease;
+}
+
+.msg.sucesso {
+    background: #d4ffd4;
+    color: #1b6d1b;
+}
+
+.msg.erro {
+    background: #ffd4d4;
+    color: #991b1b;
+}
+
+/* =============================
+   BOTÕES DE LOGIN E CADASTRO
+============================= */
+
+.btn-login,
+.btn-cadastro {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    border: none;
+    transition: 0.25s ease-in-out;
+    text-decoration: none;
+    display: inline-block;
+}
+
+/* LOGIN = estilo secundário */
+.btn-login {
+    background: transparent;
+    color: #0077ff;
+    border: 2px solid #0077ff;
+}
+
+.btn-login:hover {
+    background: #0077ff;
+    color: white;
+}
+
+/* CADASTRO = destaque */
+.btn-cadastro {
+    background: #0077ff;
+    color: white;
+}
+
+.btn-cadastro:hover {
+    background: #005fcc;
+}
+
+/* ========================================
+   MODO ESCURO — ajusta contraste
+======================================== */
+
+:root[data-theme="dark"] .btn-login {
+    color: #66b3ff;
+    border-color: #66b3ff;
+}
+
+:root[data-theme="dark"] .btn-login:hover {
+    background: #66b3ff;
+    color: #0a0a0a;
+}
+
+:root[data-theme="dark"] .btn-cadastro {
+    background: #3399ff;
+}
+
+:root[data-theme="dark"] .btn-cadastro:hover {
+    background: #1a7dd6;
+}
+
+
+
+

@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}{{ produto.nome }} - AQUAPURA{% endblock %}
+
+{% block content %}
+
+<section class="produto-pagina" style="padding:40px 5%;">
+  <div class="produto-container">
+
+    <!-- COLUNA IMAGEM -->
+    <div class="produto-imagem" style="min-width:320px;">
+      <!-- imagem principal -->
+      <img id="mainImage" src="{{ produto.imagem_principal }}" alt="{{ produto.nome }}" style="width:100%; border-radius:12px; object-fit:cover;">
+      
+      <!-- miniaturas, se houver imagens adicionais -->
+      {% if imagens %}
+      <div style="display:flex; gap:10px; margin-top:12px; justify-content:center; flex-wrap:wrap;">
+        {% for img in imagens %}
+        <img class="thumb" src="{{ img.imagem }}" alt="foto {{ loop.index }}" style="width:72px; height:72px; object-fit:cover; border-radius:8px; cursor:pointer; border:1px solid var(--border);">
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- COLUNA INFORMAÇÕES -->
+    <div class="produto-info">
+      <h1 class="produto-titulo">{{ produto.nome }}</h1>
+
+      <p class="produto-preco">R$ {{ "%.2f"|format(produto.preco) }}</p>
+
+      {% if produto.descricao %}
+      <p class="produto-descricao">{{ produto.descricao }}</p>
+      {% endif %}
+
+      <!-- PERSONALIZAÇÃO -->
+      <div style="margin-top:18px;">
+        <button id="btnPersonalizar" class="btn-personalizar" type="button">Personalizar ✏️</button>
+      </div>
+
+      <form id="addCartForm" method="get" action="{{ url_for('add_carrinho', produto_id=produto.id) }}">
+        <!-- campo de personalização (inicia escondido) -->
+        <div id="personalizarBox" class="personalizar-box" style="display:none; margin-top:12px; max-width:420px;">
+          <label for="nomePersonalizado" style="font-weight:600; color:var(--texto);">Nome para personalizar (opcional)</label>
+          <input id="nomePersonalizado" name="nome_personalizado" type="text" placeholder="Ex: Maria" style="padding:8px; border-radius:10px; border:1px solid var(--border); margin-top:6px; width:100%;">
+        </div>
+
+        <!-- quantidade -->
+        <div style="display:flex; align-items:center; gap:10px; margin-top:14px;">
+          <label style="font-weight:600;">Quantidade</label>
+          <div class="quantidade" style="align-items:center;">
+            <button type="button" id="qtyMinus" style="width:36px; height:36px; border-radius:50%; border:none; background:var(--azul); color:var(--card-bg); cursor:pointer;">-</button>
+            <input id="qtyInput" name="quantidade" value="1" min="1" type="number" style="width:56px; text-align:center; padding:6px; border-radius:8px; border:1px solid var(--border);">
+            <button type="button" id="qtyPlus" style="width:36px; height:36px; border-radius:50%; border:none; background:var(--azul); color:var(--card-bg); cursor:pointer;">+</button>
+          </div>
+        </div>
+
+        <!-- botão adicionar ao carrinho -->
+        <div style="margin-top:18px;">
+          <button type="submit" class="btn-add-carrinho" style="padding:12px 22px;">Adicionar ao carrinho</button>
+        </div>
+      </form>
+
+      <!-- informação pequena -->
+      <p style="margin-top:14px; color:var(--texto); opacity:0.8;">
+        Em estoque: <strong>{{ produto.estoque }}</strong>
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<!-- script pequeno para interações -->
+<script>
+  // mostrar/ocultar personalizar
+  const btnPersonalizar = document.getElementById('btnPersonalizar');
+  const personalizarBox = document.getElementById('personalizarBox');
+
+  btnPersonalizar.addEventListener('click', () => {
+    if (personalizarBox.style.display === 'none' || !personalizarBox.style.display) {
+      personalizarBox.style.display = 'flex';
+      personalizarBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      personalizarBox.style.display = 'none';
+    }
+  });
+
+  // quantidade plus/minus
+  const qtyInput = document.getElementById('qtyInput');
+  document.getElementById('qtyPlus').addEventListener('click', () => {
+    qtyInput.value = Math.max(1, parseInt(qtyInput.value || '1') + 1);
+  });
+  document.getElementById('qtyMinus').addEventListener('click', () => {
+    qtyInput.value = Math.max(1, parseInt(qtyInput.value || '1') - 1);
+  });
+
+  // miniaturas trocam a imagem principal
+  document.querySelectorAll('.thumb').forEach(thumb => {
+    thumb.addEventListener('click', (e) => {
+      document.getElementById('mainImage').src = e.target.src;
+    });
+  });
+
+  // quando o formulário for enviado, ele fará GET para /add_carrinho/<id>?quantidade=x&nome_personalizado=...
+  // Se preferir POST + backend, eu atualizo a rota no app.py depois.
+</script>
+
+{% endblock %}

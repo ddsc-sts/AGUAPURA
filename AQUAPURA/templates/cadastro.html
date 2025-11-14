@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="form-container">
+    <h2>Criar conta</h2>
+
+    <form method="POST">
+
+        <label for="nome">Nome completo</label>
+        <input type="text" name="nome" required placeholder="Seu nome">
+
+        <label for="email">E-mail</label>
+        <input type="email" name="email" required placeholder="seuemail@gmail.com">
+
+        <label for="senha">Senha</label>
+        <input type="password" name="senha" required placeholder="Crie uma senha">
+
+        <button type="submit" class="btn-submit">Cadastrar</button>
+
+        <p class="alt-text">
+            Já possui conta?
+            <a href="{{ url_for('login') }}">Entrar</a>
+        </p>
+    </form>
+</div>
+
+{% endblock %}

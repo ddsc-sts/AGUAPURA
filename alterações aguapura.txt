@@ -1,0 +1,10 @@
+alterações aguapura:
+
+barra de pesquisa funcional
+decidir e arrumar o rodapé
+alinhar o cabeçalho
+criar novas imagens para o carrossel
+criar novas imagens para os produtos
+painel do adm com crud
+adcionar método de pagamento no carrinho
+adcionar gestão de pedidos no painel do adm

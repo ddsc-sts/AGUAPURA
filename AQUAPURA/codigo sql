@@ -79,6 +79,17 @@ CREATE TABLE pedido_itens (
     FOREIGN KEY (pedido_id) REFERENCES pedidos(id) ON DELETE CASCADE,
     FOREIGN KEY (produto_id) REFERENCES produtos(id)
 );
+-- ============================
+-- CARRINHO
+-- ============================
+CREATE TABLE carrinho (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    session_id VARCHAR(255) NOT NULL,
+    produto_id INT NOT NULL,
+    quantidade INT DEFAULT 1,
+    FOREIGN KEY (produto_id) REFERENCES produtos(id)
+);
+
 
 -- ============================
 -- INSERÇÃO DE PRODUTOS
@@ -86,7 +97,7 @@ CREATE TABLE pedido_itens (
 
 INSERT INTO produtos (nome, descricao, preco, categoria, imagem_principal, estoque)
 VALUES (
-    'Garrafa Térmica Aqua 750ml',
+    'Garrafa Térmica gqua 750ml',
     'Garrafa térmica de alta durabilidade, ideal para uso diário. Mantém líquidos frios ou quentes por até 12 horas.',
     119.90,
     'Garrafa',
@@ -96,7 +107,7 @@ VALUES (
 
 INSERT INTO produtos (nome, descricao, preco, categoria, imagem_principal, estoque)
 VALUES (
-    'Copo Térmico Aqua 500ml',
+    'Copo Térmico Agua 500ml',
     'Copo térmico com isolamento duplo ideal para bebidas quentes ou frias. Perfeito para seu dia a dia.',
     89.90,
     'Copo',
@@ -107,19 +118,13 @@ VALUES (
 INSERT INTO produtos (nome, descricao, preco, categoria, imagem_principal, estoque)
 VALUES (
     'Tampa Extra de Silicone',
-    'Tampa de silicone compatível com garrafas térmicas AquaPura. Material resistente e livre de BPA.',
+    'Tampa de silicone compatível com garrafas térmicas AguaPura. Material resistente e livre de BPA.',
     29.90,
     'Acessório',
     '/static/img/acessorios.png',
     35
 );
 
-INSERT INTO produtos (nome, descricao, preco, categoria, imagem_principal, estoque)
-VALUES (
-    'Promo Garrafa Special Edition 1L',
-    'Edição limitada da Garrafa Aqua com capacidade aumentada para 1 litro.',
-    149.90,
-    'Garrafa',
-    '/static/img/banner1.png',
-    12
-);
+select * from usuarios
+
+

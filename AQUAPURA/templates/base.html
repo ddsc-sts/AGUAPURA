@@ -7,7 +7,37 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 </head>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const mensagens = document.querySelectorAll(".msg");
+
+        if (mensagens.length > 0) {
+            setTimeout(() => {
+                mensagens.forEach(msg => {
+                    msg.style.transition = "opacity 0.6s ease";
+                    msg.style.opacity = "0";
+
+                    setTimeout(() => msg.remove(), 600); // remove após a animação
+                });
+            }, 1750); // tempo na tela (3s)
+        }
+    });
+</script>
+
 <body>
+    
+    {% with msgs = get_flashed_messages(with_categories=True) %}
+    {% if msgs %}
+        <div class="mensagens">
+            {% for categoria, texto in msgs %}
+                <p class="msg {{ categoria }}">{{ texto }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% endwith %}
+
+    
     <header class="site-header">
         <div class="top-bar">
             <div class="logo-container">
@@ -25,12 +55,15 @@
         
             <input type="text" placeholder="O que você está buscando?">
             <button id="theme-toggle" class="theme-btn" aria-label="Alternar tema">🌙</button>
-                <a href="{{ url_for('carrinho') }}" class="cart">
-                    <img src="{{ url_for('static', filename='icons/cart.svg') }}" class="cart-icon">
-                    <span class="cart-count">0</span>
-                </a>
-</div>
-
+            <a href="{{ url_for('carrinho') }}" class="cart">
+                <img src="{{ url_for('static', filename='icons/cart.svg') }}" class="cart-icon">
+            
+                <span class="cart-count">
+                    {{ total_carrinho }}
+                </span>
+            </a>
+            
+        
 
         </div>
         
@@ -39,10 +72,20 @@
                 <li><a href="{{ url_for('garrafas') }}">GARRAFAS</a></li>
                 <li><a href="{{ url_for('copos') }}">COPOS</a></li>
                 <li><a href="{{ url_for('acessorios') }}">ACESSÓRIOS</a></li>
-                <li><a href="#">LANÇAMENTOS</a></li>
                 <li><a href="{{ url_for('sobre') }}">SOBRE</a></li>
             </ul>
+        
+             <div class="nav-right">
+                {% if session.get("logado") %}
+                    <span class="usuario-nome">Olá, {{ session["usuario_nome"] }}</span>
+                    <a href="/logout" class="btn-logout">Sair</a>
+                {% else %}
+                    <a href="/login" class="btn-login">Entrar</a>
+                    <a href="/cadastro" class="btn-cadastro">Criar conta</a>
+                {% endif %}
+                </div>
         </nav>
+        
 
         <div class="shipping-info">
             Frete Grátis em compras acima de R$129,90 para Santa Catarina
@@ -121,46 +164,112 @@
 </div>
 
 <button id="chat-open" class="chat-open-btn">Suporte</button>
-    <!-- MENU LATERAL -->
-<nav class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-        <img src="https://via.placeholder.com/80" class="avatar" alt="Avatar">
-        <h3 class="user-name">Usuário</h3>
+
+<!-- SIDEBAR -->
+<div id="sidebar" class="sidebar" aria-hidden="true">
+    <div class="sidebar-content">
+      <h2>Menu</h2>
+      <br>
+      <ul>
+        <li><a href="#">Configurações</a></li>
+        <li><a href="#">Acessibilidade</a></li>
+        <li><a href="#">Idioma</a></li>
+        <li><a href="#">Coins & Recompensas</a></li>
+        <li><a href="#">Favoritos</a></li>
+        <li><a href="{{ url_for('politica_troca') }}">Política de Troca</a></li>
+        <li><a href="{{ url_for('politica_privacidade') }}">Política de Privacidade</a></li>
+        <li><a href="#">Avaliar o Site</a></li>
+      </ul>
     </div>
+  </div>
+  
+  <div id="sidebar-overlay" class="sidebar-overlay"></div>
+  
 
-    <ul class="menu-list">
-
-        <li><i data-lucide="settings"></i> Configurações</li>
-
-        <li><i data-lucide="shopping-bag"></i> Avaliar Compras</li>
-
-        <li><i data-lucide="accessibility"></i> Acessibilidade</li>
-
-        <li><i data-lucide="languages"></i> Idioma</li>
-
-        <li><i data-lucide="coins"></i> Mini Loja (Coins)</li>
-
-        <li><i data-lucide="heart"></i> Produtos Favoritos</li>
-
-        <li><i data-lucide="book-open"></i> Políticas Água Pura</li>
-
-        <li><i data-lucide="star"></i> Avaliação do Site</li>
-
-    </ul>
-</nav>
-
-<!-- Botão para abrir -->
-<button class="sidebar-open-btn" onclick="toggleSidebar()">☰ Menu</button>
-
-<!-- MENU LATERAL -->
-<div id="sidebar" class="sidebar">
-    <!-- seu conteúdo do menu -->
-</div>
-
-<!-- FUNDO QUE FECHA O MENU -->
-<div id="sidebar-overlay" class="sidebar-overlay"></div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+    
+        const sidebar = document.getElementById("sidebar");
+        const overlay = document.getElementById("sidebar-overlay");
+        const btn = document.getElementById("sidebarBtn");
+    
+        // ABRIR MENU
+        btn.addEventListener("click", function () {
+            sidebar.classList.add("open");
+            overlay.classList.add("show");
+        });
+    
+        // FECHAR QUANDO CLICAR NO OVERLAY
+        overlay.addEventListener("click", function () {
+            sidebar.classList.remove("open");
+            overlay.classList.remove("show");
+        });
+    
+    });
+    </script>
+    <button id="sidebarBtn">☰ Menu</button>
 
 
-      
+
+
+<style>
+   
+    /* BOTÃO DO MENU — separado */
+    #sidebarBtn {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 100000; /* sempre por cima da sidebar */
+        padding: 12px 18px;
+        background: #222;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 18px;
+        cursor: pointer;
+        font-weight: 600;
+    }
+    
+    
+    #sidebarBtn:hover {
+        background: var(--sidebar-btn-bg-hover);
+        transform: scale(1.05);
+    }
+
+    #sidebarBtn {
+        transition: opacity 0.3s ease;
+    }
+    #sidebarBtn.hidden {
+        opacity: 0;
+        pointer-events: none;
+    }
+    
+    .sidebar-overlay.active {
+        display: block !important;
+        opacity: 1;
+    }
+    
+    #sidebarBtn {
+        z-index: 9999;
+    }
+    
+    
+    /* Tema claro/escuro do botão */
+    :root[data-theme="light"] {
+        --sidebar-btn-bg: #222;
+        --sidebar-btn-text: white;
+        --sidebar-btn-bg-hover: #000;
+    }
+    
+    :root[data-theme="dark"] {
+        --sidebar-btn-bg: #e6e6e6;
+        --sidebar-btn-text: #111;
+        --sidebar-btn-bg-hover: #ffffff;
+    }
+    
+</style>
+
+    
+
 </body>
 </html>

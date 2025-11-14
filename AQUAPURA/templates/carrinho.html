@@ -2,45 +2,54 @@
 {% block content %}
 
 <div class="carrinho-container">
-
     <h2 class="titulo-carrinho">Seu Carrinho</h2>
+
+    {% if itens|length == 0 %}
+        <p>Seu carrinho está vazio 😢</p>
+    {% else %}
 
     <div class="lista-carrinho">
 
-        <!-- Exemplo de item no carrinho -->
+        {% for item in itens %}
         <div class="item-carrinho">
-            <img src="{{ url_for('static', filename='img/exemplo.jpg') }}" alt="Produto">
+
+            <img src="{{ item.imagem_principal }}" alt="{{ item.nome }}">
 
             <div class="info-item">
-                <h3>Copo Térmico Azul 500ml</h3>
-                <p>R$ 89,90</p>
+                <h3>{{ item.nome }}</h3>
+                <p>R$ {{ "%.2f"|format(item.preco) }}</p>
 
                 <div class="quantidade">
-                    <button>-</button>
-                    <span>1</span>
-                    <button>+</button>
+                    <a href="/carrinho/sub/{{ item.carrinho_id }}"><button>-</button></a>
+
+                    <span>{{ item.quantidade }}</span>
+
+                    <a href="/carrinho/add/{{ item.carrinho_id }}"><button>+</button></a>
                 </div>
             </div>
 
-            <button class="remove-item">✖</button>
-        </div>
+            <a href="/carrinho/remover/{{ item.carrinho_id }}" class="remove-item">✖</a>
 
-        <!-- Adicione mais itens depois dinamicamente -->
+        </div>
+        {% endfor %}
 
     </div>
 
     <div class="resumo-carrinho">
         <h3>Resumo do Pedido</h3>
-        <p>Subtotal: <span>R$ 89,90</span></p>
-        <p>Frete: <span>R$ 12,00</span></p>
+        <p>Subtotal: <span>R$ {{ "%.2f"|format(subtotal) }}</span></p>
+        <p>Frete: <span>R$ {{ "%.2f"|format(frete) }}</span></p>
 
         <hr>
 
-        <p class="total"><strong>Total:</strong> <span>R$ 101,90</span></p>
+        <p class="total"><strong>Total:</strong> 
+            <span>R$ {{ "%.2f"|format(total) }}</span>
+        </p>
 
         <button class="finalizar">Finalizar Compra</button>
     </div>
 
+    {% endif %}
 </div>
 
 {% endblock %}

@@ -152,28 +152,59 @@ document.addEventListener('DOMContentLoaded', () => {
 
 });
 
-const sidebar = document.getElementById("sidebar");
-const overlay = document.getElementById("sidebar-overlay");
-const menuButton = document.getElementById("menu-btn"); // ID do botão que abre o menu!
+((function () {
+  const btn = document.getElementById("sidebarBtn");
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("sidebar-overlay");
 
-// FUNÇÃO DE ABRIR/FECHAR
-function toggleSidebar() {
-    const aberto = sidebar.classList.contains("open");
+  if (!btn || !sidebar || !overlay) return;
 
-    if (aberto) {
-        sidebar.classList.remove("open");
-        overlay.classList.remove("show");
-    } else {
-        sidebar.classList.add("open");
-        overlay.classList.add("show");
-    }
-}
+  function openSidebar() {
+    sidebar.classList.add("open");
+    overlay.classList.add("active");
 
-// CLIQUE NO BOTÃO
-menuButton.addEventListener("click", toggleSidebar);
+    // some o botão
+    btn.style.display = "none";
 
-// CLIQUE FORA FECHA
-overlay.addEventListener("click", () => {
+    document.documentElement.style.overflow = "hidden";
+  }
+
+  function closeSidebar() {
     sidebar.classList.remove("open");
-    overlay.classList.remove("show");
+    overlay.classList.remove("active");
+
+    // reaparece o botão
+    btn.style.display = "block";
+
+    document.documentElement.style.overflow = "";
+  }
+
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+
+    sidebar.classList.contains("open") ? closeSidebar() : openSidebar();
+  });
+
+  overlay.addEventListener("click", () => {
+    closeSidebar();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeSidebar();
+  });
+
+  sidebar.addEventListener("click", (e) => {
+    e.stopPropagation(); // clicou dentro não fecha
+  });
+})());
+
+// Fechar clicando no overlay
+document.getElementById("sidebar-overlay").addEventListener("click", () => {
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("sidebar-overlay");
+  const btn = document.getElementById("sidebarBtn");
+
+  sidebar.classList.remove("open");
+  overlay.classList.remove("active");
+  btn.classList.remove("hidden"); // volta o botão
 });

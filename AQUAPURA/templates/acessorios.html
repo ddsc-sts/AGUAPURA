@@ -11,7 +11,10 @@
             <img src="{{ produto.imagem_principal }}" alt="{{ produto.nome }}">
             <h3>{{ produto.nome }}</h3>
             <p>R${{ produto.preco }}</p>
-            <button>Adicionar ao carrinho 🛒</button>
+            <a href="/produto/{{ produto.id }}">
+                <button class="btn-detalhes">Ver detalhes</button>
+            </a>
+            
         </div>
         {% endfor %}
     </div>
