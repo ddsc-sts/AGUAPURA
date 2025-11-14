@@ -25,7 +25,12 @@
         
             <input type="text" placeholder="O que você está buscando?">
             <button id="theme-toggle" class="theme-btn" aria-label="Alternar tema">🌙</button>
-            <a href="{{ url_for('carrinho') }}" class="cart">🛒 </a>
+                <a href="{{ url_for('carrinho') }}" class="cart">
+                    <img src="{{ url_for('static', filename='icons/cart.svg') }}" class="cart-icon">
+                    <span class="cart-count">0</span>
+                </a>
+</div>
+
 
         </div>
         
@@ -97,6 +102,64 @@
         </div>
     </footer>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+    <!-- Chat de Suporte -->
+<div id="chat-container" class="chat-container hidden">
+    <div class="chat-header">
+        <span>Atendimento Agua Pura</span>
+        <button id="chat-close">×</button>
+    </div>
+
+    <div class="chat-body" id="chat-body">
+        <div class="bot-message">Olá! Como posso ajudar hoje?</div>
+    </div>
+
+    <div class="chat-input-area">
+        <input type="text" id="chat-input" placeholder="Digite sua mensagem...">
+        <button id="chat-send">Enviar</button>
+    </div>
+</div>
+
+<button id="chat-open" class="chat-open-btn">Suporte</button>
+    <!-- MENU LATERAL -->
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <img src="https://via.placeholder.com/80" class="avatar" alt="Avatar">
+        <h3 class="user-name">Usuário</h3>
+    </div>
+
+    <ul class="menu-list">
+
+        <li><i data-lucide="settings"></i> Configurações</li>
+
+        <li><i data-lucide="shopping-bag"></i> Avaliar Compras</li>
+
+        <li><i data-lucide="accessibility"></i> Acessibilidade</li>
+
+        <li><i data-lucide="languages"></i> Idioma</li>
+
+        <li><i data-lucide="coins"></i> Mini Loja (Coins)</li>
+
+        <li><i data-lucide="heart"></i> Produtos Favoritos</li>
+
+        <li><i data-lucide="book-open"></i> Políticas Água Pura</li>
+
+        <li><i data-lucide="star"></i> Avaliação do Site</li>
+
+    </ul>
+</nav>
+
+<!-- Botão para abrir -->
+<button class="sidebar-open-btn" onclick="toggleSidebar()">☰ Menu</button>
+
+<!-- MENU LATERAL -->
+<div id="sidebar" class="sidebar">
+    <!-- seu conteúdo do menu -->
+</div>
+
+<!-- FUNDO QUE FECHA O MENU -->
+<div id="sidebar-overlay" class="sidebar-overlay"></div>
+
 
       
 </body>

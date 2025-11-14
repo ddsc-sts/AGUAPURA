@@ -85,3 +85,95 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+
+  const chatContainer = document.getElementById("chat-container");
+  const chatOpen = document.getElementById("chat-open");
+  const chatClose = document.getElementById("chat-close");
+  const chatBody = document.getElementById("chat-body");
+  const chatInput = document.getElementById("chat-input");
+  const chatSend = document.getElementById("chat-send");
+
+  // Abrir e fechar chat
+  chatOpen.addEventListener("click", () => {
+      chatContainer.classList.remove("hidden");
+  });
+  chatClose.addEventListener("click", () => {
+      chatContainer.classList.add("hidden");
+  });
+
+  // Lista de respostas pré-definidas (você edita como quiser)
+  const respostas = {
+      "oi": "Olá! Como posso ajudar?",
+      "ola": "Olá! Como posso ajudar?",
+      "preço": "Todos os preços estão listados diretamente na página dos produtos.",
+      "entrega": "Realizamos entregas em todo o Brasil. Qual sua cidade?",
+      "frete": "O frete é grátis em compras acima de R$129,90 para Santa Catarina.",
+      "troca": "Para trocas, consulte nossa Política de Troca no rodapé do site.",
+      "horário": "Nosso suporte funciona 24h via site.",
+      "pagamento": "Aceitamos Pix, cartão de crédito e boleto.",
+      "default": "Desculpe, não entendi. Pode tentar reformular?"
+  };
+
+  function addMessage(text, type) {
+      const div = document.createElement("div");
+      div.classList.add(type === "user" ? "user-message" : "bot-message");
+      div.textContent = text;
+      chatBody.appendChild(div);
+      chatBody.scrollTop = chatBody.scrollHeight;
+  }
+
+  function responder(msg) {
+      msg = msg.toLowerCase();
+      for (const chave in respostas) {
+          if (msg.includes(chave)) {
+              return respostas[chave];
+          }
+      }
+      return respostas.default;
+  }
+
+  chatSend.addEventListener("click", () => {
+      const texto = chatInput.value.trim();
+      if (!texto) return;
+
+      addMessage(texto, "user");
+      chatInput.value = "";
+
+      setTimeout(() => {
+          addMessage(responder(texto), "bot");
+      }, 500);
+  });
+
+  chatInput.addEventListener("keypress", e => {
+      if (e.key === "Enter") chatSend.click();
+  });
+
+});
+
+const sidebar = document.getElementById("sidebar");
+const overlay = document.getElementById("sidebar-overlay");
+const menuButton = document.getElementById("menu-btn"); // ID do botão que abre o menu!
+
+// FUNÇÃO DE ABRIR/FECHAR
+function toggleSidebar() {
+    const aberto = sidebar.classList.contains("open");
+
+    if (aberto) {
+        sidebar.classList.remove("open");
+        overlay.classList.remove("show");
+    } else {
+        sidebar.classList.add("open");
+        overlay.classList.add("show");
+    }
+}
+
+// CLIQUE NO BOTÃO
+menuButton.addEventListener("click", toggleSidebar);
+
+// CLIQUE FORA FECHA
+overlay.addEventListener("click", () => {
+    sidebar.classList.remove("open");
+    overlay.classList.remove("show");
+});

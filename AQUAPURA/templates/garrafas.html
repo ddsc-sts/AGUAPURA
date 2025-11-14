@@ -4,18 +4,18 @@
 
 <section class="produtos">
     <h2>Garrafas Térmicas</h2>
-    <p>As melhores garrafas para hidratação em qualquer momento do seu dia.</p>
 
     <div class="grid-produtos">
+        {% for produto in produtos %}
         <div class="produto">
-            <img src="{{ url_for('static', filename='img/garrafas.png') }}" alt="Garrafa térmica">
-            <h3>Garrafa Térmica Aqua 750ml</h3>
-            <p>R$119,90</p>
+            <img src="{{ produto.imagem_principal }}" alt="{{ produto.nome }}">
+            <h3>{{ produto.nome }}</h3>
+            <p>R${{ produto.preco }}</p>
             <button>Adicionar ao carrinho 🛒</button>
         </div>
+        {% endfor %}
     </div>
 
-      
 </section>
 
 {% endblock %}

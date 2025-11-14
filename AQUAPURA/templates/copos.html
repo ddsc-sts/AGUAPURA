@@ -4,19 +4,17 @@
 
 <section class="produtos">
     <h2>Copos Térmicos</h2>
-    <p>Encontre o copo ideal para manter sua bebida na temperatura perfeita por muito mais tempo.</p>
-    
+
     <div class="grid-produtos">
+        {% for produto in produtos %}
         <div class="produto">
-            <img src="{{ url_for('static', filename='img/copos.png') }}" alt="Copo térmico">
-            <h3>Copo Térmico Aqua 500ml</h3>
-            <p>R$89,90</p>
+            <img src="{{ produto.imagem_principal }}" alt="{{ produto.nome }}">
+            <h3>{{ produto.nome }}</h3>
+            <p>R${{ produto.preco }}</p>
             <button>Adicionar ao carrinho 🛒</button>
         </div>
-        <!-- pode duplicar esse bloco para mais produtos -->
+        {% endfor %}
     </div>
-
-      
 </section>
 
 {% endblock %}
