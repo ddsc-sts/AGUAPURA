@@ -64,6 +64,10 @@ CREATE TABLE pedidos (
     valor_total DECIMAL(10,2),
     status VARCHAR(50) DEFAULT 'pendente',
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    pagamento_metodo VARCHAR(30) NULL,
+	cliente_nome VARCHAR(150) NULL,
+	cliente_cpf VARCHAR(30) NULL,
+	cliente_endereco TEXT NULL,
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 );
 
@@ -87,6 +91,7 @@ CREATE TABLE carrinho (
     session_id VARCHAR(255) NOT NULL,
     produto_id INT NOT NULL,
     quantidade INT DEFAULT 1,
+    cor VARCHAR(30) NOT NULL,
     FOREIGN KEY (produto_id) REFERENCES produtos(id)
 );
 
@@ -97,7 +102,7 @@ CREATE TABLE carrinho (
 
 INSERT INTO produtos (nome, descricao, preco, categoria, imagem_principal, estoque)
 VALUES (
-    'Garrafa Térmica gqua 750ml',
+    'Garrafa Térmica aqua 750ml',
     'Garrafa térmica de alta durabilidade, ideal para uso diário. Mantém líquidos frios ou quentes por até 12 horas.',
     119.90,
     'Garrafa',
