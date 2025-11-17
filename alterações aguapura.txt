@@ -1,16 +1,14 @@
 alterações aguapura:
 
-barra de pesquisa funcional
 decidir e arrumar o rodapé
 alinhar o cabeçalho
 criar novas imagens para o carrossel
 criar novas imagens para os produtos
 painel do adm com crud
-adcionar método de pagamento no carrinho e finalização de compra
 adcionar gestão de pedidos no painel do adm
-ao tentar adcionar mais de um produto ao carrinho vai somente 1
-carrinho nao respeitando o limite em estoque
-adcionar mais opçoes nas paginas individuais com base no site https://share.google/fvV3bgIeJvWXF7Tjd
+definir no perfil os campos de cpf endereço e etc para quando for finalizar a compra ja ter la para ele adcionar
+na parte do checkout colocar as tabelas de cidade e estado no modo escuro e adcionar todas as cidades
+fazer o qr ficar mais bonito na parte de finalizar_pedido
 
 documentação:
 

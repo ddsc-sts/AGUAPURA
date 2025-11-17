@@ -6,22 +6,22 @@
 <section class="produto-pagina" style="padding:40px 5%;">
   <div class="produto-container">
 
-    <!-- COLUNA IMAGEM -->
+    <!-- IMAGEM PRINCIPAL -->
     <div class="produto-imagem" style="min-width:320px;">
-      <!-- imagem principal -->
-      <img id="mainImage" src="{{ produto.imagem_principal }}" alt="{{ produto.nome }}" style="width:100%; border-radius:12px; object-fit:cover;">
-      
-      <!-- miniaturas, se houver imagens adicionais -->
+      <img id="mainImage" src="{{ produto.imagem_principal }}" alt="{{ produto.nome }}"
+           style="width:100%; border-radius:12px; object-fit:cover;">
+
       {% if imagens %}
       <div style="display:flex; gap:10px; margin-top:12px; justify-content:center; flex-wrap:wrap;">
         {% for img in imagens %}
-        <img class="thumb" src="{{ img.imagem }}" alt="foto {{ loop.index }}" style="width:72px; height:72px; object-fit:cover; border-radius:8px; cursor:pointer; border:1px solid var(--border);">
+        <img class="thumb" src="{{ img.imagem }}" alt="foto {{ loop.index }}"
+             style="width:72px; height:72px; object-fit:cover; border-radius:8px; cursor:pointer; border:1px solid var(--border);">
         {% endfor %}
       </div>
       {% endif %}
     </div>
 
-    <!-- COLUNA INFORMAÇÕES -->
+    <!-- INFO DO PRODUTO -->
     <div class="produto-info">
       <h1 class="produto-titulo">{{ produto.nome }}</h1>
 
@@ -31,35 +31,74 @@
       <p class="produto-descricao">{{ produto.descricao }}</p>
       {% endif %}
 
-      <!-- PERSONALIZAÇÃO -->
+      <!-- PERSONALIZAR (não aparece em acessórios) -->
+      {% if produto.categoria != "Acessório" %}
       <div style="margin-top:18px;">
         <button id="btnPersonalizar" class="btn-personalizar" type="button">Personalizar ✏️</button>
       </div>
+      {% endif %}
 
-      <form id="addCartForm" method="get" action="{{ url_for('add_carrinho', produto_id=produto.id) }}">
-        <!-- campo de personalização (inicia escondido) -->
-        <div id="personalizarBox" class="personalizar-box" style="display:none; margin-top:12px; max-width:420px;">
-          <label for="nomePersonalizado" style="font-weight:600; color:var(--texto);">Nome para personalizar (opcional)</label>
-          <input id="nomePersonalizado" name="nome_personalizado" type="text" placeholder="Ex: Maria" style="padding:8px; border-radius:10px; border:1px solid var(--border); margin-top:6px; width:100%;">
+      <!-- FORM PRINCIPAL: envia produto + cor + personalização + quantidade + (kit hidden fields gerados) -->
+      <form id="addCartForm" method="post" action="{{ url_for('add_carrinho', produto_id=produto.id) }}">
+
+        {% if produto.categoria != "Acessório" %}
+        <!-- BOX DE PERSONALIZAÇÃO -->
+        <div id="personalizarBox" class="personalizar-box"
+             style="display:none; margin-top:12px; max-width:420px;">
+          <label style="font-weight:600; color:var(--texto);">Nome (opcional)</label>
+          <input id="nomePersonalizado" name="nome_personalizado" type="text"
+                 placeholder="Ex: Maria"
+                 style="padding:8px; border-radius:10px; border:1px solid var(--border); margin-top:6px; width:100%;">
         </div>
 
-        <!-- quantidade -->
+        <!-- CORES (aparece apenas para Copo/Garrafa) -->
+        {% if produto.categoria in ["Copo", "Garrafa"] %}
+        <div style="margin-top:18px;">
+          <label style="font-weight:600; color:var(--texto);">Escolha a cor:</label>
+          <select name="cor" required
+                  style="padding:10px; width:180px; margin-top:6px; border-radius:10px; border:1px solid var(--border);">
+              <option value="">Selecione</option>
+              <option value="Preto">Preto</option>
+              <option value="Branco">Branco</option>
+              <option value="Azul">Azul</option>
+              <option value="Vermelho">Vermelho</option>
+          </select>
+        </div>
+        {% endif %}
+        {% endif %}
+
+        <!-- QUANTIDADE DO PRODUTO PRINCIPAL -->
         <div style="display:flex; align-items:center; gap:10px; margin-top:14px;">
           <label style="font-weight:600;">Quantidade</label>
-          <div class="quantidade" style="align-items:center;">
-            <button type="button" id="qtyMinus" style="width:36px; height:36px; border-radius:50%; border:none; background:var(--azul); color:var(--card-bg); cursor:pointer;">-</button>
-            <input id="qtyInput" name="quantidade" value="1" min="1" type="number" style="width:56px; text-align:center; padding:6px; border-radius:8px; border:1px solid var(--border);">
-            <button type="button" id="qtyPlus" style="width:36px; height:36px; border-radius:50%; border:none; background:var(--azul); color:var(--card-bg); cursor:pointer;">+</button>
+
+          <div class="quantidade">
+              <button type="button" id="qtyMinus"
+                      style="width:36px; height:36px; border-radius:50%; border:none;
+                             background:var(--azul); color:var(--card-bg); cursor:pointer;">-</button>
+
+              <input
+                  id="qtyInput"
+                  name="quantidade"
+                  value="1"
+                  min="1"
+                  max="{{ produto.estoque }}"
+                  type="number"
+                  style="width:56px; text-align:center; padding:6px; border-radius:8px; border:1px solid var(--border);">
+
+              <button type="button" id="qtyPlus"
+                      style="width:36px; height:36px; border-radius:50%; border:none;
+                             background:var(--azul); color:var(--card-bg); cursor:pointer;">+</button>
           </div>
         </div>
 
-        <!-- botão adicionar ao carrinho -->
+        <!-- BOTÃO ADICIONAR (apenas este botão submete o produto + kit hidden fields) -->
         <div style="margin-top:18px;">
-          <button type="submit" class="btn-add-carrinho" style="padding:12px 22px;">Adicionar ao carrinho</button>
+          <button type="submit" class="btn-add-carrinho"
+                  style="padding:12px 22px;">Adicionar ao carrinho</button>
         </div>
+
       </form>
 
-      <!-- informação pequena -->
       <p style="margin-top:14px; color:var(--texto); opacity:0.8;">
         Em estoque: <strong>{{ produto.estoque }}</strong>
       </p>
@@ -68,39 +107,180 @@
   </div>
 </section>
 
-<!-- script pequeno para interações -->
+<!-- SUGESTÕES (fora do form, como pedido) -->
+{% if sugestoes %}
+<section style="padding:40px 5%; margin-top:20px; text-align:center;">
+
+  {% if produto.categoria in ["Copo", "Garrafa"] %}
+    <h2 style="font-size:24px; margin-bottom:20px;">Complete seu kit 🛍️</h2>
+  {% else %}
+    <h2 style="font-size:24px; margin-bottom:20px;">Combine com Copos e Garrafas ✨</h2>
+  {% endif %}
+
+  <div id="kitContainer" style="display:flex; justify-content:center; gap:25px; flex-wrap:wrap;">
+    {% for s in sugestoes %}
+    <div style="width:220px; background:var(--card-bg); padding:14px;
+                border-radius:12px; box-shadow:0 0 6px #0001; position:relative;">
+
+      <img src="{{ s.imagem_principal }}" style="width:100%; height:180px; object-fit:cover; border-radius:10px;">
+
+      <p style="font-weight:600; margin-top:10px;">{{ s.nome }}</p>
+      <p style="color:var(--texto); opacity:0.8;">R$ {{ "%.2f"|format(s.preco) }}</p>
+
+      <!-- checkbox (marca incluir no kit) -->
+      <label class="kit-opcao" style="margin-top:10px; display:flex; align-items:center; gap:8px; cursor:pointer;">
+        <input type="checkbox" class="kit-check" value="{{ s.id }}">
+        <span>Incluir no kit</span>
+      </label>
+
+      <!-- QUANTIDADE DO KIT (só aparece quando checkbox marcado) -->
+      <div class="kit-qtd-box" id="qbox-{{ s.id }}"
+           style="
+              margin-top:10px;
+              display:none;
+              align-items:center;
+              gap:8px;
+              justify-content:center;
+              background:var(--card-bg);
+              padding:8px;
+              border-radius:10px;
+              border:1px solid var(--border);
+           ">
+
+        <label style="font-size:0.9rem; font-weight:600; color:var(--texto);">Qtd:</label>
+
+        <input type="number"
+               class="kit-qtd"
+               data-id="{{ s.id }}"
+               value="1"
+               min="1"
+               max="{{ s.estoque }}"
+               style="
+                  width:60px;
+                  padding:6px;
+                  text-align:center;
+                  border-radius:8px;
+                  border:1px solid var(--azul);
+                  background:var(--card-bg);
+                  color:var(--texto);
+                  font-weight:600;
+               ">
+      </div>
+
+      <p style="font-size:0.8rem; color:var(--texto); opacity:0.7; margin-top:8px;">
+        Em estoque: <strong>{{ s.estoque }}</strong>
+      </p>
+
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- JS -->
 <script>
-  // mostrar/ocultar personalizar
-  const btnPersonalizar = document.getElementById('btnPersonalizar');
-  const personalizarBox = document.getElementById('personalizarBox');
+document.addEventListener("DOMContentLoaded", () => {
 
-  btnPersonalizar.addEventListener('click', () => {
-    if (personalizarBox.style.display === 'none' || !personalizarBox.style.display) {
-      personalizarBox.style.display = 'flex';
-      personalizarBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else {
-      personalizarBox.style.display = 'none';
+  /* ---------- QUANTIDADE DO PRODUTO PRINCIPAL ---------- */
+  const estoqueMax = parseInt("{{ produto.estoque }}") || 0;
+  const qtyInput = document.getElementById("qtyInput");
+
+  // segurança se qtyInput não existir
+  if (qtyInput) {
+    const plusBtn = document.getElementById("qtyPlus");
+    const minusBtn = document.getElementById("qtyMinus");
+
+    if (plusBtn) {
+      plusBtn.addEventListener("click", () => {
+        let atual = parseInt(qtyInput.value || "1");
+        if (atual < estoqueMax) qtyInput.value = atual + 1;
+      });
     }
-  });
 
-  // quantidade plus/minus
-  const qtyInput = document.getElementById('qtyInput');
-  document.getElementById('qtyPlus').addEventListener('click', () => {
-    qtyInput.value = Math.max(1, parseInt(qtyInput.value || '1') + 1);
-  });
-  document.getElementById('qtyMinus').addEventListener('click', () => {
-    qtyInput.value = Math.max(1, parseInt(qtyInput.value || '1') - 1);
-  });
+    if (minusBtn) {
+      minusBtn.addEventListener("click", () => {
+        qtyInput.value = Math.max(1, parseInt(qtyInput.value || "1") - 1);
+      });
+    }
 
-  // miniaturas trocam a imagem principal
-  document.querySelectorAll('.thumb').forEach(thumb => {
-    thumb.addEventListener('click', (e) => {
-      document.getElementById('mainImage').src = e.target.src;
+    qtyInput.addEventListener("input", () => {
+      const val = parseInt(qtyInput.value) || 1;
+      if (val < 1) qtyInput.value = 1;
+      if (val > estoqueMax) qtyInput.value = estoqueMax;
+    });
+  }
+
+  /* ---------- PERSONALIZAR ---------- */
+  const btnPersonalizar = document.getElementById("btnPersonalizar");
+  const personalizarBox = document.getElementById("personalizarBox");
+
+  if (btnPersonalizar && personalizarBox) {
+    btnPersonalizar.addEventListener("click", () => {
+      personalizarBox.style.display =
+        personalizarBox.style.display === "flex" ? "none" : "flex";
+    });
+  }
+
+  /* ---------- TROCAR IMAGEM ---------- */
+  document.querySelectorAll(".thumb").forEach(thumb => {
+    thumb.addEventListener("click", e => {
+      const t = e.target;
+      if (t && t.src) document.getElementById("mainImage").src = t.src;
     });
   });
 
-  // quando o formulário for enviado, ele fará GET para /add_carrinho/<id>?quantidade=x&nome_personalizado=...
-  // Se preferir POST + backend, eu atualizo a rota no app.py depois.
+  /* ---------- KIT: mostrar quantidade só quando marcar ---------- */
+  document.querySelectorAll(".kit-check").forEach(chk => {
+    chk.addEventListener("change", () => {
+      const box = document.getElementById("qbox-" + chk.value);
+      if (!box) return;
+      box.style.display = chk.checked ? "flex" : "none";
+    });
+  });
+
+  /* ---------- ADICIONAR ITENS DO KIT AO FORMULÁRIO ---------- */
+  const form = document.getElementById("addCartForm");
+  if (form) {
+    form.addEventListener("submit", (e) => {
+      // remove entradas antigas do kit (se existirem)
+      document.querySelectorAll('input[name="kit_produtos"]').forEach(x => x.remove());
+      document.querySelectorAll('input[name="kit_qtds"]').forEach(x => x.remove());
+
+      // percorre checks e adiciona campos hidden para envio
+      document.querySelectorAll(".kit-check").forEach(chk => {
+        if (chk.checked) {
+          const id = chk.value;
+          const qtdInput = document.querySelector(`.kit-qtd[data-id="${id}"]`);
+          let qtd = 1;
+          let max = 9999;
+          if (qtdInput) {
+            qtd = parseInt(qtdInput.value || "1");
+            max = parseInt(qtdInput.max || max);
+            if (isNaN(qtd) || qtd < 1) qtd = 1;
+            if (!isNaN(max) && qtd > max) qtd = max;
+          }
+
+          // cria hidden para id
+          const hidId = document.createElement("input");
+          hidId.type = "hidden";
+          hidId.name = "kit_produtos";
+          hidId.value = id;
+          form.appendChild(hidId);
+
+          // cria hidden para qtd
+          const hidQtd = document.createElement("input");
+          hidQtd.type = "hidden";
+          hidQtd.name = "kit_qtds";
+          hidQtd.value = String(qtd);
+          form.appendChild(hidQtd);
+        }
+      });
+
+      // ok: o form segue para envio com campos kit_produtos[] e kit_qtds[]
+    });
+  }
+
+});
 </script>
 
 {% endblock %}

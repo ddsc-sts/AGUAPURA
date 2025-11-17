@@ -12,25 +12,26 @@
 
         {% for item in itens %}
         <div class="item-carrinho">
-
             <img src="{{ item.imagem_principal }}" alt="{{ item.nome }}">
-
+        
             <div class="info-item">
                 <h3>{{ item.nome }}</h3>
                 <p>R$ {{ "%.2f"|format(item.preco) }}</p>
-
+        
+                {% if item.cor and item.cor != '' %}
+                    <p style="margin:6px 0;"><strong>Cor:</strong> {{ item.cor }}</p>
+                {% endif %}
+        
                 <div class="quantidade">
                     <a href="/carrinho/sub/{{ item.carrinho_id }}"><button>-</button></a>
-
                     <span>{{ item.quantidade }}</span>
-
                     <a href="/carrinho/add/{{ item.carrinho_id }}"><button>+</button></a>
                 </div>
             </div>
-
+        
             <a href="/carrinho/remover/{{ item.carrinho_id }}" class="remove-item">✖</a>
-
         </div>
+        
         {% endfor %}
 
     </div>
@@ -46,10 +47,13 @@
             <span>R$ {{ "%.2f"|format(total) }}</span>
         </p>
 
-        <button class="finalizar">Finalizar Compra</button>
+        <a class="finalizar" href="{{ url_for('checkout') }}">Finalizar Compra</a>
+
+
     </div>
 
     {% endif %}
 </div>
+
 
 {% endblock %}

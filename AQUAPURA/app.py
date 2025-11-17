@@ -55,13 +55,32 @@ def produto(id):
     db = conectar()
     cursor = db.cursor(dictionary=True)
 
+    # Produto atual
     cursor.execute("SELECT * FROM produtos WHERE id = %s", (id,))
     produto = cursor.fetchone()
 
+    # Imagens adicionais
     cursor.execute("SELECT imagem FROM imagens_produto WHERE produto_id = %s", (id,))
     imagens = cursor.fetchall()
 
-    return render_template('produto.html', produto=produto, imagens=imagens)
+    # Se for Copo ou Garrafa → sugerir acessórios
+    if produto["categoria"] in ("Copo", "Garrafa"):
+        cursor.execute("SELECT * FROM produtos WHERE categoria = 'Acessório' LIMIT 4")
+        sugestoes = cursor.fetchall()
+
+    # Se for Acessório → sugerir Copos e Garrafas
+    else:
+        cursor.execute("SELECT * FROM produtos WHERE categoria IN ('Copo', 'Garrafa') LIMIT 4")
+        sugestoes = cursor.fetchall()
+
+    return render_template(
+        'produto.html',
+        produto=produto,
+        imagens=imagens,
+        sugestoes=sugestoes
+    )
+
+
 
 
 # ============================
@@ -119,7 +138,9 @@ def politica_troca():
 def politica_privacidade():
     return render_template("politica_privacidade.html")
 
-#Carrinho
+# ---------------------------
+# CARRINHO
+# ---------------------------
 
 @app.route("/carrinho")
 @login_required
@@ -130,90 +151,173 @@ def carrinho():
     session_id = get_session_id()
 
     cursor.execute("""
-        SELECT c.id AS carrinho_id, c.quantidade, 
-               p.nome, p.preco, p.imagem_principal
+        SELECT c.id AS carrinho_id, c.quantidade, c.cor,
+               p.id AS produto_id, p.nome, p.preco, p.imagem_principal, p.estoque
         FROM carrinho c
         JOIN produtos p ON p.id = c.produto_id
         WHERE c.session_id = %s
     """, (session_id,))
-    
     itens = cursor.fetchall()
 
-    # Garantir que valores sejam Decimal
+    # Calcular subtotal com Decimal
     subtotal = Decimal("0.00")
-
     for item in itens:
         preco = Decimal(item["preco"])
         quantidade = Decimal(item["quantidade"])
         subtotal += preco * quantidade
 
-    # Frete também como Decimal
     frete = Decimal("12.00") if subtotal > 0 else Decimal("0.00")
-
     total = subtotal + frete
 
-    return render_template("carrinho.html",itens=itens,subtotal=subtotal,frete=frete,total=total)
+    return render_template("carrinho.html", itens=itens, subtotal=subtotal, frete=frete, total=total)
 
 
 
-@app.route("/add_carrinho/<int:produto_id>")
+# ---------------------------
+# Atualizar carrinho (agora aceita POST, salva cor e itens do kit como itens normais)
+# ---------------------------
+@app.route("/add_carrinho/<int:produto_id>", methods=["POST"])
 def add_carrinho(produto_id):
     db = conectar()
-    cursor = db.cursor()
+    cursor = db.cursor(dictionary=True)
 
     session_id = get_session_id()
 
-    # Verifica se já existe o item no carrinho
-    cursor.execute("""
-        SELECT quantidade FROM carrinho 
-        WHERE session_id = %s AND produto_id = %s
-    """, (session_id, produto_id))
+    # quantidade do produto principal
+    qtd_form = int(request.form.get("quantidade", 1))
+    cor = request.form.get("cor", "") or ""  # salva string vazia se não tiver cor
 
-    item = cursor.fetchone()
+    # kit (se vier): listas paralelas de ids e quantidades
+    kit_produtos = request.form.getlist("kit_produtos")
+    kit_qtds = request.form.getlist("kit_qtds")
 
-    if item:
+    # --- Função util: inserir/atualizar um item no carrinho levando em conta 'cor' ---
+    def upsert_carrinho(prod_id, qtd, cor_value=""):
+        # pegar estoque atual do produto
+        cursor.execute("SELECT estoque FROM produtos WHERE id = %s", (prod_id,))
+        r = cursor.fetchone()
+        if not r:
+            return False, f"Produto {prod_id} não encontrado."
+
+        estoque = int(r["estoque"])
+
+        # procurar item com mesma session, produto e cor
         cursor.execute("""
-            UPDATE carrinho 
-            SET quantidade = quantidade + 1
-            WHERE session_id = %s AND produto_id = %s
-        """, (session_id, produto_id))
-    else:
-        cursor.execute("""
-            INSERT INTO carrinho (session_id, produto_id, quantidade)
-            VALUES (%s, %s, 1)
-        """, (session_id, produto_id))
+            SELECT id, quantidade FROM carrinho
+            WHERE session_id = %s AND produto_id = %s AND IFNULL(cor, '') = %s
+        """, (session_id, prod_id, cor_value))
+        existing = cursor.fetchone()
 
+        nova_qtd = qtd + (existing["quantidade"] if existing else 0)
+
+        if nova_qtd > estoque:
+            return False, f"Quantidade solicitada maior que estoque (disponível {estoque})."
+
+        if existing:
+            cursor.execute("""
+                UPDATE carrinho SET quantidade = %s WHERE id = %s
+            """, (nova_qtd, existing["id"]))
+        else:
+            cursor.execute("""
+                INSERT INTO carrinho (session_id, produto_id, quantidade, cor)
+                VALUES (%s, %s, %s, %s)
+            """, (session_id, prod_id, nova_qtd, cor_value))
+
+        return True, None
+
+    # Primeiro, adiciona/atualiza produto principal
+    ok, err = upsert_carrinho(produto_id, qtd_form, cor)
+    if not ok:
+        flash(err, "erro")
+        return redirect(url_for("produto", id=produto_id))
+
+    # Em seguida, adiciona itens do kit (se houver)
+    if kit_produtos and kit_qtds:
+        # kit_produtos and kit_qtds são lists de strings; iterar de forma segura
+        for idx, pid_str in enumerate(kit_produtos):
+            try:
+                pid = int(pid_str)
+                qtd_kit = int(kit_qtds[idx]) if idx < len(kit_qtds) else 1
+            except:
+                continue
+            ok, err = upsert_carrinho(pid, qtd_kit, "")  # acessórios sem cor por padrão
+            if not ok:
+                flash(f"Erro ao adicionar item do kit: {err}", "erro")
+                # continuar tentando os outros, mas informar o usuário
     db.commit()
+    flash("Produto(s) adicionados ao carrinho!", "sucesso")
     return redirect(url_for("carrinho"))
 
+
+
+
+
+
+
+# ---------------------------
+# AUMENTAR QUANTIDADE (CHECK DE ESTOQUE)
+# ---------------------------
 @app.route("/carrinho/add/<int:id>")
 @login_required
 def aumentar_item(id):
     db = conectar()
-    cursor = db.cursor()
+    cursor = db.cursor(dictionary=True)
+
+    # Buscar item + estoque do produto
+    cursor.execute("""
+        SELECT c.quantidade, p.estoque, c.produto_id
+        FROM carrinho c
+        JOIN produtos p ON p.id = c.produto_id
+        WHERE c.id = %s
+    """, (id,))
+    item = cursor.fetchone()
+
+    if not item:
+        return redirect(url_for("carrinho"))
+
+    if item["quantidade"] >= item["estoque"]:
+        flash(f"Máximo disponível: {item['estoque']} unidades.", "erro")
+        return redirect(url_for("carrinho"))
 
     cursor.execute("UPDATE carrinho SET quantidade = quantidade + 1 WHERE id = %s", (id,))
     db.commit()
+
     return redirect(url_for("carrinho"))
 
 
+
+# ---------------------------
+# DIMINUIR QUANTIDADE (NÃO NEGATIVO)
+# ---------------------------
 @app.route("/carrinho/sub/<int:id>")
+@login_required
 def diminuir_item(id):
     db = conectar()
     cursor = db.cursor()
 
     cursor.execute("SELECT quantidade FROM carrinho WHERE id = %s", (id,))
-    q = cursor.fetchone()[0]
+    q = cursor.fetchone()
 
-    if q > 1:
-        cursor.execute("UPDATE carrinho SET quantidade = quantidade - 1 WHERE id = %s", (id,))
-    else:
+    if not q:
+        return redirect(url_for("carrinho"))
+
+    qtd = q[0]
+
+    if qtd <= 1:
         cursor.execute("DELETE FROM carrinho WHERE id = %s", (id,))
+    else:
+        cursor.execute("UPDATE carrinho SET quantidade = quantidade - 1 WHERE id = %s", (id,))
 
     db.commit()
     return redirect(url_for("carrinho"))
 
+
+
+# ---------------------------
+# REMOVER ITEM
+# ---------------------------
 @app.route("/carrinho/remover/<int:id>")
+@login_required
 def remover_item(id):
     db = conectar()
     cursor = db.cursor()
@@ -360,6 +464,189 @@ def logout():
     session.clear()
     flash("Você saiu da sua conta.", "sucesso")
     return redirect("/")
+
+@app.route('/buscar')
+def buscar():
+    termo = request.args.get("q", "").strip()
+
+    if termo == "":
+        return redirect(url_for("index"))
+
+    db = conectar()
+    cursor = db.cursor(dictionary=True)
+
+    # Busca por nome OU parte do nome
+    cursor.execute("""
+        SELECT * FROM produtos 
+        WHERE nome LIKE %s
+    """, (f"%{termo}%", ))
+
+    resultados = cursor.fetchall()
+
+    return render_template("buscar.html", termo=termo, resultados=resultados)
+
+# ---------------------------
+# Checkout (dados do cliente + escolha método) - GET mostra o form, POST processa
+# ---------------------------
+@app.route("/checkout", methods=["GET", "POST"])
+def checkout():
+    db = conectar()
+    cursor = db.cursor(dictionary=True)
+
+    session_id = get_session_id()
+
+    # obter itens do carrinho
+    cursor.execute("""
+        SELECT c.id AS carrinho_id, c.quantidade, c.cor, p.id AS produto_id, p.nome, p.preco, p.imagem_principal, p.estoque
+        FROM carrinho c
+        JOIN produtos p ON p.id = c.produto_id
+        WHERE c.session_id = %s
+    """, (session_id,))
+    itens = cursor.fetchall()
+
+    if request.method == "GET":
+        # se não houver itens, redireciona
+        if not itens:
+            flash("Seu carrinho está vazio.", "erro")
+            return redirect(url_for("home"))
+
+        # calcula subtotal / frete / total aqui e passa pro template (corrige problema do zero)
+        from decimal import Decimal
+        subtotal = Decimal("0.00")
+        for item in itens:
+            preco = Decimal(item["preco"])
+            qtd = int(item["quantidade"])
+            subtotal += preco * qtd
+
+        frete = Decimal("12.00") if subtotal > 0 else Decimal("0.00")
+        total = subtotal + frete
+
+        return render_template("checkout.html", itens=itens, subtotal=subtotal, frete=frete, total=total)
+
+    # POST: processar checkout
+    # ler dados do formulário (endereços separados)
+    nome = request.form.get("nome", "").strip()
+    cpf = request.form.get("cpf", "").strip()
+    email = request.form.get("email", "").strip()
+    telefone = request.form.get("telefone", "").strip()
+
+    rua = request.form.get("rua", "").strip()
+    numero = request.form.get("numero", "").strip()
+    bairro = request.form.get("bairro", "").strip()
+    estado = request.form.get("estado", "").strip()
+    cidade = request.form.get("cidade", "").strip()
+    cep = request.form.get("cep", "").strip()
+
+    metodo = request.form.get("metodo_pagamento")  # "PIX" ou "CARTAO"
+
+    # val server-side mínimo
+    if not nome or not cpf or not rua or not numero or not estado or not cidade or not cep or not metodo:
+        flash("Preencha todos os campos obrigatórios.", "erro")
+        return redirect(url_for("checkout"))
+
+    # normaliza cpf/cep (apenas dígitos)
+    import re
+    cpf_digits = re.sub(r"\D", "", cpf)
+    cep_digits = re.sub(r"\D", "", cep)
+
+    if len(cpf_digits) != 11:
+        flash("CPF inválido. Verifique o formato.", "erro")
+        return redirect(url_for("checkout"))
+    if len(cep_digits) != 8:
+        flash("CEP inválido. Verifique o formato.", "erro")
+        return redirect(url_for("checkout"))
+
+    # recalcular total e validar estoque antes de criar pedido
+    from decimal import Decimal
+    subtotal = Decimal("0.00")
+    for item in itens:
+        preco = Decimal(item["preco"])
+        qtd = int(item["quantidade"])
+        # verificar estoque atual
+        cursor.execute("SELECT estoque FROM produtos WHERE id = %s", (item["produto_id"],))
+        estoque_row = cursor.fetchone()
+        if not estoque_row:
+            flash("Produto não encontrado durante checkout.", "erro")
+            return redirect(url_for("carrinho"))
+        estoque = int(estoque_row["estoque"])
+        if qtd > estoque:
+            flash(f"Quantidade do produto {item['nome']} maior que o estoque ({estoque}).", "erro")
+            return redirect(url_for("carrinho"))
+        subtotal += preco * Decimal(qtd)
+
+    frete = Decimal("12.00") if subtotal > 0 else Decimal("0.00")
+    total = subtotal + frete
+
+    # monta endereço final (pode ter colunas separadas no DB, aqui concatenamos)
+    endereco = f"{rua}, {numero}" + (f" - {bairro}" if bairro else "") + f" - {cidade}/{estado} - CEP {cep_digits}"
+
+    # criar pedido (ajuste as colunas conforme seu schema)
+    try:
+        cursor.execute("""
+            INSERT INTO pedidos (usuario_id, valor_total, status, pagamento_metodo, cliente_nome, cliente_cpf, cliente_endereco)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """, (None, str(total), "aguardando_pagamento", metodo, nome, cpf_digits, endereco))
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        flash("Erro ao criar pedido. Tente novamente.", "erro")
+        print("Erro INSERT pedidos:", e)
+        return redirect(url_for("checkout"))
+
+    pedido_id = cursor.lastrowid
+
+    # inserir itens do pedido e reduzir estoque
+    try:
+        for item in itens:
+            produto_id = item["produto_id"]
+            qtd = int(item["quantidade"])
+            preco = Decimal(item["preco"])
+
+            cursor.execute("""
+                INSERT INTO pedido_itens (pedido_id, produto_id, quantidade, valor)
+                VALUES (%s, %s, %s, %s)
+            """, (pedido_id, produto_id, qtd, str(preco)))
+
+            # reduzir estoque no produto
+            cursor.execute("UPDATE produtos SET estoque = estoque - %s WHERE id = %s", (qtd, produto_id))
+
+        # limpar carrinho do usuário (sessão)
+        cursor.execute("DELETE FROM carrinho WHERE session_id = %s", (session_id,))
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        flash("Erro ao processar itens do pedido. Contate o suporte.", "erro")
+        print("Erro pedido_itens/estoque:", e)
+        return redirect(url_for("carrinho"))
+
+    # redirecionar para página "pedido feito"
+    flash("Pedido criado com sucesso!", "sucesso")
+    return redirect(url_for("pedido_finalizado", pedido_id=pedido_id))
+
+
+# ---------------------------
+# Página "Pedido Feito"
+# ---------------------------
+@app.route("/pedido_finalizado/<int:pedido_id>")
+def pedido_finalizado(pedido_id):
+    db = conectar()
+    cursor = db.cursor(dictionary=True)
+
+    cursor.execute("SELECT * FROM pedidos WHERE id = %s", (pedido_id,))
+    pedido = cursor.fetchone()
+    if not pedido:
+        flash("Pedido não encontrado.", "erro")
+        return redirect(url_for("home"))
+
+    cursor.execute("""
+        SELECT pi.*, p.nome, p.imagem_principal
+        FROM pedido_itens pi
+        JOIN produtos p ON p.id = pi.produto_id
+        WHERE pi.pedido_id = %s
+    """, (pedido_id,))
+    itens = cursor.fetchall()
+
+    return render_template("pedido_finalizado.html", pedido=pedido, itens=itens)
 
 
 

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Resultados para "{{ termo }}"{% endblock %}
+
+{% block content %}
+
+<section style="padding:40px 5%;">
+    <h1 style="margin-bottom:20px;">
+        Resultados para: <strong>{{ termo }}</strong>
+    </h1>
+
+    {% if resultados %}
+        <div class="grid-produtos">
+            {% for p in resultados %}
+            <a href="{{ url_for('produto', id=p.id) }}" class="produto-card">
+                
+                <img src="{{ p.imagem_principal }}" alt="{{ p.nome }}" class="produto-img">
+
+                <h3>{{ p.nome }}</h3>
+                <p>R$ {{ "%.2f"|format(p.preco) }}</p>
+
+            </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p style="font-size:18px; opacity:0.7;">Nenhum produto encontrado.</p>
+    {% endif %}
+</section>
+
+{% endblock %}
