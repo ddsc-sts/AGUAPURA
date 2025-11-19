@@ -8,7 +8,6 @@ adcionar gestão de pedidos no painel do adm
 definir no perfil os campos de cpf endereço e etc para quando for finalizar a compra ja ter la para ele adcionar
 colocar uma opçao de lembrar o metodo de pagamento para proxima compra
 na parte do checkout colocar as tabelas de cidade e estado no modo escuro e adcionar todas as cidades
-fazer o qr ficar mais bonito na parte de finalizar_pedido
 
 documentação:
 

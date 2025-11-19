@@ -1792,3 +1792,10 @@ input:checked + .slider:before {
     font-size: 18px;
     font-weight: 500;
 }
+
+.compras-table tr.pendente {
+    background: rgba(255, 200, 0, 0.15);
+    font-weight: bold;
+}
+
+

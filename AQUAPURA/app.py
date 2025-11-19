@@ -627,6 +627,47 @@ def checkout():
 # ---------------------------
 # Página "Pedido Feito"
 # ---------------------------
+@app.route("/finalizar_pedido", methods=["POST"])
+def finalizar_pedido():
+    if "usuario_id" not in session:
+        flash("Você precisa estar logado.", "erro")
+        return redirect("/login")
+
+    usuario_id = session["usuario_id"]
+    carrinho = session.get("carrinho", [])
+
+    if not carrinho:
+        flash("Carrinho vazio!", "erro")
+        return redirect("/carrinho")
+
+    valor_total = sum(item["preco"] * item["quantidade"] for item in carrinho)
+
+    db = conectar()
+    cursor = db.cursor(dictionary=True)
+
+    # 🔥 AGORA O usuario_id ESTÁ SENDO SALVO
+    cursor.execute("""
+        INSERT INTO pedidos (usuario_id, valor_total, status, pagamento_metodo)
+        VALUES (%s, %s, 'Aguradando Pagamento', %s)
+    """, (usuario_id, valor_total, "PIX"))
+
+    pedido_id = cursor.lastrowid
+
+    # Salva cada item do pedido
+    for item in carrinho:
+        cursor.execute("""
+            INSERT INTO pedido_itens (pedido_id, produto_id, quantidade, preco_unitario)
+            VALUES (%s, %s, %s, %s)
+        """, (pedido_id, item["id"], item["quantidade"], item["preco"]))
+
+    db.commit()
+    cursor.close()
+    db.close()
+
+    session["carrinho"] = []  # limpa carrinho
+
+    return redirect(url_for("pedido_finalizado", pedido_id=pedido_id))
+
 @app.route("/pedido_finalizado/<int:pedido_id>")
 def pedido_finalizado(pedido_id):
     db = conectar()
@@ -634,9 +675,10 @@ def pedido_finalizado(pedido_id):
 
     cursor.execute("SELECT * FROM pedidos WHERE id = %s", (pedido_id,))
     pedido = cursor.fetchone()
+
     if not pedido:
         flash("Pedido não encontrado.", "erro")
-        return redirect(url_for("home"))
+        return redirect("/")
 
     cursor.execute("""
         SELECT pi.*, p.nome, p.imagem_principal
@@ -648,59 +690,31 @@ def pedido_finalizado(pedido_id):
 
     return render_template("pedido_finalizado.html", pedido=pedido, itens=itens)
 
-
 @app.route("/perfil")
 def perfil():
     if "usuario_id" not in session:
         return redirect("/login")
 
-    conn = conectar()
-    cursor = conn.cursor(dictionary=True)
-
     user_id = session["usuario_id"]
 
-    # Carregar dados do usuário
-    cursor.execute("""
-        SELECT id, nome, avatar, criado_em 
-        FROM usuarios 
-        WHERE id = %s
-    """, (user_id,))
+    db = conectar()
+    cursor = db.cursor(dictionary=True)
+
+    cursor.execute("SELECT id, nome, avatar, criado_em FROM usuarios WHERE id = %s", (user_id,))
     usuario = cursor.fetchone()
 
-    # --- PREVENIR ERRO ---
-    if not usuario:
-        flash("Usuário não encontrado. Faça login novamente.", "erro")
-        session.clear()
-        return redirect("/login")
+    cursor.execute("SELECT * FROM pedidos WHERE usuario_id = %s ORDER BY criado_em DESC", (user_id,))
+    pedidos = cursor.fetchall()
 
-    # Favoritos
     cursor.execute("""
         SELECT produtos.nome, produtos.imagem_principal
-        FROM favoritos 
+        FROM favoritos
         JOIN produtos ON produtos.id = favoritos.produto_id
         WHERE favoritos.usuario_id = %s
     """, (user_id,))
     favoritos = cursor.fetchall()
 
-    # Compras
-    cursor.execute("""
-        SELECT criado_em, produto, quantidade, valor
-        FROM compras
-        WHERE usuario_id = %s
-        ORDER BY criado_em DESC
-    """, (user_id,))
-    compras = cursor.fetchall()
-
-    cursor.close()
-    conn.close()
-
-    return render_template(
-        "perfil.html",
-        usuario=usuario,
-        favoritos=favoritos,
-        compras=compras
-    )
-
+    return render_template("perfil.html", usuario=usuario, pedidos=pedidos, favoritos=favoritos)
 
 # --------------------------
 # API PARA GRÁFICO EM JS
@@ -713,24 +727,22 @@ def api_estatisticas():
 
     user_id = session["usuario_id"]
 
-    conn = conectar()
-    cursor = conn.cursor(dictionary=True)
+    db = conectar()
+    cursor = db.cursor(dictionary=True)
 
-    # Total de compras por mês
     cursor.execute("""
-        SELECT 
+        SELECT
             MONTH(criado_em) AS mes,
             COUNT(*) AS total
-        FROM compras
+        FROM pedidos
         WHERE usuario_id = %s
         GROUP BY MONTH(criado_em)
     """, (user_id,))
+
     dados = cursor.fetchall()
 
-    cursor.close()
-    conn.close()
-
     return jsonify(dados)
+
 
 if __name__ == '__main__':
     app.run(debug=True)

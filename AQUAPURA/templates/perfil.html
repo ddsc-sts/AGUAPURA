@@ -42,13 +42,35 @@
             <div class="favoritos-list" id="listaFavoritos"></div>
         </div>
 
-        <!-- HISTÓRICO DE COMPRAS -->
-        <div id="compras" class="tab-content">
-            <h2>Histórico de Compras</h2>
-            <table class="compras-table" id="tabelaCompras">
-                <tr><th>Data</th><th>Produto</th><th>Qtd</th><th>Valor</th></tr>
-            </table>
-        </div>
+ <!-- HISTÓRICO DE PEDIDOS -->
+<div class="tab-content" id="compras">
+    <h2>Histórico de Pedidos</h2>
+    
+    <table class="compras-table">
+        <tr>
+            <th>ID</th>
+            <th>Data</th>
+            <th>Status</th>
+            <th>Valor Total</th>
+            <th>Método</th>
+        </tr>
+
+        {% for p in pedidos %}
+        <tr>
+            <td>{{ p.id }}</td>
+            <td>{{ p.criado_em.strftime('%d/%m/%Y') }}</td>
+            <td>{{ p.status }}</td>
+            <td>R$ {{ "%.2f"|format(p.valor_total) }}</td>
+            <td>{{ p.pagamento_metodo }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="5">Nenhum pedido encontrado.</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
 
         <!-- ESTATÍSTICAS -->
         <div id="estatisticas" class="tab-content">
@@ -64,55 +86,33 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-document.addEventListener("DOMContentLoaded", async () => {
-
-    // Só cria o gráfico se o canvas existir
-    const canvas = document.getElementById("chartCompras");
-    if (!canvas) return;
-
-    try {
-        const response = await fetch("/api/estatisticas");
-        const dados = await response.json();
-
-        if (!Array.isArray(dados) || dados.length === 0) {
-            canvas.parentElement.innerHTML = "<p>Nenhum dado disponível para gerar gráfico.</p>";
-            return;
-        }
-
-        // Transforma mês (1-12) em nome
-        const nomesMes = [
-            "Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
-            "Jul", "Ago", "Set", "Out", "Nov", "Dez"
-        ];
-
-        const labels = dados.map(item => nomesMes[item.mes - 1]);
-        const valores = dados.map(item => item.total);
-
-        new Chart(canvas, {
-            type: "bar",
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: "Compras por mês",
-                    data: valores,
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
+    fetch("/api/estatisticas")
+        .then(r => r.json())
+        .then(dados => {
+    
+            const meses = dados.map(d => d.mes);
+            const totais = dados.map(d => d.total);
+    
+            new Chart(document.getElementById("chartCompras"), {
+                type: "line",
+                data: {
+                    labels: meses,
+                    datasets: [{
+                        label: "Pedidos por mês",
+                        data: totais,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: { y: { beginAtZero: true } }
                 }
-            }
+            });
         });
+    </script>
+    
 
-    } catch (err) {
-        console.error("Erro ao carregar dados do gráfico:", err);
-    }
-});
-</script>
+
 
 {% endblock %}
 

@@ -9,26 +9,23 @@
   <h3 style="margin-top:18px;">Status: {{ pedido.status|replace('_',' ')|title }}</h3>
 
   {% if pedido.pagamento_metodo == "PIX" %}
-    <div style="margin-top:20px;">
-      <p>Use o QR Code abaixo para pagar (QR fictício):</p>
-      <div style="display:inline-block; background:white; padding:16px; border-radius:12px;">
-        <!-- SVG QR fictício -->
-        <svg width="180" height="180" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-          <rect width="100" height="100" fill="#000"></rect>
-          <rect x="6" y="6" width="20" height="20" fill="#fff"></rect>
-          <rect x="74" y="6" width="20" height="20" fill="#fff"></rect>
-          <rect x="6" y="74" width="20" height="20" fill="#fff"></rect>
-          <rect x="30" y="30" width="10" height="10" fill="#fff"></rect>
-          <rect x="45" y="30" width="10" height="10" fill="#fff"></rect>
-          <rect x="30" y="45" width="10" height="10" fill="#fff"></rect>
-          <rect x="45" y="45" width="10" height="10" fill="#fff"></rect>
-        </svg>
-      </div>
+  <div style="margin-top:20px;">
+    <p>Use o QR Code abaixo para pagar :</p>
 
-      <p style="margin-top:12px; font-size:0.9rem; color:var(--texto); opacity:0.8;">
-        Aguardando pagamento — depois que o pagamento for confirmado, o administrador poderá atualizar o pedido.
-      </p>
+    <div style="display:inline-block; background:white; padding:16px; border-radius:12px;">
+      <img 
+        src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=QR%20Code%20fict%C3%ADcio%20%E2%80%94%20Implementa%C3%A7%C3%A3o%20futura"
+        alt="QR Code PIX"
+        width="180"
+        height="180"
+        style="display:block;"
+      >
     </div>
+
+    <p style="font-size:0.9rem; color:var(--texto); opacity:0.8; margin-top:12px;">
+      Aguardando pagamento — depois que o pagamento for confirmado, o administrador poderá atualizar o pedido.
+    </p>
+  </div>
   {% else %}
     <p style="margin-top:20px;">Recebemos sua solicitação de pagamento via cartão. Aguardando confirmação.</p>
   {% endif %}
@@ -50,4 +47,6 @@
     </div>
   </div>
 </div>
+
+
 {% endblock %}

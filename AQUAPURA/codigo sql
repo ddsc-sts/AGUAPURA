@@ -96,6 +96,17 @@ CREATE TABLE carrinho (
     FOREIGN KEY (produto_id) REFERENCES produtos(id)
 );
 
+-- ============================
+-- CARTOES SALVOS
+-- ============================
+CREATE TABLE IF NOT EXISTS cartoes_salvos (
+    session_id TEXT PRIMARY KEY,
+    numero TEXT NOT NULL,
+    nome TEXT NOT NULL,
+    validade TEXT NOT NULL
+);
+
+
 
 -- ============================
 -- INSERÇÃO DE PRODUTOS
@@ -154,4 +165,11 @@ CREATE TABLE compras (
 );
 
 SELECT id, nome, avatar, criado_em FROM usuarios;
+
+SELECT id, usuario_id, valor_total, status, pagamento_metodo 
+FROM pedidos 
+WHERE id = 8;
+
+ALTER TABLE pedidos
+MODIFY valor_total DECIMAL(10,2) NOT NULL DEFAULT 0;
 
