@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="perfil-container">
+
+    <!-- Sidebar -->
+    <aside class="perfil-sidebar">
+        <div class="perfil-user">
+            <img src="{{ usuario.avatar or url_for('static', filename='img/user.png') }}" class="perfil-avatar">
+            <h3>{{ usuario.nome }}</h3>
+        </div>
+
+        <nav class="perfil-menu">
+            <button class="perfil-tab active" data-tab="geral">Visão Geral</button>
+            <button class="perfil-tab" data-tab="favoritos">Favoritos</button>
+            <button class="perfil-tab" data-tab="compras">Histórico</button>
+            <button class="perfil-tab" data-tab="estatisticas">Estatísticas</button>
+
+            {% if usuario.tipo == 'admin' %}
+            <a href="/admin" class="perfil-admin">Painel Admin</a>
+            {% endif %}
+        </nav>
+    </aside>
+
+    <!-- Conteúdo -->
+    <section class="perfil-content">
+
+        <!-- VISÃO GERAL -->
+        <div id="geral" class="tab-content active">
+            <h2>Olá, {{ usuario.nome }} 👋</h2>
+            <div class="perfil-cards">
+                <div class="perfil-card">Total de Compras: <strong id="total-compras"></strong></div>
+                <div class="perfil-card">Favoritos: <strong id="total-favoritos"></strong></div>
+                <div class="perfil-card">Conta Criada: <strong>{{ usuario.criado_em.strftime("%d/%m/%Y") }}</strong></div>
+            </div>
+        </div>
+
+        <!-- FAVORITOS -->
+        <div id="favoritos" class="tab-content">
+            <h2>Favoritos ❤️</h2>
+            <div class="favoritos-list" id="listaFavoritos"></div>
+        </div>
+
+        <!-- HISTÓRICO DE COMPRAS -->
+        <div id="compras" class="tab-content">
+            <h2>Histórico de Compras</h2>
+            <table class="compras-table" id="tabelaCompras">
+                <tr><th>Data</th><th>Produto</th><th>Qtd</th><th>Valor</th></tr>
+            </table>
+        </div>
+
+        <!-- ESTATÍSTICAS -->
+        <div id="estatisticas" class="tab-content">
+            <h2>Estatísticas 📊</h2>
+            <canvas id="chartCompras"></canvas>
+        </div>
+
+    </section>
+
+</div>
+
+<script src="{{ url_for('static', filename='perfil.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+
+    // Só cria o gráfico se o canvas existir
+    const canvas = document.getElementById("chartCompras");
+    if (!canvas) return;
+
+    try {
+        const response = await fetch("/api/estatisticas");
+        const dados = await response.json();
+
+        if (!Array.isArray(dados) || dados.length === 0) {
+            canvas.parentElement.innerHTML = "<p>Nenhum dado disponível para gerar gráfico.</p>";
+            return;
+        }
+
+        // Transforma mês (1-12) em nome
+        const nomesMes = [
+            "Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
+            "Jul", "Ago", "Set", "Out", "Nov", "Dez"
+        ];
+
+        const labels = dados.map(item => nomesMes[item.mes - 1]);
+        const valores = dados.map(item => item.total);
+
+        new Chart(canvas, {
+            type: "bar",
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: "Compras por mês",
+                    data: valores,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+    } catch (err) {
+        console.error("Erro ao carregar dados do gráfico:", err);
+    }
+});
+</script>
+
+{% endblock %}
+

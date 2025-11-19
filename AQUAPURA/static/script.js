@@ -175,3 +175,24 @@ document.addEventListener("DOMContentLoaded", () => {
       e.stopPropagation();
   });
 });
+
+function toggleSidebar() {
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("sidebar-overlay");
+
+  const opened = sidebar.classList.contains("open");
+
+  if (opened) {
+      sidebar.classList.remove("open");
+      overlay.classList.remove("show");
+  } else {
+      sidebar.classList.add("open");
+      overlay.classList.add("show");
+  }
+}
+
+// Fechar ao clicar fora
+document.getElementById("sidebar-overlay").addEventListener("click", function () {
+  document.getElementById("sidebar").classList.remove("open");
+  this.classList.remove("show");
+});

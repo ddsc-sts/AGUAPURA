@@ -1,7 +1,6 @@
 alterações aguapura:
 
-decidir e arrumar o rodapé
-alinhar o cabeçalho
+precisa de ajustar as compras e simular a compra
 criar novas imagens para o carrossel
 criar novas imagens para os produtos
 painel do adm com crud

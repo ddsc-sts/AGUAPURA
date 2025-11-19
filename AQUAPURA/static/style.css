@@ -1715,3 +1715,80 @@ input:checked + .slider:before {
     --avatar-border: #666;
 }
 
+
+/* css do prefil*/
+.perfil-container {
+    display: flex;
+    width: 100%;
+    min-height: 80vh;
+    margin-top: 40px;
+}
+
+/* Sidebar estilo discord */
+.perfil-sidebar {
+    width: 260px;
+    background: var(--sidebar-bg);
+    border-radius: 12px;
+    padding: 25px 15px;
+    height: fit-content;
+}
+
+.perfil-user {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.perfil-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 3px solid var(--accent);
+    object-fit: cover;
+}
+
+.perfil-menu button,
+.perfil-menu a {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    background: var(--btn-bg);
+    color: var(--text);
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    display: block;
+    text-align: left;
+}
+
+.perfil-menu button.active {
+    background: var(--accent);
+    color: white;
+}
+
+/* Conteúdo */
+.perfil-content {
+    flex: 1;
+    margin-left: 25px;
+    background: var(--card-bg);
+    padding: 25px;
+    border-radius: 12px;
+}
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Cartões */
+.perfil-cards {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.perfil-card {
+    flex: 1;
+    padding: 20px;
+    background: var(--sidebar-bg);
+    border-radius: 10px;
+    font-size: 18px;
+    font-weight: 500;
+}

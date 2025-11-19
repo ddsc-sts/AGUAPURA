@@ -10,6 +10,7 @@ CREATE TABLE usuarios (
     nome VARCHAR(150) NOT NULL,
     email VARCHAR(150) UNIQUE NOT NULL,
     senha VARCHAR(255) NOT NULL,
+    avatar VARCHAR(255),
     tipo ENUM('admin', 'cliente') DEFAULT 'cliente',
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -130,6 +131,27 @@ VALUES (
     35
 );
 
-select * from usuarios
+select * from usuarios;
 
+CREATE TABLE favoritos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT,
+    produto_id INT,
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+    FOREIGN KEY (produto_id) REFERENCES produtos(id)
+);
+
+
+CREATE TABLE compras (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT,
+    produto VARCHAR(150),
+    quantidade INT,
+    valor DECIMAL(10,2),
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+);
+
+SELECT id, nome, avatar, criado_em FROM usuarios;
 

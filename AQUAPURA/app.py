@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session , jsonify
 import mysql.connector, uuid
 from decimal import Decimal
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -649,6 +649,89 @@ def pedido_finalizado(pedido_id):
     return render_template("pedido_finalizado.html", pedido=pedido, itens=itens)
 
 
+@app.route("/perfil")
+def perfil():
+    if "usuario_id" not in session:
+        return redirect("/login")
+
+    conn = conectar()
+    cursor = conn.cursor(dictionary=True)
+
+    user_id = session["usuario_id"]
+
+    # Carregar dados do usuário
+    cursor.execute("""
+        SELECT id, nome, avatar, criado_em 
+        FROM usuarios 
+        WHERE id = %s
+    """, (user_id,))
+    usuario = cursor.fetchone()
+
+    # --- PREVENIR ERRO ---
+    if not usuario:
+        flash("Usuário não encontrado. Faça login novamente.", "erro")
+        session.clear()
+        return redirect("/login")
+
+    # Favoritos
+    cursor.execute("""
+        SELECT produtos.nome, produtos.imagem_principal
+        FROM favoritos 
+        JOIN produtos ON produtos.id = favoritos.produto_id
+        WHERE favoritos.usuario_id = %s
+    """, (user_id,))
+    favoritos = cursor.fetchall()
+
+    # Compras
+    cursor.execute("""
+        SELECT criado_em, produto, quantidade, valor
+        FROM compras
+        WHERE usuario_id = %s
+        ORDER BY criado_em DESC
+    """, (user_id,))
+    compras = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        "perfil.html",
+        usuario=usuario,
+        favoritos=favoritos,
+        compras=compras
+    )
+
+
+# --------------------------
+# API PARA GRÁFICO EM JS
+# --------------------------
+
+@app.route("/api/estatisticas")
+def api_estatisticas():
+    if "usuario_id" not in session:
+        return jsonify({"erro": "não logado"}), 401
+
+    user_id = session["usuario_id"]
+
+    conn = conectar()
+    cursor = conn.cursor(dictionary=True)
+
+    # Total de compras por mês
+    cursor.execute("""
+        SELECT 
+            MONTH(criado_em) AS mes,
+            COUNT(*) AS total
+        FROM compras
+        WHERE usuario_id = %s
+        GROUP BY MONTH(criado_em)
+    """, (user_id,))
+    dados = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return jsonify(dados)
 
 if __name__ == '__main__':
     app.run(debug=True)
+
