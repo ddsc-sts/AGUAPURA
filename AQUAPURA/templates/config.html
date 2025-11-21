@@ -1,0 +1,539 @@
+{% extends "base.html" %}
+
+{% block title %}Configurações - AquaPura{% endblock %}
+
+{% block content %}
+
+<style>
+    :root {
+        --fundo: #f5f9ff;
+        --texto: #222;
+        --cinza: #eef3fb;
+        --azul: #6ea8fe;
+        --card-bg: #ffffff;
+        --border: #d0dce9;
+        --shadow: rgba(0, 0, 0, 0.1);
+    }
+
+    [data-theme="dark"] {
+        --fundo: #0b1622;
+        --texto: #f0f4ff;
+        --cinza: #162232;
+        --azul: #3b6fb6;
+        --card-bg: #1a2838;
+        --border: #2a3a52;
+        --shadow: rgba(0, 0, 0, 0.4);
+    }
+
+    .config-container {
+        max-width: 900px;
+        margin: 60px auto;
+        padding: 0 20px;
+    }
+
+    .config-header {
+        text-align: center;
+        margin-bottom: 50px;
+    }
+
+    .config-header h1 {
+        color: var(--texto);
+        font-size: 2.5em;
+        margin-bottom: 10px;
+    }
+
+    .config-header p {
+        color: var(--texto);
+        opacity: 0.7;
+        font-size: 1.1em;
+    }
+
+    .config-sections {
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+    }
+
+    .config-section {
+        background: var(--card-bg);
+        border-radius: 16px;
+        padding: 35px;
+        box-shadow: 0 4px 15px var(--shadow);
+        border: 2px solid var(--border);
+    }
+
+    .section-title {
+        color: var(--texto);
+        font-size: 1.5em;
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid var(--border);
+    }
+
+    .form-group {
+        margin-bottom: 25px;
+    }
+
+    .form-group label {
+        display: block;
+        color: var(--texto);
+        font-weight: 600;
+        margin-bottom: 10px;
+        font-size: 1em;
+    }
+
+    .form-group input,
+    .form-group textarea {
+        width: 100%;
+        padding: 14px 18px;
+        border: 2px solid var(--border);
+        border-radius: 10px;
+        background: var(--cinza);
+        color: var(--texto);
+        font-size: 1em;
+        transition: all 0.3s ease;
+        font-family: inherit;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: var(--azul);
+        background: var(--card-bg);
+    }
+
+    .form-group textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    .avatar-section {
+        display: flex;
+        align-items: center;
+        gap: 25px;
+        margin-bottom: 25px;
+    }
+
+    .avatar-preview {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        border: 4px solid var(--azul);
+        object-fit: cover;
+    }
+
+    .avatar-upload {
+        flex: 1;
+    }
+
+    .btn {
+        padding: 14px 28px;
+        border: none;
+        border-radius: 10px;
+        font-size: 1em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-block;
+    }
+
+    .btn-primary {
+        background: var(--azul);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px var(--shadow);
+    }
+
+    .btn-secondary {
+        background: var(--cinza);
+        color: var(--texto);
+        border: 2px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+        background: var(--card-bg);
+    }
+
+    .btn-danger {
+        background: #dc3545;
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background: #c82333;
+    }
+
+    .btn-group {
+        display: flex;
+        gap: 15px;
+        margin-top: 25px;
+    }
+
+    .toggle-setting {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        background: var(--cinza);
+        border-radius: 10px;
+        margin-bottom: 15px;
+    }
+
+    .toggle-setting:last-child {
+        margin-bottom: 0;
+    }
+
+    .toggle-info h4 {
+        color: var(--texto);
+        margin-bottom: 5px;
+        font-size: 1.1em;
+    }
+
+    .toggle-info p {
+        color: var(--texto);
+        opacity: 0.7;
+        font-size: 0.9em;
+    }
+
+    .toggle-switch {
+        position: relative;
+        width: 60px;
+        height: 30px;
+        background: var(--border);
+        border-radius: 30px;
+        cursor: pointer;
+        transition: background 0.3s ease;
+    }
+
+    .toggle-switch.active {
+        background: var(--azul);
+    }
+
+    .toggle-switch::after {
+        content: '';
+        position: absolute;
+        width: 24px;
+        height: 24px;
+        background: white;
+        border-radius: 50%;
+        top: 3px;
+        left: 3px;
+        transition: transform 0.3s ease;
+    }
+
+    .toggle-switch.active::after {
+        transform: translateX(30px);
+    }
+
+    .danger-zone {
+        background: #fff5f5;
+        border: 2px solid #ffcccc;
+    }
+
+    [data-theme="dark"] .danger-zone {
+        background: #2a1a1a;
+        border-color: #5a3a3a;
+    }
+
+    .danger-zone .section-title {
+        color: #dc3545;
+        border-bottom-color: #ffcccc;
+    }
+
+    .alert {
+        padding: 15px 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        font-size: 0.95em;
+    }
+
+    .alert-success {
+        background: #d1e7dd;
+        color: #0f5132;
+        border: 2px solid #badbcc;
+    }
+
+    .alert-error {
+        background: #f8d7da;
+        color: #842029;
+        border: 2px solid #f5c2c7;
+    }
+
+    @media (max-width: 768px) {
+        .avatar-section {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .btn-group {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="config-container">
+    <div class="config-header">
+        <h1>⚙️ Configurações da Conta</h1>
+        <p>Gerencie suas informações e preferências</p>
+    </div>
+
+    {% with msgs = get_flashed_messages(with_categories=True) %}
+    {% if msgs %}
+        {% for categoria, texto in msgs %}
+        <div class="alert alert-{{ 'success' if categoria == 'sucesso' else 'error' }}">
+            {{ texto }}
+        </div>
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="config-sections">
+
+        <!-- DADOS PESSOAIS -->
+        <div class="config-section">
+            <h3 class="section-title">
+                <span>👤</span>
+                Informações Pessoais
+            </h3>
+
+            <form method="POST" action="/config/atualizar-perfil" enctype="multipart/form-data">
+                <div class="avatar-section">
+                    <img src="{{ usuario_avatar }}" 
+                    class="avatar-preview" 
+                    id="avatarPreview">
+                    <div class="avatar-upload">
+                        <label>Foto de Perfil</label>
+                        <input type="file" 
+                               name="avatar" 
+                               accept="image/*" 
+                               id="avatarInput"
+                               style="margin-top: 10px;">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Nome Completo</label>
+                    <input type="text" 
+                           name="nome" 
+                           value="{{ session.get('usuario_nome', '') }}" 
+                           required>
+                </div>
+
+                <div class="form-group">
+                    <label>E-mail</label>
+                    <input type="email" 
+                           name="email" 
+                           value="{{ session.get('usuario_email', '') }}" 
+                           required>
+                </div>
+
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-primary">💾 Salvar Alterações</button>
+                    <button type="reset" class="btn btn-secondary">🔄 Cancelar</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- SEGURANÇA -->
+        <div class="config-section">
+            <h3 class="section-title">
+                <span>🔒</span>
+                Segurança
+            </h3>
+
+            <form method="POST" action="/config/alterar-senha">
+                <div class="form-group">
+                    <label>Senha Atual</label>
+                    <input type="password" name="senha_atual" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Nova Senha</label>
+                    <input type="password" name="nova_senha" required minlength="6">
+                </div>
+
+                <div class="form-group">
+                    <label>Confirmar Nova Senha</label>
+                    <input type="password" name="confirmar_senha" required minlength="6">
+                </div>
+
+                <button type="submit" class="btn btn-primary">🔐 Alterar Senha</button>
+            </form>
+        </div>
+
+        <!-- ENDEREÇO -->
+        <div class="config-section">
+            <h3 class="section-title">
+                <span>📍</span>
+                Endereço de Entrega
+            </h3>
+
+            <form method="POST" action="/config/atualizar-endereco">
+                <div class="form-group">
+                    <label>CEP</label>
+                    <input type="text" 
+                           name="cep" 
+                           placeholder="00000-000" 
+                           maxlength="9"
+                           id="cep">
+                </div>
+
+                <div class="form-group">
+                    <label>Rua</label>
+                    <input type="text" name="rua" id="rua">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label>Número</label>
+                        <input type="text" name="numero">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Complemento</label>
+                        <input type="text" name="complemento" placeholder="Opcional">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Bairro</label>
+                    <input type="text" name="bairro" id="bairro">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label>Cidade</label>
+                        <input type="text" name="cidade" id="cidade">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Estado</label>
+                        <input type="text" name="estado" id="estado" maxlength="2">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">📍 Salvar Endereço</button>
+            </form>
+        </div>
+
+        <!-- PREFERÊNCIAS -->
+        <div class="config-section">
+            <h3 class="section-title">
+                <span>🔔</span>
+                Preferências
+            </h3>
+
+            <div class="toggle-setting">
+                <div class="toggle-info">
+                    <h4>Notificações por E-mail</h4>
+                    <p>Receba atualizações sobre seus pedidos</p>
+                </div>
+                <div class="toggle-switch" onclick="toggleSwitch(this)"></div>
+            </div>
+
+            <div class="toggle-setting">
+                <div class="toggle-info">
+                    <h4>Newsletter</h4>
+                    <p>Receba promoções e novidades</p>
+                </div>
+                <div class="toggle-switch" onclick="toggleSwitch(this)"></div>
+            </div>
+
+            <div class="toggle-setting">
+                <div class="toggle-info">
+                    <h4>Notificações de Estoque</h4>
+                    <p>Seja avisado quando produtos voltarem</p>
+                </div>
+                <div class="toggle-switch" onclick="toggleSwitch(this)"></div>
+            </div>
+        </div>
+
+        <!-- ZONA DE PERIGO -->
+        <div class="config-section danger-zone">
+            <h3 class="section-title">
+                <span>⚠️</span>
+                Zona de Perigo
+            </h3>
+
+            <p style="color: var(--texto); margin-bottom: 20px;">
+                Essas ações são irreversíveis. Tenha certeza antes de continuar.
+            </p>
+
+            <div class="btn-group">
+                <button class="btn btn-danger" onclick="confirmarExclusao()">
+                    🗑️ Excluir Conta
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+// Preview de Avatar
+document.getElementById('avatarInput')?.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('avatarPreview').src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+// Toggle Switch
+function toggleSwitch(element) {
+    element.classList.toggle('active');
+    // Aqui você pode fazer uma requisição AJAX para salvar a preferência
+}
+
+// Buscar CEP (ViaCEP API)
+document.getElementById('cep')?.addEventListener('blur', function() {
+    const cep = this.value.replace(/\D/g, '');
+    
+    if (cep.length === 8) {
+        fetch(`https://viacep.com.br/ws/${cep}/json/`)
+            .then(res => res.json())
+            .then(data => {
+                if (!data.erro) {
+                    document.getElementById('rua').value = data.logradouro || '';
+                    document.getElementById('bairro').value = data.bairro || '';
+                    document.getElementById('cidade').value = data.localidade || '';
+                    document.getElementById('estado').value = data.uf || '';
+                }
+            })
+            .catch(err => console.error('Erro ao buscar CEP:', err));
+    }
+});
+
+// Confirmar exclusão
+function confirmarExclusao() {
+    if (confirm('⚠️ ATENÇÃO!\n\nVocê tem certeza que deseja excluir sua conta?\n\nEsta ação NÃO pode ser desfeita e você perderá:\n• Histórico de pedidos\n• Favoritos\n• Dados salvos\n\nDeseja continuar?')) {
+        if (confirm('Digite "CONFIRMAR" para excluir permanentemente')) {
+            window.location.href = '/config/excluir-conta';
+        }
+    }
+}
+
+// Máscara de CEP
+document.getElementById('cep')?.addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 5) {
+        value = value.slice(0, 5) + '-' + value.slice(5, 8);
+    }
+    e.target.value = value;
+});
+</script>
+
+{% endblock %}

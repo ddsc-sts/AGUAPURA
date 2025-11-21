@@ -53,7 +53,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const root = document.documentElement;
   const logo = document.getElementById('site-logo');
 
-  // função para aplicar tema + logo
   function applyTheme(theme) {
     root.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
@@ -72,11 +71,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // aplica tema salvo
   const savedTheme = localStorage.getItem('theme') || 'light';
   applyTheme(savedTheme);
 
-  // alternar tema
   if (toggle) {
     toggle.addEventListener('click', () => {
       const current = root.getAttribute('data-theme');
@@ -84,10 +81,8 @@ document.addEventListener('DOMContentLoaded', () => {
       applyTheme(newTheme);
     });
   }
-});
 
-document.addEventListener('DOMContentLoaded', () => {
-
+  // ===== CHAT DE SUPORTE =====
   const chatContainer = document.getElementById("chat-container");
   const chatOpen = document.getElementById("chat-open");
   const chatClose = document.getElementById("chat-close");
@@ -95,46 +90,48 @@ document.addEventListener('DOMContentLoaded', () => {
   const chatInput = document.getElementById("chat-input");
   const chatSend = document.getElementById("chat-send");
 
-  // Abrir e fechar chat
-  chatOpen.addEventListener("click", () => {
+  if (chatOpen && chatClose && chatContainer) {
+    chatOpen.addEventListener("click", () => {
       chatContainer.classList.remove("hidden");
-  });
-  chatClose.addEventListener("click", () => {
+    });
+    
+    chatClose.addEventListener("click", () => {
       chatContainer.classList.add("hidden");
-  });
+    });
+  }
 
-  // Lista de respostas pré-definidas (você edita como quiser)
   const respostas = {
-      "oi": "Olá! Como posso ajudar?",
-      "ola": "Olá! Como posso ajudar?",
-      "preço": "Todos os preços estão listados diretamente na página dos produtos.",
-      "entrega": "Realizamos entregas em todo o Brasil. Qual sua cidade?",
-      "frete": "O frete é grátis em compras acima de R$129,90 para Santa Catarina.",
-      "troca": "Para trocas, consulte nossa Política de Troca no rodapé do site.",
-      "horário": "Nosso suporte funciona 24h via site.",
-      "pagamento": "Aceitamos Pix, cartão de crédito e boleto.",
-      "default": "Desculpe, não entendi. Pode tentar reformular?"
+    "oi": "Olá! Como posso ajudar?",
+    "ola": "Olá! Como posso ajudar?",
+    "preço": "Todos os preços estão listados diretamente na página dos produtos.",
+    "entrega": "Realizamos entregas em todo o Brasil. Qual sua cidade?",
+    "frete": "O frete é grátis em compras acima de R$129,90 para Santa Catarina.",
+    "troca": "Para trocas, consulte nossa Política de Troca no rodapé do site.",
+    "horário": "Nosso suporte funciona 24h via site.",
+    "pagamento": "Aceitamos Pix, cartão de crédito e boleto.",
+    "default": "Desculpe, não entendi. Pode tentar reformular?"
   };
 
   function addMessage(text, type) {
-      const div = document.createElement("div");
-      div.classList.add(type === "user" ? "user-message" : "bot-message");
-      div.textContent = text;
-      chatBody.appendChild(div);
-      chatBody.scrollTop = chatBody.scrollHeight;
+    const div = document.createElement("div");
+    div.classList.add(type === "user" ? "user-message" : "bot-message");
+    div.textContent = text;
+    chatBody.appendChild(div);
+    chatBody.scrollTop = chatBody.scrollHeight;
   }
 
   function responder(msg) {
-      msg = msg.toLowerCase();
-      for (const chave in respostas) {
-          if (msg.includes(chave)) {
-              return respostas[chave];
-          }
+    msg = msg.toLowerCase();
+    for (const chave in respostas) {
+      if (msg.includes(chave)) {
+        return respostas[chave];
       }
-      return respostas.default;
+    }
+    return respostas.default;
   }
 
-  chatSend.addEventListener("click", () => {
+  if (chatSend && chatInput) {
+    chatSend.addEventListener("click", () => {
       const texto = chatInput.value.trim();
       if (!texto) return;
 
@@ -142,57 +139,66 @@ document.addEventListener('DOMContentLoaded', () => {
       chatInput.value = "";
 
       setTimeout(() => {
-          addMessage(responder(texto), "bot");
+        addMessage(responder(texto), "bot");
       }, 500);
-  });
+    });
 
-  chatInput.addEventListener("keypress", e => {
+    chatInput.addEventListener("keypress", e => {
       if (e.key === "Enter") chatSend.click();
-  });
+    });
+  }
 
-});
+  // ===== MENU DROPDOWN DO USUÁRIO (CORRIGIDO) =====
+  const userAvatar = document.querySelector('.user-avatar');
+  const userDropdown = document.getElementById('userDropdown');
 
-document.addEventListener("DOMContentLoaded", () => {
-
-  const avatar = document.getElementById("userAvatar");
-  const dropdown = document.getElementById("userDropdown");
-
-  if (!avatar || !dropdown) return;
-
-  // Abrir / Fechar ao clicar no avatar
-  avatar.addEventListener("click", (e) => {
-      e.stopPropagation(); 
-      dropdown.classList.toggle("show");
-  });
-
-  // Fechar ao clicar fora
-  document.addEventListener("click", () => {
-      dropdown.classList.remove("show");
-  });
-
-  // Impede que clique dentro feche o menu
-  dropdown.addEventListener("click", (e) => {
+  if (userAvatar && userDropdown) {
+    userAvatar.addEventListener('click', (e) => {
       e.stopPropagation();
-  });
+      userDropdown.classList.toggle('show');
+    });
+
+    // Fechar ao clicar fora
+    document.addEventListener('click', (e) => {
+      if (!userAvatar.contains(e.target) && !userDropdown.contains(e.target)) {
+        userDropdown.classList.remove('show');
+      }
+    });
+
+    // Impede que clique dentro feche o menu
+    userDropdown.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+  }
+
+  // ===== SIDEBAR =====
+  const sidebarOverlay = document.getElementById("sidebar-overlay");
+  
+  if (sidebarOverlay) {
+    sidebarOverlay.addEventListener("click", function () {
+      const sidebar = document.getElementById("sidebar");
+      if (sidebar) {
+        sidebar.classList.remove("open");
+      }
+      this.classList.remove("show");
+    });
+  }
 });
 
+// Função global para toggle da sidebar
 function toggleSidebar() {
   const sidebar = document.getElementById("sidebar");
   const overlay = document.getElementById("sidebar-overlay");
 
-  const opened = sidebar.classList.contains("open");
+  if (sidebar && overlay) {
+    const opened = sidebar.classList.contains("open");
 
-  if (opened) {
+    if (opened) {
       sidebar.classList.remove("open");
       overlay.classList.remove("show");
-  } else {
+    } else {
       sidebar.classList.add("open");
       overlay.classList.add("show");
+    }
   }
 }
-
-// Fechar ao clicar fora
-document.getElementById("sidebar-overlay").addEventListener("click", function () {
-  document.getElementById("sidebar").classList.remove("open");
-  this.classList.remove("show");
-});

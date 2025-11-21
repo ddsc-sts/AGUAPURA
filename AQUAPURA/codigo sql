@@ -165,11 +165,12 @@ CREATE TABLE compras (
 );
 
 SELECT id, nome, avatar, criado_em FROM usuarios;
-
+SELECT nome FROM produtos;
 SELECT id, usuario_id, valor_total, status, pagamento_metodo 
 FROM pedidos 
 WHERE id = 8;
+select * from usuarios;
+ALTER TABLE pedidos;
 
-ALTER TABLE pedidos
-MODIFY valor_total DECIMAL(10,2) NOT NULL DEFAULT 0;
+
 

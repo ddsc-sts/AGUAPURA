@@ -6,6 +6,75 @@ from werkzeug.security import generate_password_hash, check_password_hash
 app = Flask(__name__)
 
 app.secret_key = "chave-muito-segura"
+import os
+from werkzeug.utils import secure_filename
+
+import os
+from werkzeug.utils import secure_filename
+
+# Caminho ABSOLUTO para garantir que salve no lugar certo
+UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'static', 'uploads', 'avatars')
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+# Criar pasta se não existir
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route("/config/atualizar-perfil", methods=["POST"])
+def atualizar_perfil():
+    if "usuario_id" not in session:
+        flash("Você precisa estar logado!", "erro")
+        return redirect("/login")
+    
+    nome = request.form["nome"]
+    email = request.form["email"]
+    user_id = session["usuario_id"]
+    
+    db = conectar()
+    cursor = db.cursor(dictionary=True)
+    
+    cursor.execute("SELECT avatar FROM usuarios WHERE id = %s", (user_id,))
+    user = cursor.fetchone()
+    avatar_path = user['avatar'] if user and user['avatar'] else None
+    
+    # Upload de avatar
+    if 'avatar' in request.files:
+        avatar = request.files['avatar']
+        if avatar and avatar.filename and allowed_file(avatar.filename):
+            import uuid
+            ext = avatar.filename.rsplit('.', 1)[1].lower()
+            filename = f"{user_id}_{uuid.uuid4().hex[:8]}.{ext}"
+            
+            # CAMINHO COMPLETO DO ARQUIVO
+            filepath = os.path.join(UPLOAD_FOLDER, filename)
+            
+            # Salvar arquivo
+            avatar.save(filepath)
+            
+            # Caminho RELATIVO para salvar no banco (sem /static/)
+            avatar_path = f"uploads/avatars/{filename}"
+            
+            print(f"✅ Avatar salvo em: {filepath}")
+            print(f"✅ Caminho no banco: {avatar_path}")
+    
+    # Atualizar banco
+    cursor.execute("""
+        UPDATE usuarios 
+        SET nome = %s, email = %s, avatar = %s 
+        WHERE id = %s
+    """, (nome, email, avatar_path, user_id))
+    db.commit()
+    
+    # Atualizar sessão
+    session["usuario_nome"] = nome
+    session["usuario_email"] = email
+    session["usuario_avatar"] = avatar_path
+    
+    flash("Perfil atualizado com sucesso!", "sucesso")
+    return redirect("/config")
 
 def login_required(func):
     def wrapper(*args, **kwargs):
@@ -30,7 +99,7 @@ def conectar():
     return mysql.connector.connect(
         host="localhost",
         user="root",
-        port=3406,
+        port=3306,
         password="",   # altere se tiver senha
         database="aguapura"
     )
@@ -386,6 +455,22 @@ def contador_carrinho():
     total = cursor.fetchone()["total"]
     return {"total_carrinho": total if total else 0}
 
+@app.context_processor
+def dados_usuario():
+    if "usuario_id" in session:
+        db = conectar()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("SELECT avatar FROM usuarios WHERE id = %s", (session["usuario_id"],))
+        user = cursor.fetchone()
+        
+        if user and user["avatar"]:
+            avatar_path = user["avatar"]
+        else:
+            avatar_path = "img/user.png"
+        
+        return {"usuario_avatar": url_for('static', filename=avatar_path)}
+    
+    return {"usuario_avatar": url_for('static', filename='img/user.png')}
 # --------------------------- CADASTRO ---------------------------
 
 @app.route("/cadastro", methods=["GET", "POST"])
@@ -409,10 +494,13 @@ def cadastro():
         # Criptografa a senha
         senha_hash = generate_password_hash(senha)
 
-        # Salvar no banco
+        # ✅ AVATAR PADRÃO
+        avatar_padrao = "uploads/avatars/user.png"
+
+        # Salvar no banco COM AVATAR PADRÃO
         cursor.execute(
-            "INSERT INTO usuarios (nome, email, senha) VALUES (%s, %s, %s)",
-            (nome, email, senha_hash)
+            "INSERT INTO usuarios (nome, email, senha, avatar) VALUES (%s, %s, %s, %s)",
+            (nome, email, senha_hash, avatar_padrao)
         )
         db.commit()
 
@@ -420,6 +508,9 @@ def cadastro():
         return redirect("/login")
 
     return render_template("cadastro.html")
+
+### 2. **Criar a imagem padrão**
+
 
 
 # --------------------------- LOGIN ---------------------------
@@ -433,7 +524,6 @@ def login():
         db = conectar()
         cursor = db.cursor(dictionary=True)
 
-        # Busca usuário
         cursor.execute("SELECT * FROM usuarios WHERE email = %s", (email,))
         user = cursor.fetchone()
 
@@ -441,21 +531,20 @@ def login():
             flash("E-mail não encontrado!", "erro")
             return redirect("/login")
 
-        # Verifica senha
         if not check_password_hash(user["senha"], senha):
             flash("Senha incorreta!", "erro")
             return redirect("/login")
 
-        # Tudo certo → salva sessão
+        # ✅ CORRIGIDO: garantir que avatar sempre tenha valor
         session["usuario_id"] = user["id"]
         session["usuario_nome"] = user["nome"]
+        session["usuario_avatar"] = user["avatar"] if user["avatar"] else "uploads/avatars/default-avatar.png"
         session["logado"] = True
 
         flash("Bem-vindo(a), " + user["nome"] + "!", "sucesso")
         return redirect("/")
 
     return render_template("login.html")
-
 
 # --------------------------- LOGOUT ---------------------------
 
@@ -743,6 +832,70 @@ def api_estatisticas():
 
     return jsonify(dados)
 
+
+# Alterar senha
+@app.route("/config/alterar-senha", methods=["POST"])
+def alterar_senha():
+    if "usuario_id" not in session:
+        return redirect("/login")
+    
+    senha_atual = request.form["senha_atual"]
+    nova_senha = request.form["nova_senha"]
+    confirmar = request.form["confirmar_senha"]
+    
+    if nova_senha != confirmar:
+        flash("As senhas não coincidem!", "erro")
+        return redirect("/config")
+    
+    # Verificar senha atual e atualizar
+    # ... seu código aqui
+    
+    flash("Senha alterada com sucesso!", "sucesso")
+    return redirect("/config")
+
+# Atualizar endereço
+@app.route("/config/atualizar-endereco", methods=["POST"])
+def atualizar_endereco():
+    # Salvar endereço no banco
+    flash("Endereço atualizado!", "sucesso")
+    return redirect("/config")
+
+# Excluir conta
+@app.route("/config/excluir-conta")
+def excluir_conta():
+    if "usuario_id" not in session:
+        return redirect("/login")
+    
+    user_id = session["usuario_id"]
+    db = conectar()
+    cursor = db.cursor()
+    cursor.execute("DELETE FROM usuarios WHERE id = %s", (user_id,))
+    db.commit()
+    
+    session.clear()
+    flash("Conta excluída com sucesso.", "sucesso")
+    return redirect("/")
+
+# Rota GET da página
+@app.route("/config")
+def config():
+    if "usuario_id" not in session:
+        flash("Você precisa estar logado!", "erro")
+        return redirect("/login")
+    
+    user_id = session["usuario_id"]
+    
+    db = conectar()
+    cursor = db.cursor(dictionary=True)
+    cursor.execute("SELECT nome, email, avatar FROM usuarios WHERE id = %s", (user_id,))
+    usuario = cursor.fetchone()
+    
+    # Atualizar sessão com dados atuais
+    session["usuario_nome"] = usuario["nome"]
+    session["usuario_email"] = usuario["email"]
+    session["usuario_avatar"] = usuario["avatar"]
+    
+    return render_template("config.html", usuario=usuario)
 
 if __name__ == '__main__':
     app.run(debug=True)

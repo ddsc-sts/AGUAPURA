@@ -2,24 +2,387 @@
 
 {% block content %}
 
-<div class="perfil-container">
+<style>
+    :root {
+        --fundo: #f5f9ff;
+        --texto: #222;
+        --cinza: #eef3fb;
+        --azul: #6ea8fe;
+        --card-bg: #ffffff;
+        --border: #d0dce9;
+        --shadow: rgba(0, 0, 0, 0.1);
+    }
 
+    [data-theme="dark"] {
+        --fundo: #0b1622;
+        --texto: #f0f4ff;
+        --cinza: #162232;
+        --azul: #3b6fb6;
+        --card-bg: #1a2838;
+        --border: #2a3a52;
+        --shadow: rgba(0, 0, 0, 0.4);
+    }
+
+    .perfil-container {
+        display: flex;
+        max-width: 1400px;
+        margin: 60px auto;
+        gap: 30px;
+        padding: 0 20px;
+    }
+
+    .perfil-sidebar {
+        width: 280px;
+        background: var(--card-bg);
+        border-radius: 16px;
+        padding: 30px;
+        box-shadow: 0 4px 12px var(--shadow);
+        height: fit-content;
+        position: sticky;
+        top: 100px;
+    }
+
+    .perfil-user {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .perfil-avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        border: 4px solid var(--azul);
+        margin-bottom: 15px;
+    }
+
+    .perfil-user h3 {
+        color: var(--texto);
+        font-size: 1.3em;
+        margin: 0;
+    }
+
+    .perfil-menu {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .perfil-tab {
+        background: transparent;
+        border: 2px solid var(--border);
+        color: var(--texto);
+        padding: 14px 20px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 1em;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-align: left;
+    }
+
+    .perfil-tab:hover {
+        background: var(--cinza);
+        border-color: var(--azul);
+    }
+
+    .perfil-tab.active {
+        background: var(--azul);
+        color: white;
+        border-color: var(--azul);
+    }
+
+    .perfil-content {
+        flex: 1;
+        background: var(--card-bg);
+        border-radius: 16px;
+        padding: 40px;
+        box-shadow: 0 4px 12px var(--shadow);
+        min-height: 600px;
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+        animation: fadeIn 0.4s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .tab-content h2 {
+        color: var(--texto);
+        font-size: 2em;
+        margin-bottom: 30px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    /* === GRÁFICO DE ESTATÍSTICAS === */
+    .chart-wrapper {
+        background: var(--cinza);
+        border-radius: 12px;
+        padding: 35px 25px;
+        margin-bottom: 30px;
+    }
+
+    .grafico-barras {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-around;
+        height: 320px;
+        border-left: 3px solid var(--texto);
+        border-bottom: 3px solid var(--texto);
+        padding: 20px 0 0 20px;
+        position: relative;
+    }
+
+    .grafico-barras::before {
+        content: 'Pedidos';
+        position: absolute;
+        left: -55px;
+        top: 50%;
+        transform: rotate(-90deg);
+        font-size: 0.85em;
+        color: var(--texto);
+        font-weight: 600;
+    }
+
+    .barra-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1;
+        max-width: 90px;
+    }
+
+    .barra {
+        width: 75%;
+        background: var(--azul);
+        border-radius: 8px 8px 0 0;
+        position: relative;
+        transition: all 0.3s ease;
+        animation: crescer 1s ease-out;
+        box-shadow: 0 -4px 12px var(--shadow);
+        min-height: 20px;
+    }
+
+    .barra:hover {
+        transform: translateY(-6px);
+        opacity: 0.85;
+        cursor: pointer;
+    }
+
+    @keyframes crescer {
+        from { height: 0 !important; opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .barra-valor {
+        position: absolute;
+        top: -32px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-weight: 700;
+        color: var(--texto);
+        font-size: 1.05em;
+        background: var(--card-bg);
+        padding: 5px 12px;
+        border-radius: 6px;
+        box-shadow: 0 2px 8px var(--shadow);
+        border: 2px solid var(--border);
+    }
+
+    .barra-mes {
+        margin-top: 15px;
+        font-weight: 600;
+        color: var(--texto);
+        font-size: 0.9em;
+    }
+
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+    }
+
+    .stat-card {
+        background: var(--azul);
+        padding: 28px;
+        border-radius: 12px;
+        text-align: center;
+        color: white;
+        box-shadow: 0 4px 12px var(--shadow);
+        transition: transform 0.3s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .stat-card-icon {
+        font-size: 2em;
+        margin-bottom: 10px;
+    }
+
+    .stat-card-valor {
+        font-size: 2.5em;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .stat-card-label {
+        font-size: 0.95em;
+        opacity: 0.95;
+    }
+
+    /* === FAVORITOS === */
+    .favoritos-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 25px;
+    }
+
+    .produto-card {
+        background: var(--cinza);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 3px 10px var(--shadow);
+        transition: transform 0.3s ease;
+        border: 2px solid var(--border);
+    }
+
+    .produto-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 6px 20px var(--shadow);
+    }
+
+    .produto-card img {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+    }
+
+    .produto-info {
+        padding: 20px;
+    }
+
+    .produto-info h3 {
+        color: var(--texto);
+        font-size: 1.1em;
+        margin-bottom: 10px;
+    }
+
+    .produto-info .preco {
+        color: var(--azul);
+        font-size: 1.3em;
+        font-weight: 700;
+    }
+
+    /* === HISTÓRICO === */
+    .historico-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    .historico-table thead {
+        background: var(--azul);
+        color: white;
+    }
+
+    .historico-table th,
+    .historico-table td {
+        padding: 16px;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .historico-table tbody tr {
+        background: var(--cinza);
+        transition: background 0.3s ease;
+    }
+
+    .historico-table tbody tr:hover {
+        background: var(--card-bg);
+    }
+
+    .historico-table td {
+        color: var(--texto);
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.85em;
+        font-weight: 600;
+    }
+
+    .status-pendente {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .status-aguardando {
+        background: #cfe2ff;
+        color: #084298;
+    }
+
+    .status-concluido {
+        background: #d1e7dd;
+        color: #0f5132;
+    }
+
+    .loading, .sem-dados {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--texto);
+        font-size: 1.1em;
+    }
+
+    .sem-dados-icon {
+        font-size: 3.5em;
+        margin-bottom: 15px;
+        opacity: 0.5;
+    }
+
+    @media (max-width: 968px) {
+        .perfil-container {
+            flex-direction: column;
+        }
+
+        .perfil-sidebar {
+            width: 100%;
+            position: relative;
+            top: 0;
+        }
+
+        .perfil-menu {
+            flex-direction: row;
+            overflow-x: auto;
+        }
+    }
+</style>
+
+<div class="perfil-container">
     <!-- Sidebar -->
     <aside class="perfil-sidebar">
         <div class="perfil-user">
-            <img src="{{ usuario.avatar or url_for('static', filename='img/user.png') }}" class="perfil-avatar">
+            <img src="{{ usuario_avatar }}" alt="Avatar" class="perfil-avatar">
             <h3>{{ usuario.nome }}</h3>
         </div>
 
         <nav class="perfil-menu">
-            <button class="perfil-tab active" data-tab="geral">Visão Geral</button>
-            <button class="perfil-tab" data-tab="favoritos">Favoritos</button>
-            <button class="perfil-tab" data-tab="compras">Histórico</button>
-            <button class="perfil-tab" data-tab="estatisticas">Estatísticas</button>
-
-            {% if usuario.tipo == 'admin' %}
-            <a href="/admin" class="perfil-admin">Painel Admin</a>
-            {% endif %}
+            <button class="perfil-tab active" data-tab="geral">📊 Visão Geral</button>
+            <button class="perfil-tab" data-tab="favoritos">❤️ Favoritos</button>
+            <button class="perfil-tab" data-tab="historico">📋 Histórico</button>
+            <button class="perfil-tab" data-tab="estatisticas">📈 Estatísticas</button>
         </nav>
     </aside>
 
@@ -28,91 +391,211 @@
 
         <!-- VISÃO GERAL -->
         <div id="geral" class="tab-content active">
-            <h2>Olá, {{ usuario.nome }} 👋</h2>
-            <div class="perfil-cards">
-                <div class="perfil-card">Total de Compras: <strong id="total-compras"></strong></div>
-                <div class="perfil-card">Favoritos: <strong id="total-favoritos"></strong></div>
-                <div class="perfil-card">Conta Criada: <strong>{{ usuario.criado_em.strftime("%d/%m/%Y") }}</strong></div>
+            <h2>👋 Olá, {{ usuario.nome }}!</h2>
+            <div class="stats-cards">
+                <div class="stat-card">
+                    <div class="stat-card-icon">📦</div>
+                    <div class="stat-card-valor">{{ pedidos|length }}</div>
+                    <div class="stat-card-label">Total de Pedidos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-icon">❤️</div>
+                    <div class="stat-card-valor">{{ favoritos|length }}</div>
+                    <div class="stat-card-label">Favoritos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-icon">📅</div>
+                    <div class="stat-card-valor">{{ usuario.criado_em.strftime("%d/%m/%Y") }}</div>
+                    <div class="stat-card-label">Membro desde</div>
+                </div>
             </div>
         </div>
 
         <!-- FAVORITOS -->
         <div id="favoritos" class="tab-content">
-            <h2>Favoritos ❤️</h2>
-            <div class="favoritos-list" id="listaFavoritos"></div>
+            <h2>❤️ Meus Favoritos</h2>
+            <div id="favoritosContent" class="loading">Carregando favoritos...</div>
         </div>
 
- <!-- HISTÓRICO DE PEDIDOS -->
-<div class="tab-content" id="compras">
-    <h2>Histórico de Pedidos</h2>
-    
-    <table class="compras-table">
-        <tr>
-            <th>ID</th>
-            <th>Data</th>
-            <th>Status</th>
-            <th>Valor Total</th>
-            <th>Método</th>
-        </tr>
-
-        {% for p in pedidos %}
-        <tr>
-            <td>{{ p.id }}</td>
-            <td>{{ p.criado_em.strftime('%d/%m/%Y') }}</td>
-            <td>{{ p.status }}</td>
-            <td>R$ {{ "%.2f"|format(p.valor_total) }}</td>
-            <td>{{ p.pagamento_metodo }}</td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="5">Nenhum pedido encontrado.</td>
-        </tr>
-        {% endfor %}
-    </table>
-</div>
-
+        <!-- HISTÓRICO -->
+        <div id="historico" class="tab-content">
+            <h2>📋 Histórico de Compras</h2>
+            <table class="historico-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Data</th>
+                        <th>Status</th>
+                        <th>Valor Total</th>
+                        <th>Método</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in pedidos %}
+                    <tr>
+                        <td>#{{ p.id }}</td>
+                        <td>{{ p.criado_em.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            <span class="status-badge status-{{ p.status|lower|replace(' ', '-') }}">
+                                {{ p.status }}
+                            </span>
+                        </td>
+                        <td>R$ {{ "%.2f"|format(p.valor_total) }}</td>
+                        <td>{{ p.pagamento_metodo or 'N/A' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 40px;">
+                            <div class="sem-dados-icon">📦</div>
+                            Nenhum pedido encontrado
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
         <!-- ESTATÍSTICAS -->
         <div id="estatisticas" class="tab-content">
-            <h2>Estatísticas 📊</h2>
-            <canvas id="chartCompras"></canvas>
+            <h2>📈 Estatísticas</h2>
+            <div id="statsLoading" class="loading">Carregando estatísticas...</div>
+            <div id="statsContent" style="display: none;">
+                <div class="chart-wrapper">
+                    <div class="grafico-barras" id="graficoBarras"></div>
+                </div>
+                <div class="stats-cards" id="statsCards"></div>
+            </div>
+            <div id="semDadosStats" class="sem-dados" style="display: none;">
+                <div class="sem-dados-icon">📊</div>
+                <h3>Nenhuma estatística disponível</h3>
+                <p>Realize compras para ver seus dados</p>
+            </div>
         </div>
 
     </section>
-
 </div>
 
-<script src="{{ url_for('static', filename='perfil.js') }}"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script>
-    fetch("/api/estatisticas")
-        .then(r => r.json())
-        .then(dados => {
-    
-            const meses = dados.map(d => d.mes);
-            const totais = dados.map(d => d.total);
-    
-            new Chart(document.getElementById("chartCompras"), {
-                type: "line",
-                data: {
-                    labels: meses,
-                    datasets: [{
-                        label: "Pedidos por mês",
-                        data: totais,
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: { y: { beginAtZero: true } }
-                }
-            });
+// Sistema de abas
+const tabs = document.querySelectorAll(".perfil-tab");
+const conteudos = document.querySelectorAll(".tab-content");
+
+tabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+        tabs.forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+        conteudos.forEach(c => c.classList.remove("active"));
+        const alvo = document.getElementById(tab.dataset.tab);
+        alvo.classList.add("active");
+    });
+});
+
+// === CARREGAR FAVORITOS ===
+const favoritosContent = document.getElementById('favoritosContent');
+
+fetch('/api/favoritos')
+    .then(res => res.json())
+    .then(favoritos => {
+        if (!favoritos || favoritos.length === 0) {
+            favoritosContent.innerHTML = `
+                <div class="sem-dados">
+                    <div class="sem-dados-icon">❤️</div>
+                    <h3>Nenhum favorito ainda</h3>
+                    <p>Adicione produtos aos seus favoritos</p>
+                </div>
+            `;
+            return;
+        }
+
+        favoritosContent.className = 'favoritos-grid';
+        favoritosContent.innerHTML = favoritos.map(fav => `
+            <div class="produto-card">
+                <img src="${fav.imagem_principal}" alt="${fav.nome}">
+                <div class="produto-info">
+                    <h3>${fav.nome}</h3>
+                    <p class="preco">R$ ${parseFloat(fav.preco).toFixed(2)}</p>
+                </div>
+            </div>
+        `).join('');
+    })
+    .catch(err => {
+        favoritosContent.innerHTML = '<div class="sem-dados">Erro ao carregar favoritos</div>';
+    });
+
+// === CARREGAR ESTATÍSTICAS ===
+const statsLoading = document.getElementById('statsLoading');
+const statsContent = document.getElementById('statsContent');
+const semDadosStats = document.getElementById('semDadosStats');
+const graficoBarras = document.getElementById('graficoBarras');
+const statsCards = document.getElementById('statsCards');
+
+const meses = {
+    1: 'Jan', 2: 'Fev', 3: 'Mar', 4: 'Abr',
+    5: 'Mai', 6: 'Jun', 7: 'Jul', 8: 'Ago',
+    9: 'Set', 10: 'Out', 11: 'Nov', 12: 'Dez'
+};
+
+fetch('/api/estatisticas')
+    .then(res => res.json())
+    .then(dados => {
+        statsLoading.style.display = 'none';
+
+        if (!dados || dados.length === 0) {
+            semDadosStats.style.display = 'block';
+            return;
+        }
+
+        statsContent.style.display = 'block';
+
+        const maxTotal = Math.max(...dados.map(d => d.total));
+        const alturaMax = 280;
+
+        dados.forEach(item => {
+            const altura = Math.max((item.total / maxTotal) * alturaMax, 20);
+            const barraItem = document.createElement('div');
+            barraItem.className = 'barra-item';
+
+            barraItem.innerHTML = `
+                <div class="barra" style="height: ${altura}px">
+                    <span class="barra-valor">${item.total}</span>
+                </div>
+                <div class="barra-mes">${meses[item.mes]}</div>
+            `;
+
+            graficoBarras.appendChild(barraItem);
         });
-    </script>
-    
 
+        const totalPedidos = dados.reduce((sum, d) => sum + d.total, 0);
+        const media = (totalPedidos / dados.length).toFixed(1);
+        const melhorMes = dados.reduce((max, d) => d.total > max.total ? d : max);
 
+        statsCards.innerHTML = `
+            <div class="stat-card">
+                <div class="stat-card-icon">📦</div>
+                <div class="stat-card-valor">${totalPedidos}</div>
+                <div class="stat-card-label">Total de Pedidos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-icon">📊</div>
+                <div class="stat-card-valor">${media}</div>
+                <div class="stat-card-label">Média Mensal</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-icon">🏆</div>
+                <div class="stat-card-valor">${melhorMes.total}</div>
+                <div class="stat-card-label">Melhor Mês (${meses[melhorMes.mes]})</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-icon">📅</div>
+                <div class="stat-card-valor">${dados.length}</div>
+                <div class="stat-card-label">Meses Ativos</div>
+            </div>
+        `;
+    })
+    .catch(err => {
+        statsLoading.style.display = 'none';
+        semDadosStats.style.display = 'block';
+    });
+</script>
 
 {% endblock %}
-
