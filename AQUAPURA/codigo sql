@@ -173,4 +173,81 @@ select * from usuarios;
 ALTER TABLE pedidos;
 
 
+-- Primeiro, limpar os pedidos com dados NULL
+DELETE FROM pedidos WHERE usuario_id = 6;
 
+-- Agora criar pedidos corretos (um por vez)
+
+-- Pedido 1 (Janeiro)
+INSERT INTO pedidos (usuario_id, valor_total, status, pagamento_metodo, cliente_nome, cliente_cpf, cliente_endereco, criado_em)
+VALUES (
+    6,
+    239.80,
+    'Concluído',
+    'PIX',
+    'Seu Nome',
+    '12345678900',
+    'Rua das Flores, 123 - Joinville/SC',
+    '2025-01-15 14:30:00'
+);
+
+-- Adicionar itens deste pedido
+INSERT INTO pedido_itens (pedido_id, produto_id, quantidade, valor)
+VALUES 
+    (LAST_INSERT_ID(), 1, 2, 119.90),
+    (LAST_INSERT_ID(), 2, 1, 89.90);
+
+-- Pedido 2 (Fevereiro)
+INSERT INTO pedidos (usuario_id, valor_total, status, pagamento_metodo, cliente_nome, cliente_cpf, cliente_endereco, criado_em)
+VALUES (
+    6,
+    149.80,
+    'Aguardando Pagamento',
+    'CARTAO',
+    'Seu Nome',
+    '12345678900',
+    'Rua das Flores, 123 - Joinville/SC',
+    '2025-02-10 10:00:00'
+);
+
+INSERT INTO pedido_itens (pedido_id, produto_id, quantidade, valor)
+VALUES 
+    (LAST_INSERT_ID(), 1, 1, 119.90),
+    (LAST_INSERT_ID(), 3, 1, 29.90);
+
+-- Pedido 3 (Março)
+INSERT INTO pedidos (usuario_id, valor_total, status, pagamento_metodo, cliente_nome, cliente_cpf, cliente_endereco, criado_em)
+VALUES (
+    6,
+    329.70,
+    'Concluído',
+    'PIX',
+    'Seu Nome',
+    '12345678900',
+    'Rua das Flores, 123 - Joinville/SC',
+    '2025-03-05 16:45:00'
+);
+
+INSERT INTO pedido_itens (pedido_id, produto_id, quantidade, valor)
+VALUES 
+    (LAST_INSERT_ID(), 1, 2, 119.90),
+    (LAST_INSERT_ID(), 2, 1, 89.90);
+    
+    
+
+-- Verificar se criou certo
+SELECT * FROM pedidos WHERE usuario_id = 6;
+
+ALTER TABLE usuarios MODIFY COLUMN tipo ENUM('admin', 'cliente', 'funcionario') DEFAULT 'cliente';
+
+-- Ver todos os usuários
+SELECT id, nome, email, tipo FROM usuarios;
+
+-- Promover um usuário específico (troque o ID)
+UPDATE usuarios SET tipo = 'funcionario' WHERE id = 8;
+
+
+UPDATE usuarios 
+SET senha = 'scrypt:32768:8:1$so3Bg6a8P0OXkBQg$d336d5fe08059bf79b0d3ae47e11260030706a2c9b010b1d1dd66ae79cac169e4040b74cd8a888bbac3a6f2eff263749a018e4084310bb8cc69fd3785b3f5bc6',
+    tipo = 'admin'
+WHERE email = 'admin@aguapura.com';

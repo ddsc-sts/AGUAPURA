@@ -12,6 +12,400 @@ from werkzeug.utils import secure_filename
 import os
 from werkzeug.utils import secure_filename
 
+
+# ============================
+# DECORADORES DE PROTEÇÃO
+# ============================
+
+
+
+from functools import wraps
+
+def admin_required(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if not session.get("logado"):
+            flash("Você precisa estar logado!", "erro")
+            return redirect("/admin/login")
+        
+        if session.get("tipo") != "admin":
+            flash("Acesso negado! Apenas administradores.", "erro")
+            return redirect("/")
+        
+        return func(*args, **kwargs)
+    return wrapper
+
+
+def funcionario_required(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if not session.get("logado"):
+            flash("Você precisa estar logado!", "erro")
+            return redirect("/admin/login")
+        
+        tipo = session.get("tipo")
+        if tipo not in ["funcionario", "admin"]:
+            flash("Acesso negado! Apenas funcionários e administradores.", "erro")
+            return redirect("/")
+        
+        return func(*args, **kwargs)
+    return wrapper
+
+
+# ============================
+# LOGIN ADMIN/FUNCIONÁRIO
+# ============================
+
+@app.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+    if request.method == "POST":
+        email = request.form["email"]
+        senha = request.form["senha"]
+
+        db = conectar()
+        cursor = db.cursor(dictionary=True)
+
+        cursor.execute("SELECT * FROM usuarios WHERE email = %s", (email,))
+        user = cursor.fetchone()
+
+        if not user:
+            flash("E-mail não encontrado!", "erro")
+            return redirect("/admin/login")
+
+        # Verifica se é admin ou funcionário
+        if user["tipo"] not in ["admin", "funcionario"]:
+            flash("Acesso negado! Apenas funcionários e administradores.", "erro")
+            return redirect("/admin/login")
+
+        # Verifica senha
+        if not check_password_hash(user["senha"], senha):
+            flash("Senha incorreta!", "erro")
+            return redirect("/admin/login")
+
+        # Login bem-sucedido
+        session["usuario_id"] = user["id"]
+        session["usuario_nome"] = user["nome"]
+        session["usuario_avatar"] = user["avatar"]
+        session["tipo"] = user["tipo"]
+        session["logado"] = True
+
+        # Redireciona conforme o tipo
+        if user["tipo"] == "admin":
+            flash(f"Bem-vindo, Admin {user['nome']}!", "sucesso")
+            return redirect("/admin/painel")
+        else:
+            flash(f"Bem-vindo, {user['nome']}!", "sucesso")
+            return redirect("/funcionario/painel")
+
+    return render_template("admin/login.html")
+
+
+# ============================
+# PAINEL DO FUNCIONÁRIO
+# ============================
+
+@app.route("/funcionario/painel")
+@funcionario_required
+def funcionario_painel():
+    db = conectar()
+    cursor = db.cursor(dictionary=True)
+
+    # Estatísticas rápidas
+    cursor.execute("SELECT COUNT(*) as total FROM pedidos WHERE DATE(criado_em) = CURDATE()")
+    pedidos_hoje = cursor.fetchone()["total"]
+
+    cursor.execute("SELECT COUNT(*) as total FROM pedidos WHERE status = 'aguardando_pagamento'")
+    pedidos_pendentes = cursor.fetchone()["total"]
+
+    cursor.execute("SELECT COUNT(*) as total FROM produtos WHERE estoque < 10")
+    estoque_baixo = cursor.fetchone()["total"]
+
+    cursor.execute("SELECT COUNT(*) as total FROM usuarios WHERE tipo = 'cliente'")
+    total_clientes = cursor.fetchone()["total"]
+
+    return render_template("funcionario/painel.html",
+                         pedidos_hoje=pedidos_hoje,
+                         pedidos_pendentes=pedidos_pendentes,
+                         estoque_baixo=estoque_baixo,
+                         total_clientes=total_clientes)
+
+
+@app.route("/funcionario/pedidos")
+@funcionario_required
+def funcionario_pedidos():
+    db = conectar()
+    cursor = db.cursor(dictionary=True)
+
+    # Filtros
+    status_filtro = request.args.get("status", "todos")
+    
+    if status_filtro == "todos":
+        cursor.execute("""
+            SELECT p.*, u.nome as cliente_nome, u.email as cliente_email
+            FROM pedidos p
+            LEFT JOIN usuarios u ON u.id = p.usuario_id
+            ORDER BY p.criado_em DESC
+        """)
+    else:
+        cursor.execute("""
+            SELECT p.*, u.nome as cliente_nome, u.email as cliente_email
+            FROM pedidos p
+            LEFT JOIN usuarios u ON u.id = p.usuario_id
+            WHERE p.status = %s
+            ORDER BY p.criado_em DESC
+        """, (status_filtro,))
+    
+    pedidos = cursor.fetchall()
+
+    return render_template("funcionario/pedidos.html", pedidos=pedidos, status_filtro=status_filtro)
+
+
+@app.route("/funcionario/pedido/<int:pedido_id>")
+@funcionario_required
+def funcionario_pedido_detalhe(pedido_id):
+    db = conectar()
+    cursor = db.cursor(dictionary=True)
+
+    # Buscar pedido
+    cursor.execute("""
+        SELECT p.*, u.nome as cliente_nome, u.email as cliente_email
+        FROM pedidos p
+        LEFT JOIN usuarios u ON u.id = p.usuario_id
+        WHERE p.id = %s
+    """, (pedido_id,))
+    pedido = cursor.fetchone()
+
+    if not pedido:
+        flash("Pedido não encontrado!", "erro")
+        return redirect("/funcionario/pedidos")
+
+    # Buscar itens do pedido
+    cursor.execute("""
+        SELECT pi.*, p.nome, p.imagem_principal
+        FROM pedido_itens pi
+        JOIN produtos p ON p.id = pi.produto_id
+        WHERE pi.pedido_id = %s
+    """, (pedido_id,))
+    itens = cursor.fetchall()
+
+    return render_template("funcionario/pedido_detalhe.html", pedido=pedido, itens=itens)
+
+
+@app.route("/funcionario/pedido/<int:pedido_id>/atualizar-status", methods=["POST"])
+@funcionario_required
+def funcionario_atualizar_status(pedido_id):
+    novo_status = request.form["status"]
+    
+    db = conectar()
+    cursor = db.cursor()
+    
+    cursor.execute("UPDATE pedidos SET status = %s WHERE id = %s", (novo_status, pedido_id))
+    db.commit()
+    
+    flash("Status atualizado com sucesso!", "sucesso")
+    return redirect(f"/funcionario/pedido/{pedido_id}")
+
+
+@app.route("/funcionario/clientes")
+@funcionario_required
+def funcionario_clientes():
+    db = conectar()
+    cursor = db.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT u.*, COUNT(p.id) as total_pedidos
+        FROM usuarios u
+        LEFT JOIN pedidos p ON p.usuario_id = u.id
+        WHERE u.tipo = 'cliente'
+        GROUP BY u.id
+        ORDER BY total_pedidos DESC
+    """)
+    clientes = cursor.fetchall()
+
+    return render_template("funcionario/clientes.html", clientes=clientes)
+
+
+@app.route("/funcionario/estoque")
+@funcionario_required
+def funcionario_estoque():
+    db = conectar()
+    cursor = db.cursor(dictionary=True)
+
+    cursor.execute("SELECT * FROM produtos ORDER BY estoque ASC")
+    produtos = cursor.fetchall()
+
+    return render_template("funcionario/estoque.html", produtos=produtos)
+
+
+# ============================
+# PAINEL DO ADMIN
+# ============================
+
+@app.route("/admin/painel")
+@admin_required
+def admin_painel():
+    db = conectar()
+    cursor = db.cursor(dictionary=True)
+
+    # Estatísticas completas
+    cursor.execute("SELECT COUNT(*) as total FROM pedidos")
+    total_pedidos = cursor.fetchone()["total"]
+
+    cursor.execute("SELECT COUNT(*) as total FROM produtos")
+    total_produtos = cursor.fetchone()["total"]
+
+    cursor.execute("SELECT COUNT(*) as total FROM usuarios WHERE tipo = 'cliente'")
+    total_clientes = cursor.fetchone()["total"]
+
+    cursor.execute("SELECT SUM(valor_total) as total FROM pedidos WHERE status = 'concluido'")
+    faturamento = cursor.fetchone()["total"] or 0
+
+    # Pedidos recentes
+    cursor.execute("""
+        SELECT p.*, u.nome as cliente_nome
+        FROM pedidos p
+        LEFT JOIN usuarios u ON u.id = p.usuario_id
+        ORDER BY p.criado_em DESC
+        LIMIT 5
+    """)
+    pedidos_recentes = cursor.fetchall()
+
+    # Produtos mais vendidos
+    cursor.execute("""
+        SELECT pr.nome, pr.imagem_principal, SUM(pi.quantidade) as vendas
+        FROM pedido_itens pi
+        JOIN produtos pr ON pr.id = pi.produto_id
+        GROUP BY pi.produto_id
+        ORDER BY vendas DESC
+        LIMIT 5
+    """)
+    produtos_top = cursor.fetchall()
+
+    return render_template("admin/painel.html",
+                         total_pedidos=total_pedidos,
+                         total_produtos=total_produtos,
+                         total_clientes=total_clientes,
+                         faturamento=faturamento,
+                         pedidos_recentes=pedidos_recentes,
+                         produtos_top=produtos_top)
+
+
+@app.route("/admin/usuarios")
+@admin_required
+def admin_usuarios():
+    db = conectar()
+    cursor = db.cursor(dictionary=True)
+
+    cursor.execute("SELECT * FROM usuarios ORDER BY criado_em DESC")
+    usuarios = cursor.fetchall()
+
+    return render_template("admin/usuarios.html", usuarios=usuarios)
+
+
+@app.route("/admin/usuario/<int:user_id>/promover/<tipo>")
+@admin_required
+def admin_promover_usuario(user_id, tipo):
+    if tipo not in ["cliente", "funcionario", "admin"]:
+        flash("Tipo inválido!", "erro")
+        return redirect("/admin/usuarios")
+
+    db = conectar()
+    cursor = db.cursor()
+    
+    cursor.execute("UPDATE usuarios SET tipo = %s WHERE id = %s", (tipo, user_id))
+    db.commit()
+    
+    flash(f"Usuário promovido para {tipo} com sucesso!", "sucesso")
+    return redirect("/admin/usuarios")
+
+
+@app.route("/admin/relatorios")
+@admin_required
+def admin_relatorios():
+    db = conectar()
+    cursor = db.cursor(dictionary=True)
+
+    # Vendas por mês
+    cursor.execute("""
+        SELECT 
+            MONTH(criado_em) as mes,
+            YEAR(criado_em) as ano,
+            COUNT(*) as total_pedidos,
+            SUM(valor_total) as faturamento
+        FROM pedidos
+        WHERE status = 'concluido'
+        GROUP BY ano, mes
+        ORDER BY ano DESC, mes DESC
+        LIMIT 12
+    """)
+    vendas_mensais = cursor.fetchall()
+
+    # Produtos mais vendidos
+    cursor.execute("""
+        SELECT 
+            pr.nome,
+            pr.categoria,
+            SUM(pi.quantidade) as total_vendido,
+            SUM(pi.quantidade * pi.valor) as receita
+        FROM pedido_itens pi
+        JOIN produtos pr ON pr.id = pi.produto_id
+        JOIN pedidos p ON p.id = pi.pedido_id
+        WHERE p.status = 'concluido'
+        GROUP BY pi.produto_id
+        ORDER BY total_vendido DESC
+        LIMIT 10
+    """)
+    produtos_top = cursor.fetchall()
+
+    return render_template("admin/relatorios.html",
+                         vendas_mensais=vendas_mensais,
+                         produtos_top=produtos_top)
+
+
+@app.route("/admin/produtos/editar/<int:produto_id>", methods=["GET", "POST"])
+@admin_required
+def admin_editar_produto(produto_id):
+    db = conectar()
+    cursor = db.cursor(dictionary=True)
+
+    if request.method == "POST":
+        nome = request.form["nome"]
+        descricao = request.form["descricao"]
+        preco = request.form["preco"]
+        estoque = request.form["estoque"]
+        categoria = request.form["categoria"]
+
+        cursor.execute("""
+            UPDATE produtos 
+            SET nome = %s, descricao = %s, preco = %s, estoque = %s, categoria = %s
+            WHERE id = %s
+        """, (nome, descricao, preco, estoque, categoria, produto_id))
+        db.commit()
+
+        flash("Produto atualizado com sucesso!", "sucesso")
+        return redirect("/admin/produtos")
+
+    cursor.execute("SELECT * FROM produtos WHERE id = %s", (produto_id,))
+    produto = cursor.fetchone()
+
+    cursor.execute("SELECT * FROM categorias")
+    categorias = cursor.fetchall()
+
+    return render_template("admin/editar_produto.html", produto=produto, categorias=categorias)
+
+
+@app.route("/admin/produtos/excluir/<int:produto_id>")
+@admin_required
+def admin_excluir_produto(produto_id):
+    db = conectar()
+    cursor = db.cursor()
+    
+    cursor.execute("DELETE FROM produtos WHERE id = %s", (produto_id,))
+    db.commit()
+    
+    flash("Produto excluído com sucesso!", "sucesso")
+    return redirect("/admin/produtos")
+
 # Caminho ABSOLUTO para garantir que salve no lugar certo
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'static', 'uploads', 'avatars')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
@@ -896,6 +1290,32 @@ def config():
     session["usuario_avatar"] = usuario["avatar"]
     
     return render_template("config.html", usuario=usuario)
+
+@app.route("/perfil/excluir-pedido/<int:pedido_id>", methods=["POST"])
+def excluir_pedido(pedido_id):
+    if "usuario_id" not in session:
+        return jsonify({"sucesso": False, "erro": "Não logado"}), 401
+    
+    user_id = session["usuario_id"]
+    
+    db = conectar()
+    cursor = db.cursor(dictionary=True)
+    
+    # Verificar se o pedido pertence ao usuário
+    cursor.execute("SELECT usuario_id FROM pedidos WHERE id = %s", (pedido_id,))
+    pedido = cursor.fetchone()
+    
+    if not pedido:
+        return jsonify({"sucesso": False, "erro": "Pedido não encontrado"})
+    
+    if pedido["usuario_id"] != user_id:
+        return jsonify({"sucesso": False, "erro": "Pedido não pertence ao usuário"})
+    
+    # Excluir pedido (CASCADE vai deletar os itens automaticamente)
+    cursor.execute("DELETE FROM pedidos WHERE id = %s", (pedido_id,))
+    db.commit()
+    
+    return jsonify({"sucesso": True})
 
 if __name__ == '__main__':
     app.run(debug=True)

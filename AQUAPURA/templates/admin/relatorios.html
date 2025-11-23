@@ -1,0 +1,377 @@
+{% extends "base_painel.html" %}
+
+{% block title %}Relatórios - AquaPura{% endblock %}
+
+{% block painel_content %}
+
+<style>
+    .page-header {
+        margin-bottom: 40px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid var(--border);
+    }
+
+    .page-header h1 {
+        color: var(--texto);
+        font-size: 2.2em;
+        margin-bottom: 10px;
+    }
+
+    .page-header p {
+        color: var(--texto);
+        opacity: 0.7;
+    }
+
+    .secao-relatorio {
+        background: var(--card-bg);
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px var(--shadow);
+        margin-bottom: 30px;
+        border: 2px solid var(--border);
+    }
+
+    .secao-titulo {
+        color: var(--texto);
+        font-size: 1.6em;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 3px solid var(--azul);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 700;
+    }
+
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background: linear-gradient(135deg, var(--azul) 0%, var(--azul-escuro) 100%);
+        padding: 25px;
+        border-radius: 12px;
+        text-align: center;
+        color: white;
+        box-shadow: 0 4px 12px var(--shadow);
+        transition: transform 0.3s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .stat-card-icon {
+        font-size: 2em;
+        margin-bottom: 10px;
+    }
+
+    .stat-card-valor {
+        font-size: 2.2em;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .stat-card-label {
+        font-size: 0.95em;
+        opacity: 0.95;
+    }
+
+    .grafico-barras {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-around;
+        height: 320px;
+        border-left: 3px solid var(--texto);
+        border-bottom: 3px solid var(--texto);
+        padding: 20px 0 0 20px;
+        position: relative;
+        margin-bottom: 40px;
+        background: var(--fundo);
+        border-radius: 10px;
+    }
+
+    .grafico-barras::before {
+        content: 'Faturamento (R$)';
+        position: absolute;
+        left: -80px;
+        top: 50%;
+        transform: rotate(-90deg);
+        font-size: 0.9em;
+        color: var(--texto);
+        font-weight: 700;
+    }
+
+    .barra-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1;
+        max-width: 80px;
+    }
+
+    .barra {
+        width: 70%;
+        background: linear-gradient(180deg, var(--azul) 0%, var(--azul-escuro) 100%);
+        border-radius: 8px 8px 0 0;
+        position: relative;
+        transition: all 0.3s ease;
+        animation: crescer 1s ease-out;
+        box-shadow: 0 -4px 12px var(--shadow);
+        min-height: 20px;
+    }
+
+    .barra:hover {
+        transform: translateY(-8px);
+        opacity: 0.9;
+        cursor: pointer;
+        box-shadow: 0 -6px 20px rgba(110, 168, 254, 0.5);
+    }
+
+    @keyframes crescer {
+        from {
+            height: 0 !important;
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    .barra-valor {
+        position: absolute;
+        top: -35px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-weight: 700;
+        color: var(--texto);
+        font-size: 0.85em;
+        background: var(--card-bg);
+        padding: 5px 10px;
+        border-radius: 6px;
+        box-shadow: 0 2px 8px var(--shadow);
+        border: 2px solid var(--border);
+        white-space: nowrap;
+    }
+
+    .barra-mes {
+        margin-top: 12px;
+        font-weight: 700;
+        color: var(--texto);
+        font-size: 0.85em;
+    }
+
+    .produtos-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    .produtos-table thead {
+        background: var(--azul);
+        color: white;
+    }
+
+    .produtos-table th {
+        padding: 15px;
+        text-align: left;
+        font-weight: 700;
+    }
+
+    .produtos-table td {
+        padding: 15px;
+        border-bottom: 1px solid var(--border);
+        color: var(--texto);
+    }
+
+    .produtos-table tbody tr {
+        transition: background 0.3s ease;
+    }
+
+    .produtos-table tbody tr:hover {
+        background: var(--cinza);
+    }
+
+    .ranking-badge {
+        display: inline-block;
+        width: 35px;
+        height: 35px;
+        background: var(--azul);
+        color: white;
+        border-radius: 50%;
+        text-align: center;
+        line-height: 35px;
+        font-weight: 700;
+        font-size: 1.1em;
+    }
+
+    .ranking-badge.top-1 {
+        background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+        color: #000;
+        box-shadow: 0 4px 15px rgba(255, 215, 0, 0.5);
+    }
+
+    .ranking-badge.top-2 {
+        background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%);
+        color: #000;
+        box-shadow: 0 4px 15px rgba(192, 192, 192, 0.5);
+    }
+
+    .ranking-badge.top-3 {
+        background: linear-gradient(135deg, #cd7f32 0%, #e89a5d 100%);
+        color: #fff;
+        box-shadow: 0 4px 15px rgba(205, 127, 50, 0.5);
+    }
+
+    .sem-dados {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--texto);
+        opacity: 0.7;
+    }
+
+    .sem-dados-icon {
+        font-size: 4em;
+        margin-bottom: 20px;
+    }
+</style>
+
+<div class="page-header">
+    <h1>📈 Relatórios e Análises</h1>
+    <p>Dados detalhados sobre vendas e desempenho</p>
+</div>
+
+<!-- CARDS DE RESUMO -->
+<div class="stats-cards">
+    <div class="stat-card">
+        <div class="stat-card-icon">💰</div>
+        <div class="stat-card-valor">
+            {% if vendas_mensais %}
+                R$ {{ "%.2f"|format(vendas_mensais|sum(attribute='faturamento')) }}
+            {% else %}
+                R$ 0,00
+            {% endif %}
+        </div>
+        <div class="stat-card-label">Faturamento Total</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-card-icon">📦</div>
+        <div class="stat-card-valor">
+            {% if vendas_mensais %}
+                {{ vendas_mensais|sum(attribute='total_pedidos') }}
+            {% else %}
+                0
+            {% endif %}
+        </div>
+        <div class="stat-card-label">Total de Pedidos</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-card-icon">📊</div>
+        <div class="stat-card-valor">
+            {% if vendas_mensais and vendas_mensais|sum(attribute='total_pedidos') > 0 %}
+                R$ {{ "%.2f"|format(vendas_mensais|sum(attribute='faturamento') / vendas_mensais|sum(attribute='total_pedidos')) }}
+            {% else %}
+                R$ 0,00
+            {% endif %}
+        </div>
+        <div class="stat-card-label">Ticket Médio</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-icon">📅</div>
+        <div class="stat-card-valor">{{ vendas_mensais|length if vendas_mensais else 0 }}</div>
+        <div class="stat-card-label">Meses com Vendas</div>
+    </div>
+</div>
+
+<!-- GRÁFICO DE VENDAS MENSAIS -->
+<div class="secao-relatorio">
+    <h3 class="secao-titulo">
+        <span>📊</span>
+        Faturamento Mensal (Últimos 12 meses)
+    </h3>
+
+    {% if vendas_mensais %}
+    <div class="grafico-barras">
+        {% for venda in vendas_mensais|reverse %}
+            <div class="barra-item">
+                <div class="barra" style="height: 100px">
+                    <span class="barra-valor">R$ {{ venda.faturamento }}</span>
+                </div>
+                <div class="barra-mes">
+                    {% if venda.mes == 1 %}Jan
+                    {% elif venda.mes == 2 %}Fev
+                    {% elif venda.mes == 3 %}Mar
+                    {% elif venda.mes == 4 %}Abr
+                    {% elif venda.mes == 5 %}Mai
+                    {% elif venda.mes == 6 %}Jun
+                    {% elif venda.mes == 7 %}Jul
+                    {% elif venda.mes == 8 %}Ago
+                    {% elif venda.mes == 9 %}Set
+                    {% elif venda.mes == 10 %}Out
+                    {% elif venda.mes == 11 %}Nov
+                    {% elif venda.mes == 12 %}Dez
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    
+    {% else %}
+    <div class="sem-dados">
+        <div class="sem-dados-icon">📊</div>
+        <h3>Nenhuma venda registrada ainda</h3>
+        <p>Os dados aparecerão aqui quando houver vendas concluídas</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- PRODUTOS MAIS VENDIDOS -->
+<div class="secao-relatorio">
+    <h3 class="secao-titulo">
+        <span>🏆</span>
+        Top 10 Produtos Mais Vendidos
+    </h3>
+
+    {% if produtos_top %}
+    <table class="produtos-table">
+        <thead>
+            <tr>
+                <th style="width: 60px; text-align: center;">#</th>
+                <th>Produto</th>
+                <th>Categoria</th>
+                <th style="text-align: center;">Quantidade Vendida</th>
+                <th style="text-align: right;">Receita Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for produto in produtos_top %}
+            <tr>
+                <td style="text-align: center;">
+                    <span class="ranking-badge {% if loop.index == 1 %}top-1{% elif loop.index == 2 %}top-2{% elif loop.index == 3 %}top-3{% endif %}">
+                        {{ loop.index }}
+                    </span>
+                </td>
+                <td><strong>{{ produto.nome }}</strong></td>
+                <td>{{ produto.categoria }}</td>
+                <td style="text-align: center;"><strong>{{ produto.total_vendido }}</strong> unidades</td>
+                <td style="text-align: right;"><strong style="color: var(--azul); font-size: 1.1em;">R$ {{ "%.2f"|format(produto.receita) }}</strong></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="sem-dados">
+        <div class="sem-dados-icon">🏆</div>
+        <h3>Nenhuma venda registrada ainda</h3>
+        <p>A tabela de produtos mais vendidos aparecerá aqui quando houver vendas concluídas</p>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

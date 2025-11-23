@@ -1,0 +1,363 @@
+{% extends "base_painel.html" %}
+
+{% block title %}Pedido #{{ pedido.id }} - AquaPura{% endblock %}
+
+{% block painel_content %}
+
+<style>
+    .btn-voltar {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        background: var(--card-bg);
+        color: var(--texto);
+        text-decoration: none;
+        border-radius: 10px;
+        margin-bottom: 25px;
+        border: 2px solid var(--border);
+        transition: all 0.3s ease;
+        font-weight: 600;
+    }
+
+    .btn-voltar:hover {
+        background: var(--cinza);
+        transform: translateX(-5px);
+    }
+
+    .pedido-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding: 30px;
+        background: var(--card-bg);
+        border-radius: 15px;
+        box-shadow: 0 4px 20px var(--shadow);
+        border: 2px solid var(--border);
+    }
+
+    .pedido-info h1 {
+        color: var(--texto);
+        font-size: 2.2em;
+        margin-bottom: 8px;
+    }
+
+    .pedido-info p {
+        color: var(--texto);
+        opacity: 0.7;
+        font-size: 1em;
+    }
+
+    .status-badge-grande {
+        padding: 14px 28px;
+        border-radius: 25px;
+        font-size: 1.1em;
+        font-weight: 700;
+        display: inline-block;
+    }
+
+    .pedido-card {
+        background: var(--card-bg);
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px var(--shadow);
+        border: 2px solid var(--border);
+        height: 100%;
+    }
+
+    .card-titulo {
+        color: var(--texto);
+        font-size: 1.3em;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 3px solid var(--azul);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 700;
+    }
+
+    /* SEÇÃO DE PRODUTOS */
+    .secao-produtos {
+        margin-bottom: 30px;
+    }
+
+    .item-produto {
+        display: flex;
+        gap: 20px;
+        padding: 20px;
+        background: var(--cinza);
+        border-radius: 12px;
+        margin-bottom: 15px;
+        border: 2px solid var(--border);
+        transition: all 0.3s ease;
+    }
+
+    .item-produto:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px var(--shadow);
+    }
+
+    .item-produto img {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 10px;
+        border: 2px solid var(--border);
+    }
+
+    .item-info {
+        flex: 1;
+        color: var(--texto);
+    }
+
+    .item-info h4 {
+        margin-bottom: 8px;
+        font-size: 1.15em;
+        font-weight: 600;
+    }
+
+    .item-info p {
+        opacity: 0.7;
+        font-size: 0.95em;
+    }
+
+    .item-preco {
+        text-align: right;
+        color: var(--texto);
+    }
+
+    .item-preco strong {
+        font-size: 1.2em;
+        color: var(--azul);
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .item-preco p {
+        opacity: 0.7;
+        font-size: 0.9em;
+    }
+
+    .total-pedido {
+        background: linear-gradient(135deg, var(--azul) 0%, var(--azul-escuro) 100%);
+        color: white;
+        padding: 25px;
+        border-radius: 12px;
+        margin-top: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 1.3em;
+        font-weight: 700;
+        box-shadow: 0 5px 20px rgba(110, 168, 254, 0.4);
+    }
+
+    /* GRID 2x2 PARA INFORMAÇÕES */
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 25px;
+    }
+
+    .info-linha {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--border);
+        color: var(--texto);
+        gap: 20px;
+    }
+
+    .info-linha:last-child {
+        border-bottom: none;
+    }
+
+    .info-label {
+        font-weight: 700;
+        opacity: 0.8;
+        font-size: 0.95em;
+        white-space: nowrap;
+    }
+
+    .info-valor {
+        text-align: right;
+        word-wrap: break-word;
+        flex: 1;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        color: var(--texto);
+        font-weight: 700;
+        margin-bottom: 10px;
+        font-size: 1em;
+    }
+
+    .form-group select {
+        width: 100%;
+        padding: 14px;
+        border: 2px solid var(--border);
+        border-radius: 10px;
+        background: var(--cinza);
+        color: var(--texto);
+        font-size: 1em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .form-group select:focus {
+        outline: none;
+        border-color: var(--azul);
+        box-shadow: 0 0 0 3px rgba(110, 168, 254, 0.2);
+    }
+
+    .btn-atualizar {
+        width: 100%;
+        padding: 16px;
+        background: var(--azul);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 1.1em;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-atualizar:hover {
+        background: var(--azul-escuro);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(110, 168, 254, 0.4);
+    }
+
+    @media (max-width: 968px) {
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .pedido-header {
+            flex-direction: column;
+            gap: 20px;
+            text-align: center;
+        }
+    }
+</style>
+
+<a href="/funcionario/pedidos" class="btn-voltar">← Voltar para Pedidos</a>
+
+<div class="pedido-header">
+    <div class="pedido-info">
+        <h1>📦 Pedido #{{ pedido.id }}</h1>
+        <p>Realizado em {{ pedido.criado_em.strftime('%d/%m/%Y às %H:%M') }}</p>
+    </div>
+    <div>
+        <span class="status-badge-grande status-{{ pedido.status|replace(' ', '_') }}">
+            {{ pedido.status|replace('_', ' ')|title }}
+        </span>
+    </div>
+</div>
+
+<!-- SEÇÃO DE PRODUTOS (LARGURA TOTAL) -->
+<div class="secao-produtos">
+    <div class="pedido-card">
+        <h3 class="card-titulo">🛍️ Itens do Pedido</h3>
+        
+        {% for item in itens %}
+        <div class="item-produto">
+            <img src="{{ url_for('static', filename=item.imagem_principal) }}" alt="{{ item.nome }}">
+            <div class="item-info">
+                <h4>{{ item.nome }}</h4>
+                <p>Quantidade: {{ item.quantidade }}x</p>
+            </div>
+            <div class="item-preco">
+                <strong>R$ {{ "%.2f"|format(item.valor) }}</strong>
+                <p>Total: R$ {{ "%.2f"|format(item.valor * item.quantidade) }}</p>
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="total-pedido">
+            <span>TOTAL DO PEDIDO</span>
+            <span>R$ {{ "%.2f"|format(pedido.valor_total) }}</span>
+        </div>
+    </div>
+</div>
+
+<!-- GRID 2x2 DE INFORMAÇÕES -->
+<div class="info-grid">
+    <!-- CLIENTE -->
+    <div class="pedido-card">
+        <h3 class="card-titulo">👤 Cliente</h3>
+        <div class="info-linha">
+            <span class="info-label">Nome:</span>
+            <span class="info-valor">{{ pedido.cliente_nome or 'N/A' }}</span>
+        </div>
+        <div class="info-linha">
+            <span class="info-label">E-mail:</span>
+            <span class="info-valor">{{ pedido.cliente_email or 'N/A' }}</span>
+        </div>
+        <div class="info-linha">
+            <span class="info-label">CPF:</span>
+            <span class="info-valor">{{ pedido.cliente_cpf or 'N/A' }}</span>
+        </div>
+    </div>
+
+    <!-- ENTREGA -->
+    <div class="pedido-card">
+        <h3 class="card-titulo">📍 Entrega</h3>
+        <div class="info-linha">
+            <span class="info-label">Endereço:</span>
+            <span class="info-valor">{{ pedido.cliente_endereco or 'N/A' }}</span>
+        </div>
+    </div>
+
+    <!-- PAGAMENTO -->
+    <div class="pedido-card">
+        <h3 class="card-titulo">💳 Pagamento</h3>
+        <div class="info-linha">
+            <span class="info-label">Método:</span>
+            <span class="info-valor">{{ pedido.pagamento_metodo or 'N/A' }}</span>
+        </div>
+        <div class="info-linha">
+            <span class="info-label">Valor Total:</span>
+            <span class="info-valor"><strong style="color: var(--azul); font-size: 1.2em;">R$ {{ "%.2f"|format(pedido.valor_total) }}</strong></span>
+        </div>
+    </div>
+
+    <!-- ATUALIZAR STATUS -->
+    <div class="pedido-card">
+        <h3 class="card-titulo">🔄 Atualizar Status</h3>
+        <form method="POST" action="/funcionario/pedido/{{ pedido.id }}/atualizar-status">
+            <div class="form-group">
+                <label>Novo Status</label>
+                <select name="status" required>
+                    <option value="aguardando_pagamento" {% if pedido.status == 'aguardando_pagamento' %}selected{% endif %}>
+                        ⏳ Aguardando Pagamento
+                    </option>
+                    <option value="em_separacao" {% if pedido.status == 'em_separacao' %}selected{% endif %}>
+                        📦 Em Separação
+                    </option>
+                    <option value="enviado" {% if pedido.status == 'enviado' %}selected{% endif %}>
+                        🚚 Enviado
+                    </option>
+                    <option value="entregue" {% if pedido.status == 'entregue' %}selected{% endif %}>
+                        ✅ Entregue
+                    </option>
+                    <option value="cancelado" {% if pedido.status == 'cancelado' %}selected{% endif %}>
+                        ❌ Cancelado
+                    </option>
+                </select>
+            </div>
+            <button type="submit" class="btn-atualizar">💾 Atualizar Status</button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,162 @@
+{% extends "base_painel.html" %}
+
+{% block title %}Editar Produto - AquaPura{% endblock %}
+
+{% block painel_content %}
+
+<style>
+    .page-header {
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid var(--border);
+    }
+
+    .page-header h1 {
+        color: var(--texto);
+        font-size: 2.2em;
+    }
+
+    .btn-voltar {
+        display: inline-block;
+        padding: 12px 24px;
+        background: var(--cinza);
+        color: var(--texto);
+        text-decoration: none;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-voltar:hover {
+        background: var(--border);
+    }
+
+    .form-container {
+        background: var(--card-bg);
+        padding: 40px;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px var(--shadow);
+        max-width: 800px;
+    }
+
+    .form-group {
+        margin-bottom: 25px;
+    }
+
+    .form-group label {
+        display: block;
+        color: var(--texto);
+        font-weight: 600;
+        margin-bottom: 10px;
+        font-size: 1em;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        width: 100%;
+        padding: 14px 18px;
+        border: 2px solid var(--border);
+        border-radius: 10px;
+        background: var(--cinza);
+        color: var(--texto);
+        font-size: 1em;
+        transition: all 0.3s ease;
+        font-family: inherit;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: var(--azul);
+        background: var(--fundo);
+    }
+
+    .form-group textarea {
+        resize: vertical;
+        min-height: 120px;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .btn-salvar {
+        width: 100%;
+        padding: 16px;
+        background: var(--azul);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 1.1em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 10px;
+    }
+
+    .btn-salvar:hover {
+        background: var(--azul-escuro);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(110, 168, 254, 0.4);
+    }
+
+    @media (max-width: 768px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<a href="/admin/produtos" class="btn-voltar">← Voltar para Produtos</a>
+
+<div class="page-header">
+    <h1>✏️ Editar Produto</h1>
+</div>
+
+<div class="form-container">
+    <form method="POST" action="/admin/produtos/editar/{{ produto.id }}">
+        <div class="form-group">
+            <label>Nome do Produto</label>
+            <input type="text" name="nome" value="{{ produto.nome }}" required>
+        </div>
+
+        <div class="form-group">
+            <label>Descrição</label>
+            <textarea name="descricao" required>{{ produto.descricao }}</textarea>
+        </div>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Preço (R$)</label>
+                <input type="number" name="preco" step="0.01" value="{{ produto.preco }}" required>
+            </div>
+
+            <div class="form-group">
+                <label>Estoque</label>
+                <input type="number" name="estoque" value="{{ produto.estoque }}" required>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Categoria</label>
+            <select name="categoria" required>
+                <option value="">Selecione uma categoria</option>
+                {% for cat in categorias %}
+                <option value="{{ cat.nome }}" {% if produto.categoria == cat.nome %}selected{% endif %}>
+                    {{ cat.nome }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <button type="submit" class="btn-salvar">
+            💾 Salvar Alterações
+        </button>
+    </form>
+</div>
+
+{% endblock %}

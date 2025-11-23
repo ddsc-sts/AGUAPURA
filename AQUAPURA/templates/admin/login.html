@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Área Administrativa</title>
+    <style>
+        :root {
+            --azul: #6ea8fe;
+            --azul-escuro: #3b6fb6;
+            --fundo: #0b1622;
+            --card: #1a2838;
+            --texto: #f0f4ff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--fundo) 0%, #1a2838 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: var(--card);
+            padding: 50px 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            max-width: 450px;
+            width: 100%;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .login-header h1 {
+            color: var(--azul);
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .login-header p {
+            color: var(--texto);
+            opacity: 0.7;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            color: var(--texto);
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #2a3a52;
+            border-radius: 10px;
+            background: var(--fundo);
+            color: var(--texto);
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--azul);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 15px;
+            background: var(--azul);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .btn-login:hover {
+            background: var(--azul-escuro);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(110, 168, 254, 0.4);
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            font-size: 0.95em;
+        }
+
+        .alert-erro {
+            background: #f8d7da;
+            color: #842029;
+            border: 2px solid #f5c2c7;
+        }
+
+        .alert-sucesso {
+            background: #d1e7dd;
+            color: #0f5132;
+            border: 2px solid #badbcc;
+        }
+
+        .voltar-home {
+            text-align: center;
+            margin-top: 25px;
+        }
+
+        .voltar-home a {
+            color: var(--azul);
+            text-decoration: none;
+            font-size: 0.95em;
+        }
+
+        .voltar-home a:hover {
+            text-decoration: underline;
+        }
+
+        .icone-login {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="icone-login">🔐</div>
+            <h1>Área Administrativa</h1>
+            <p>Acesso exclusivo para funcionários e administradores</p>
+        </div>
+
+        {% with msgs = get_flashed_messages(with_categories=True) %}
+        {% if msgs %}
+            {% for categoria, texto in msgs %}
+            <div class="alert alert-{{ categoria }}">
+                {{ texto }}
+            </div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="/admin/login">
+            <div class="form-group">
+                <label>📧 E-mail</label>
+                <input type="email" name="email" required autofocus>
+            </div>
+
+            <div class="form-group">
+                <label>🔒 Senha</label>
+                <input type="password" name="senha" required>
+            </div>
+
+            <button type="submit" class="btn-login">
+                Entrar no Sistema
+            </button>
+        </form>
+
+        <div class="voltar-home">
+            <a href="/">← Voltar para o site</a>
+        </div>
+    </div>
+</body>
+</html>

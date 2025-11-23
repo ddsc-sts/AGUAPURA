@@ -1,0 +1,219 @@
+{% extends "base_painel.html" %}
+
+{% block title %}Gerenciar Pedidos - AquaPura{% endblock %}
+
+{% block painel_content %}
+
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid var(--border);
+    }
+
+    .page-header h1 {
+        color: var(--texto);
+        font-size: 2.2em;
+    }
+
+    .filtros {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+    }
+
+    .filtro-btn {
+        padding: 12px 25px;
+        border: 2px solid var(--border);
+        background: var(--card-bg);
+        color: var(--texto);
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+
+    .filtro-btn:hover,
+    .filtro-btn.active {
+        background: var(--azul);
+        color: white;
+        border-color: var(--azul);
+    }
+
+    .pedidos-table {
+        width: 100%;
+        background: var(--card-bg);
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px var(--shadow);
+    }
+
+    .pedidos-table table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .pedidos-table thead {
+        background: var(--azul);
+        color: white;
+    }
+
+    .pedidos-table th {
+        padding: 18px;
+        text-align: left;
+        font-weight: 600;
+    }
+
+    .pedidos-table td {
+        padding: 18px;
+        border-bottom: 1px solid var(--border);
+        color: var(--texto);
+    }
+
+    .pedidos-table tbody tr {
+        transition: background 0.3s ease;
+    }
+
+    .pedidos-table tbody tr:hover {
+        background: var(--cinza);
+    }
+
+    .status-badge {
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.85em;
+        font-weight: 600;
+        display: inline-block;
+    }
+
+    .status-aguardando_pagamento {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .status-em_separacao {
+        background: #cfe2ff;
+        color: #084298;
+    }
+
+    .status-enviado {
+        background: #d1e7dd;
+        color: #0f5132;
+    }
+
+    .status-entregue {
+        background: #d1e7dd;
+        color: #0f5132;
+    }
+
+    .status-cancelado {
+        background: #f8d7da;
+        color: #842029;
+    }
+
+    .btn-ver {
+        padding: 8px 16px;
+        background: var(--azul);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s ease;
+    }
+
+    .btn-ver:hover {
+        background: var(--azul-escuro);
+        transform: translateY(-2px);
+    }
+
+    .sem-pedidos {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--texto);
+    }
+
+    .sem-pedidos-icon {
+        font-size: 4em;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+</style>
+
+<div class="page-header">
+    <h1>📦 Gerenciar Pedidos</h1>
+</div>
+
+<div class="filtros">
+    <a href="/funcionario/pedidos" class="filtro-btn {% if status_filtro == 'todos' %}active{% endif %}">
+        Todos
+    </a>
+    <a href="/funcionario/pedidos?status=aguardando_pagamento" class="filtro-btn {% if status_filtro == 'aguardando_pagamento' %}active{% endif %}">
+        Aguardando Pagamento
+    </a>
+    <a href="/funcionario/pedidos?status=em_separacao" class="filtro-btn {% if status_filtro == 'em_separacao' %}active{% endif %}">
+        Em Separação
+    </a>
+    <a href="/funcionario/pedidos?status=enviado" class="filtro-btn {% if status_filtro == 'enviado' %}active{% endif %}">
+        Enviado
+    </a>
+    <a href="/funcionario/pedidos?status=entregue" class="filtro-btn {% if status_filtro == 'entregue' %}active{% endif %}">
+        Entregue
+    </a>
+    <a href="/funcionario/pedidos?status=cancelado" class="filtro-btn {% if status_filtro == 'cancelado' %}active{% endif %}">
+        Cancelado
+    </a>
+</div>
+
+{% if pedidos %}
+<div class="pedidos-table">
+    <table>
+        <thead>
+            <tr>
+                <th>#ID</th>
+                <th>Cliente</th>
+                <th>Data</th>
+                <th>Status</th>
+                <th>Valor</th>
+                <th>Método</th>
+                <th>Ação</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pedido in pedidos %}
+            <tr>
+                <td><strong>#{{ pedido.id }}</strong></td>
+                <td>{{ pedido.cliente_nome or 'Cliente não identificado' }}</td>
+                <td>{{ pedido.criado_em.strftime('%d/%m/%Y %H:%M') }}</td>
+                <td>
+                    <span class="status-badge status-{{ pedido.status|replace(' ', '_') }}">
+                        {{ pedido.status|replace('_', ' ')|title }}
+                    </span>
+                </td>
+                <td><strong>R$ {{ "%.2f"|format(pedido.valor_total) }}</strong></td>
+                <td>{{ pedido.pagamento_metodo or 'N/A' }}</td>
+                <td>
+                    <a href="/funcionario/pedido/{{ pedido.id }}" class="btn-ver">
+                        Ver Detalhes
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="sem-pedidos">
+    <div class="sem-pedidos-icon">📦</div>
+    <h3>Nenhum pedido encontrado</h3>
+    <p>Não há pedidos com este status no momento.</p>
+</div>
+{% endif %}
+
+{% endblock %}
