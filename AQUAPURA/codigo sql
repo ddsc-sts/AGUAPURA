@@ -1,3 +1,4 @@
+
 DROP DATABASE IF EXISTS aguapura;
 CREATE DATABASE aguapura;
 USE aguapura;
@@ -251,3 +252,249 @@ UPDATE usuarios
 SET senha = 'scrypt:32768:8:1$so3Bg6a8P0OXkBQg$d336d5fe08059bf79b0d3ae47e11260030706a2c9b010b1d1dd66ae79cac169e4040b74cd8a888bbac3a6f2eff263749a018e4084310bb8cc69fd3785b3f5bc6',
     tipo = 'admin'
 WHERE email = 'admin@aguapura.com';
+
+
+-- MySQL Workbench Forward Engineering
+
+SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
+SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
+SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+
+-- -----------------------------------------------------
+-- Schema mydb
+-- -----------------------------------------------------
+-- -----------------------------------------------------
+-- Schema aguapura
+-- -----------------------------------------------------
+
+-- -----------------------------------------------------
+-- Schema aguapura
+-- -----------------------------------------------------
+CREATE SCHEMA IF NOT EXISTS `aguapura` DEFAULT CHARACTER SET utf8mb4 ;
+USE `aguapura` ;
+
+-- -----------------------------------------------------
+-- Table `aguapura`.`produtos`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `aguapura`.`produtos` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `nome` VARCHAR(150) NOT NULL,
+  `descricao` TEXT NULL DEFAULT NULL,
+  `preco` DECIMAL(10,2) NOT NULL,
+  `categoria` VARCHAR(50) NOT NULL,
+  `imagem_principal` VARCHAR(255) NOT NULL,
+  `estoque` INT(11) NULL DEFAULT 0,
+  `criado_em` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+  PRIMARY KEY (`id`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 4
+DEFAULT CHARACTER SET = utf8mb4;
+
+
+-- -----------------------------------------------------
+-- Table `aguapura`.`carrinho`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `aguapura`.`carrinho` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `session_id` VARCHAR(255) NOT NULL,
+  `produto_id` INT(11) NOT NULL,
+  `quantidade` INT(11) NULL DEFAULT 1,
+  `cor` VARCHAR(30) NOT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `produto_id` (`produto_id` ASC) VISIBLE,
+  CONSTRAINT `carrinho_ibfk_1`
+    FOREIGN KEY (`produto_id`)
+    REFERENCES `aguapura`.`produtos` (`id`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 8
+DEFAULT CHARACTER SET = utf8mb4;
+
+
+-- -----------------------------------------------------
+-- Table `aguapura`.`categorias`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `aguapura`.`categorias` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `nome` VARCHAR(150) NOT NULL,
+  PRIMARY KEY (`id`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 4
+DEFAULT CHARACTER SET = utf8mb4;
+
+
+-- -----------------------------------------------------
+-- Table `aguapura`.`usuarios`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `aguapura`.`usuarios` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `nome` VARCHAR(150) NOT NULL,
+  `email` VARCHAR(150) NOT NULL,
+  `senha` VARCHAR(255) NOT NULL,
+  `avatar` VARCHAR(255) NULL DEFAULT NULL,
+  `tipo` ENUM('admin', 'cliente') NULL DEFAULT 'cliente',
+  `criado_em` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `email` (`email` ASC) VISIBLE)
+ENGINE = InnoDB
+AUTO_INCREMENT = 3
+DEFAULT CHARACTER SET = utf8mb4;
+
+
+-- -----------------------------------------------------
+-- Table `aguapura`.`compras`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `aguapura`.`compras` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `usuario_id` INT(11) NULL DEFAULT NULL,
+  `produto` VARCHAR(150) NULL DEFAULT NULL,
+  `quantidade` INT(11) NULL DEFAULT NULL,
+  `valor` DECIMAL(10,2) NULL DEFAULT NULL,
+  `criado_em` DATETIME NULL DEFAULT CURRENT_TIMESTAMP(),
+  PRIMARY KEY (`id`),
+  INDEX `usuario_id` (`usuario_id` ASC) VISIBLE,
+  CONSTRAINT `compras_ibfk_1`
+    FOREIGN KEY (`usuario_id`)
+    REFERENCES `aguapura`.`usuarios` (`id`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb4;
+
+
+-- -----------------------------------------------------
+-- Table `aguapura`.`enderecos_usuarios`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `aguapura`.`enderecos_usuarios` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `usuario_id` INT(11) NOT NULL,
+  `nome_destinatario` VARCHAR(150) NOT NULL,
+  `cpf` VARCHAR(20) NOT NULL,
+  `rua` VARCHAR(150) NOT NULL,
+  `numero` VARCHAR(20) NOT NULL,
+  `bairro` VARCHAR(100) NULL DEFAULT NULL,
+  `cidade` VARCHAR(100) NOT NULL,
+  `estado` VARCHAR(2) NOT NULL,
+  `cep` VARCHAR(20) NOT NULL,
+  `criado_em` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+  PRIMARY KEY (`id`),
+  INDEX `usuario_id` (`usuario_id` ASC) VISIBLE,
+  CONSTRAINT `enderecos_usuarios_ibfk_1`
+    FOREIGN KEY (`usuario_id`)
+    REFERENCES `aguapura`.`usuarios` (`id`)
+    ON DELETE CASCADE)
+ENGINE = InnoDB
+AUTO_INCREMENT = 3
+DEFAULT CHARACTER SET = utf8mb4;
+
+
+-- -----------------------------------------------------
+-- Table `aguapura`.`favoritos`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `aguapura`.`favoritos` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `usuario_id` INT(11) NULL DEFAULT NULL,
+  `produto_id` INT(11) NULL DEFAULT NULL,
+  `criado_em` DATETIME NULL DEFAULT CURRENT_TIMESTAMP(),
+  PRIMARY KEY (`id`),
+  INDEX `usuario_id` (`usuario_id` ASC) VISIBLE,
+  INDEX `produto_id` (`produto_id` ASC) VISIBLE,
+  CONSTRAINT `favoritos_ibfk_1`
+    FOREIGN KEY (`usuario_id`)
+    REFERENCES `aguapura`.`usuarios` (`id`),
+  CONSTRAINT `favoritos_ibfk_2`
+    FOREIGN KEY (`produto_id`)
+    REFERENCES `aguapura`.`produtos` (`id`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb4;
+
+
+-- -----------------------------------------------------
+-- Table `aguapura`.`imagens_produto`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `aguapura`.`imagens_produto` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `produto_id` INT(11) NOT NULL,
+  `imagem` VARCHAR(255) NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `produto_id` (`produto_id` ASC) VISIBLE,
+  CONSTRAINT `imagens_produto_ibfk_1`
+    FOREIGN KEY (`produto_id`)
+    REFERENCES `aguapura`.`produtos` (`id`)
+    ON DELETE CASCADE)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb4;
+
+
+-- -----------------------------------------------------
+-- Table `aguapura`.`pagamentos_usuarios`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `aguapura`.`pagamentos_usuarios` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `usuario_id` INT(11) NOT NULL,
+  `tipo` ENUM('PIX', 'CARTAO') NOT NULL,
+  `nome_impresso` VARCHAR(150) NULL DEFAULT NULL,
+  `numero_mascarado` VARCHAR(30) NULL DEFAULT NULL,
+  `validade` VARCHAR(7) NULL DEFAULT NULL,
+  `chave_pix` VARCHAR(150) NULL DEFAULT NULL,
+  `criado_em` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+  PRIMARY KEY (`id`),
+  INDEX `usuario_id` (`usuario_id` ASC) VISIBLE,
+  CONSTRAINT `pagamentos_usuarios_ibfk_1`
+    FOREIGN KEY (`usuario_id`)
+    REFERENCES `aguapura`.`usuarios` (`id`)
+    ON DELETE CASCADE)
+ENGINE = InnoDB
+AUTO_INCREMENT = 3
+DEFAULT CHARACTER SET = utf8mb4;
+
+
+-- -----------------------------------------------------
+-- Table `aguapura`.`pedidos`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `aguapura`.`pedidos` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `usuario_id` INT(11) NULL DEFAULT NULL,
+  `valor_total` DECIMAL(10,2) NULL DEFAULT NULL,
+  `status` VARCHAR(50) NULL DEFAULT 'pendente',
+  `criado_em` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP(),
+  `pagamento_metodo` VARCHAR(30) NULL DEFAULT NULL,
+  `cliente_nome` VARCHAR(150) NULL DEFAULT NULL,
+  `cliente_cpf` VARCHAR(30) NULL DEFAULT NULL,
+  `cliente_endereco` TEXT NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `usuario_id` (`usuario_id` ASC) VISIBLE,
+  CONSTRAINT `pedidos_ibfk_1`
+    FOREIGN KEY (`usuario_id`)
+    REFERENCES `aguapura`.`usuarios` (`id`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 5
+DEFAULT CHARACTER SET = utf8mb4;
+
+
+-- -----------------------------------------------------
+-- Table `aguapura`.`pedido_itens`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `aguapura`.`pedido_itens` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `pedido_id` INT(11) NOT NULL,
+  `produto_id` INT(11) NOT NULL,
+  `quantidade` INT(11) NOT NULL,
+  `valor` DECIMAL(10,2) NOT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `pedido_id` (`pedido_id` ASC) VISIBLE,
+  INDEX `produto_id` (`produto_id` ASC) VISIBLE,
+  CONSTRAINT `pedido_itens_ibfk_1`
+    FOREIGN KEY (`pedido_id`)
+    REFERENCES `aguapura`.`pedidos` (`id`)
+    ON DELETE CASCADE,
+  CONSTRAINT `pedido_itens_ibfk_2`
+    FOREIGN KEY (`produto_id`)
+    REFERENCES `aguapura`.`produtos` (`id`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 6
+DEFAULT CHARACTER SET = utf8mb4;
+
+
+SET SQL_MODE=@OLD_SQL_MODE;
+SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
+SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+
+DROP DATABASE IF EXISTS aguapura; CREATE DATABASE aguapura; USE aguapura; -- ============================ -- TABELA DE USUÁRIOS (ADMIN) -- ============================ CREATE TABLE usuarios ( id INT PRIMARY KEY AUTO_INCREMENT, nome VARCHAR(150) NOT NULL, email VARCHAR(150) UNIQUE NOT NULL, senha VARCHAR(255) NOT NULL, avatar VARCHAR(255), tipo ENUM('admin', 'cliente') DEFAULT 'cliente', criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ); -- Criar o administrador padrão INSERT INTO usuarios (nome, email, senha, tipo) VALUES ('Administrador', 'admin@aguapura.com', 'admin123', 'admin'); -- ============================ -- TABELA DE CATEGORIAS -- ============================ CREATE TABLE categorias ( id INT PRIMARY KEY AUTO_INCREMENT, nome VARCHAR(150) NOT NULL ); INSERT INTO categorias (nome) VALUES ('Garrafa'), ('Copo'), ('Acessório'); -- ============================ -- TABELA DE PRODUTOS -- ============================ CREATE TABLE produtos ( id INT AUTO_INCREMENT PRIMARY KEY, nome VARCHAR(150) NOT NULL, descricao TEXT, preco DECIMAL(10,2) NOT NULL, categoria VARCHAR(50) NOT NULL, imagem_principal VARCHAR(255) NOT NULL, estoque INT DEFAULT 0, criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ); -- ============================ -- TABELA DE IMAGENS ADICIONAIS -- ============================ CREATE TABLE imagens_produto ( id INT PRIMARY KEY AUTO_INCREMENT, produto_id INT NOT NULL, imagem VARCHAR(255), FOREIGN KEY (produto_id) REFERENCES produtos(id) ON DELETE CASCADE ); -- ============================ -- TABELA DE PEDIDOS -- ============================ CREATE TABLE pedidos ( id INT PRIMARY KEY AUTO_INCREMENT, usuario_id INT, valor_total DECIMAL(10,2), status VARCHAR(50) DEFAULT 'pendente', criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP, pagamento_metodo VARCHAR(30) NULL, cliente_nome VARCHAR(150) NULL, cliente_cpf VARCHAR(30) NULL, cliente_endereco TEXT NULL, FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ); -- ============================ -- ITENS DO PEDIDO -- ============================ CREATE TABLE pedido_itens ( id INT PRIMARY KEY AUTO_INCREMENT, pedido_id INT NOT NULL, produto_id INT NOT NULL, quantidade INT NOT NULL, valor DECIMAL(10,2) NOT NULL, FOREIGN KEY (pedido_id) REFERENCES pedidos(id) ON DELETE CASCADE, FOREIGN KEY (produto_id) REFERENCES produtos(id) ); -- ============================ -- CARRINHO -- ============================ CREATE TABLE carrinho ( id INT AUTO_INCREMENT PRIMARY KEY, session_id VARCHAR(255) NOT NULL, produto_id INT NOT NULL, quantidade INT DEFAULT 1, cor VARCHAR(30) NOT NULL, FOREIGN KEY (produto_id) REFERENCES produtos(id) ); -- ============================ -- MÉTODOS DE PAGAMENTO SALVOS -- ============================ CREATE TABLE pagamentos_usuarios ( id INT AUTO_INCREMENT PRIMARY KEY, usuario_id INT NOT NULL, tipo ENUM('PIX', 'CARTAO') NOT NULL, -- CARTÃO nome_impresso VARCHAR(150), numero_mascarado VARCHAR(30), validade VARCHAR(7), -- PIX chave_pix VARCHAR(150), criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE ); -- ============================ -- INSERÇÃO DE PRODUTOS -- ============================ INSERT INTO produtos (nome, descricao, preco, categoria, imagem_principal, estoque) VALUES ( 'Garrafa Térmica aqua 750ml', 'Garrafa térmica de alta durabilidade, ideal para uso diário. Mantém líquidos frios ou quentes por até 12 horas.', 119.90, 'Garrafa', '/static/img/garrafas.png', 20 ); INSERT INTO produtos (nome, descricao, preco, categoria, imagem_principal, estoque) VALUES ( 'Copo Térmico Agua 500ml', 'Copo térmico com isolamento duplo ideal para bebidas quentes ou frias. Perfeito para seu dia a dia.', 89.90, 'Copo', '/static/img/copos.png', 18 ); INSERT INTO produtos (nome, descricao, preco, categoria, imagem_principal, estoque) VALUES ( 'Tampa Extra de Silicone', 'Tampa de silicone compatível com garrafas térmicas AguaPura. Material resistente e livre de BPA.', 29.90, 'Acessório', '/static/img/acessorios.png', 35 ); select * from usuarios; CREATE TABLE favoritos ( id INT AUTO_INCREMENT PRIMARY KEY, usuario_id INT, produto_id INT, criado_em DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (usuario_id) REFERENCES usuarios(id), FOREIGN KEY (produto_id) REFERENCES produtos(id) ); CREATE TABLE compras ( id INT AUTO_INCREMENT PRIMARY KEY, usuario_id INT, produto VARCHAR(150), quantidade INT, valor DECIMAL(10,2), criado_em DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ); -- ============================ -- ENDEREÇOS SALVOS DOS USUÁRIOS -- ============================ CREATE TABLE enderecos_usuarios ( id INT AUTO_INCREMENT PRIMARY KEY, usuario_id INT NOT NULL, nome_destinatario VARCHAR(150) NOT NULL, cpf VARCHAR(20) NOT NULL, rua VARCHAR(150) NOT NULL, numero VARCHAR(20) NOT NULL, bairro VARCHAR(100), cidade VARCHAR(100) NOT NULL, estado VARCHAR(2) NOT NULL, cep VARCHAR(20) NOT NULL, criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE ); UPDATE usuarios SET senha = 'scrypt:32768:8:1$so3Bg6a8P0OXkBQg$d336d5fe08059bf79b0d3ae47e11260030706a2c9b010b1d1dd66ae79cac169e4040b74cd8a888bbac3a6f2eff263749a018e4084310bb8cc69fd3785b3f5bc6', tipo = 'admin' WHERE email = 'admin@aguapura.com'; SELECT id, nome, avatar, criado_em FROM usuarios; SELECT nome FROM produtos; SELECT id, usuario_id, valor_total, status, pagamento_metodo FROM pedidos WHERE id = 8; select * from usuarios; ALTER TABLE pedidos; -- Primeiro, limpar os pedidos com dados NULL DELETE FROM pedidos WHERE usuario_id = 6; -- Agora criar pedidos corretos (um por vez) -- Pedido 1 (Janeiro) INSERT INTO pedidos (usuario_id, valor_total, status, pagamento_metodo, cliente_nome, cliente_cpf, cliente_endereco, criado_em) VALUES ( 6, 239.80, 'Concluído', 'PIX', 'Seu Nome', '12345678900', 'Rua das Flores, 123 - Joinville/SC', '2025-01-15 14:30:00' ); -- Adicionar itens deste pedido INSERT INTO pedido_itens (pedido_id, produto_id, quantidade, valor) VALUES (LAST_INSERT_ID(), 1, 2, 119.90), (LAST_INSERT_ID(), 2, 1, 89.90); -- Pedido 2 (Fevereiro) INSERT INTO pedidos (usuario_id, valor_total, status, pagamento_metodo, cliente_nome, cliente_cpf, cliente_endereco, criado_em) VALUES ( 6, 149.80, 'Aguardando Pagamento', 'CARTAO', 'Seu Nome', '12345678900', 'Rua das Flores, 123 - Joinville/SC', '2025-02-10 10:00:00' ); INSERT INTO pedido_itens (pedido_id, produto_id, quantidade, valor) VALUES (LAST_INSERT_ID(), 1, 1, 119.90), (LAST_INSERT_ID(), 3, 1, 29.90); -- Pedido 3 (Março) INSERT INTO pedidos (usuario_id, valor_total, status, pagamento_metodo, cliente_nome, cliente_cpf, cliente_endereco, criado_em) VALUES ( 6, 329.70, 'Concluído', 'PIX', 'Seu Nome', '12345678900', 'Rua das Flores, 123 - Joinville/SC', '2025-03-05 16:45:00' ); INSERT INTO pedido_itens (pedido_id, produto_id, quantidade, valor) VALUES (LAST_INSERT_ID(), 1, 2, 119.90), (LAST_INSERT_ID(), 2, 1, 89.90); -- Verificar se criou certo SELECT * FROM pedidos WHERE usuario_id = 6; ALTER TABLE usuarios MODIFY COLUMN tipo ENUM('admin', 'cliente', 'funcionario') DEFAULT 'cliente'; -- Ver todos os usuários SELECT id, nome, email, tipo FROM usuarios; -- Promover um usuário específico (troque o ID) UPDATE usuarios SET tipo = 'funcionario' WHERE id = 8;

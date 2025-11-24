@@ -12,13 +12,13 @@
 
         <div class="glass-card" style="padding:18px; border-radius:12px;">
           <label>Nome completo *</label>
-          <input name="nome" id="nome" required class="glass-input">
+          <input name="nome" id="nome" required class="glass-input" value="{{ session.get('usuario_nome','') }}">
 
           <label>CPF *</label>
           <input name="cpf" id="cpf" required maxlength="14" class="glass-input" placeholder="000.000.000-00">
 
           <label>E-mail *</label>
-          <input name="email" id="email" type="email" required class="glass-input" placeholder="seu@exemplo.com">
+          <input name="email" id="email" type="email" required class="glass-input" placeholder="seu@exemplo.com" value="{{ session.get('usuario_email','') }}">
 
           <label>Telefone</label>
           <input name="telefone" id="telefone" class="glass-input" placeholder="(00) 00000-0000" maxlength="15">
@@ -27,35 +27,60 @@
 
           <h4>Endereço para entrega</h4>
 
-          <label>Rua *</label>
-          <input name="rua" id="rua" required class="glass-input" placeholder="Av. Exemplo">
-
-          <div style="display:flex; gap:8px;">
-            <div style="flex:1">
-              <label>Número *</label>
-              <input name="numero" id="numero" required class="glass-input" placeholder="123">
-            </div>
-            <div style="flex:1">
-              <label>Bairro</label>
-              <input name="bairro" id="bairro" class="glass-input" placeholder="Centro">
-            </div>
-          </div>
-
-          <div style="display:flex; gap:8px; margin-top:8px;">
-            <div style="flex:1">
-              <label>Estado *</label>
-              <select name="estado" id="estado" required class="glass-input"></select>
-            </div>
-            <div style="flex:2">
-              <label>Cidade *</label>
-              <select name="cidade" id="cidade" required class="glass-input"></select>
-            </div>
-            <div style="width:120px">
-              <label>CEP *</label>
-              <input name="cep" id="cep" required maxlength="9" class="glass-input" placeholder="00000-000">
+          <!-- Se usuário logado e tiver endereços, mostrar opções salvas -->
+          {% if session.usuario_id and enderecos %}
+          <div style="margin-bottom:10px;">
+            <strong>Usar endereço salvo</strong>
+            <div style="margin-top:8px;">
+              {% for e in enderecos %}
+              <label class="saved-label" style="display:block; margin-bottom:6px; border:1px solid var(--border); padding:8px; border-radius:8px; cursor:pointer;">
+                <input type="radio" name="endereco_selecionado" value="{{ e.id }}" data-rua="{{ e.rua|e }}" data-numero="{{ e.numero|e }}" data-bairro="{{ e.bairro|e }}" data-cidade="{{ e.cidade|e }}" data-estado="{{ e.estado|e }}" data-cep="{{ e.cep|e }}" style="margin-right:8px;">
+                <strong>{{ e.nome_destinatario }}</strong> — {{ e.rua }}, {{ e.numero }} {% if e.bairro %} - {{ e.bairro }}{% endif %} — {{ e.cidade }}/{{ e.estado }} • CEP {{ e.cep }}
+              </label>
+              {% endfor %}
+              <label style="display:block; margin-top:6px; cursor:pointer;">
+                <input type="radio" name="endereco_selecionado" value="novo" checked style="margin-right:8px;"> Usar/Inserir novo endereço
+              </label>
             </div>
           </div>
+          {% endif %}
 
+          <!-- Formulário de endereço (agora pode ser escondido se usar endereço salvo) -->
+          <div id="enderecoFormWrapper">
+            <label>Rua *</label>
+            <input name="rua" id="rua" required class="glass-input" placeholder="Av. Exemplo">
+
+            <div style="display:flex; gap:8px;">
+              <div style="flex:1">
+                <label>Número *</label>
+                <input name="numero" id="numero" required class="glass-input" placeholder="123">
+              </div>
+              <div style="flex:1">
+                <label>Bairro</label>
+                <input name="bairro" id="bairro" class="glass-input" placeholder="Centro">
+              </div>
+            </div>
+
+            <div style="display:flex; gap:8px; margin-top:8px;">
+              <div style="flex:1">
+                <label>Estado *</label>
+                <select name="estado" id="estado" required class="glass-input"></select>
+              </div>
+              <div style="flex:2">
+                <label>Cidade *</label>
+                <select name="cidade" id="cidade" required class="glass-input"></select>
+              </div>
+              <div style="width:120px">
+                <label>CEP *</label>
+                <input name="cep" id="cep" required maxlength="9" class="glass-input" placeholder="00000-000">
+              </div>
+            </div>
+
+            <label style="margin-top:8px;">
+              <input type="checkbox" id="lembrar_endereco" name="lembrar_endereco">
+              Lembrar endereço de entrega
+            </label>
+          </div>
         </div>
       </div>
 
@@ -99,6 +124,28 @@
 
         <h3 style="margin-top:14px;">Método de pagamento</h3>
         <div class="glass-card" style="padding:12px; border-radius:10px;">
+          <!-- Se usuário logado e tiver métodos salvos, mostre-os -->
+          {% if session.usuario_id and pagamentos %}
+          <div style="margin-bottom:10px;">
+            <strong>Usar método salvo</strong>
+            <div style="margin-top:8px;">
+              {% for p in pagamentos %}
+              <label class="saved-pay-label" style="display:block; margin-bottom:6px; border:1px solid var(--border); padding:8px; border-radius:8px; cursor:pointer;">
+                <input type="radio" name="pagamento_selecionado" value="{{ p.id }}" data-tipo="{{ p.tipo }}" data-nome="{{ p.nome_impresso|default('') }}" data-validade="{{ p.validade|default('') }}" data-pix="{{ p.chave_pix|default('') }}" style="margin-right:8px;">
+                {% if p.tipo == 'PIX' %}
+                  PIX — <small>{{ p.chave_pix }}</small>
+                {% else %}
+                  Cartão — <small>{{ p.numero_mascarado }}</small> • {{ p.nome_impresso or '' }}
+                {% endif %}
+              </label>
+              {% endfor %}
+              <label style="display:block; margin-top:6px; cursor:pointer;">
+                <input type="radio" name="pagamento_selecionado" value="novo" checked style="margin-right:8px;"> Usar/Inserir novo método
+              </label>
+            </div>
+          </div>
+          {% endif %}
+
           <label style="display:block; margin-bottom:8px;">
             <input type="radio" name="metodo_pagamento" value="PIX" required> PIX (gerará QR)
           </label>
@@ -120,7 +167,7 @@
           </div>
 
           <label style="margin-top: 10px;">
-            <input type="checkbox" name="lembrar_pagamento">
+            <input type="checkbox" name="lembrar_pagamento" id="lembrar_pagamento">
             Lembrar método de pagamento
           </label>
 
@@ -158,6 +205,10 @@
   cursor:pointer;
 }
 .btn-primary:hover{ filter:brightness(.95); }
+
+.saved-label:hover, .saved-pay-label:hover{
+  background: rgba(0,0,0,0.03);
+}
 
 body.dark select {
   background-color: #1e1e1e !important;
@@ -232,6 +283,22 @@ async function carregarEstados() {
   });
 }
 
+// ---------- HELPERS ----------
+function setHiddenField(form, name, value) {
+  let el = document.querySelector(`#checkoutForm input[name="${name}"]`);
+  if (!value && el) {
+    el.remove();
+    return;
+  }
+  if (!el) {
+    el = document.createElement('input');
+    el.type = 'hidden';
+    el.name = name;
+    document.getElementById('checkoutForm').appendChild(el);
+  }
+  el.value = value;
+}
+
 // ---------- MAIN ----------
 document.addEventListener("DOMContentLoaded", () => {
   carregarEstados(); // apenas IBGE
@@ -248,13 +315,137 @@ document.addEventListener("DOMContentLoaded", () => {
   if(card) card.addEventListener('input', e => e.target.value = maskCard(e.target.value));
   if(val) val.addEventListener('input', e => e.target.value = maskMMYY(e.target.value));
 
-  // Mostrar cartão
+  const cartaoBox = document.getElementById('cartaoBox');
+  const enderecoFormWrapper = document.getElementById('enderecoFormWrapper');
+
+  // Mostrar/ocultar campos do cartão quando rádio muda
   document.querySelectorAll('input[name="metodo_pagamento"]').forEach(r => {
     r.addEventListener('change', () => {
-      const cartaoBox = document.getElementById('cartaoBox');
-      cartaoBox.style.display = (r.value === 'CARTAO' && r.checked) ? 'block' : 'none';
+      const metodo = r.value;
+      // if a saved payment is selected we will keep cartaoBox hidden; only show when user explicitly chooses new CARTAO
+      const pagamentoSelecionado = document.querySelector('input[name="pagamento_selecionado"]:checked');
+      const usingSavedPayment = pagamentoSelecionado && pagamentoSelecionado.value !== 'novo';
+      if (metodo === 'CARTAO') {
+        if (!usingSavedPayment) cartaoBox.style.display = 'block';
+        else cartaoBox.style.display = 'none';
+      } else {
+        cartaoBox.style.display = 'none';
+      }
     });
   });
+
+  // Toggle behavior for endereco saved radios (click twice -> revert to "novo")
+  let lastEndereco = null;
+  document.querySelectorAll('input[name="endereco_selecionado"]').forEach(r => {
+    r.addEventListener('click', (ev) => {
+      // If clicked same as last, toggle back to 'novo'
+      if (String(lastEndereco) === String(r.value)) {
+        const novo = document.querySelector('input[name="endereco_selecionado"][value="novo"]');
+        if (novo) { novo.checked = true; novo.dispatchEvent(new Event('change')); }
+        lastEndereco = 'novo';
+        return;
+      }
+      lastEndereco = r.value;
+    });
+    r.addEventListener('change', () => {
+      const selected = document.querySelector('input[name="endereco_selecionado"]:checked').value;
+      if (selected === 'novo') {
+        // show form and remove hidden address fields
+        enderecoFormWrapper.style.display = 'block';
+        setHiddenField(document.getElementById('checkoutForm'), 'endereco_id', '');
+        setHiddenField(document.getElementById('checkoutForm'), 'endereco_rua', '');
+        setHiddenField(document.getElementById('checkoutForm'), 'endereco_numero', '');
+        setHiddenField(document.getElementById('checkoutForm'), 'endereco_bairro', '');
+        setHiddenField(document.getElementById('checkoutForm'), 'endereco_cidade', '');
+        setHiddenField(document.getElementById('checkoutForm'), 'endereco_estado', '');
+        setHiddenField(document.getElementById('checkoutForm'), 'endereco_cep', '');
+      } else {
+        // use saved address: hide form and set hidden fields to submit to server
+        const radio = document.querySelector('input[name="endereco_selecionado"]:checked');
+        enderecoFormWrapper.style.display = 'none';
+        setHiddenField(document.getElementById('checkoutForm'), 'endereco_id', radio.value);
+        setHiddenField(document.getElementById('checkoutForm'), 'endereco_rua', radio.dataset.rua || '');
+        setHiddenField(document.getElementById('checkoutForm'), 'endereco_numero', radio.dataset.numero || '');
+        setHiddenField(document.getElementById('checkoutForm'), 'endereco_bairro', radio.dataset.bairro || '');
+        setHiddenField(document.getElementById('checkoutForm'), 'endereco_cidade', radio.dataset.cidade || '');
+        setHiddenField(document.getElementById('checkoutForm'), 'endereco_estado', radio.dataset.estado || '');
+        setHiddenField(document.getElementById('checkoutForm'), 'endereco_cep', radio.dataset.cep || '');
+        // Ensure "lembrar_endereco" is only sent if user checks box in UI before (we kept the checkbox inside the visible form)
+        // If form hidden, the checkbox isn't visible; we won't set it automatically.
+      }
+    });
+  });
+
+  // Toggle behavior for pagamento saved radios (click twice -> revert to "novo")
+  let lastPagamento = null;
+  document.querySelectorAll('input[name="pagamento_selecionado"]').forEach(r => {
+    r.addEventListener('click', () => {
+      if (String(lastPagamento) === String(r.value)) {
+        const novo = document.querySelector('input[name="pagamento_selecionado"][value="novo"]');
+        if (novo) { novo.checked = true; novo.dispatchEvent(new Event('change')); }
+        lastPagamento = 'novo';
+        return;
+      }
+      lastPagamento = r.value;
+    });
+    r.addEventListener('change', () => {
+      const sel = document.querySelector('input[name="pagamento_selecionado"]:checked').value;
+      // remove hidden payment fields first
+      setHiddenField(document.getElementById('checkoutForm'), 'pagamento_id', '');
+      setHiddenField(document.getElementById('checkoutForm'), 'pix_chave', '');
+      setHiddenField(document.getElementById('checkoutForm'), 'cartao_nome_hidden', '');
+      setHiddenField(document.getElementById('checkoutForm'), 'cartao_validade_hidden', '');
+
+      if (sel === 'novo') {
+        // show payment form if user chooses new method: leave visible based on selected metodo_pagamento radio
+        const metodoChecked = document.querySelector('input[name="metodo_pagamento"]:checked');
+        if (metodoChecked && metodoChecked.value === 'CARTAO') cartaoBox.style.display = 'block';
+        else cartaoBox.style.display = 'none';
+      } else {
+        // using saved payment: hide payment form and set hidden fields
+        cartaoBox.style.display = 'none';
+        const radio = document.querySelector('input[name="pagamento_selecionado"]:checked');
+        setHiddenField(document.getElementById('checkoutForm'), 'pagamento_id', radio.value);
+        if (radio.dataset.tipo === 'PIX') {
+          // set metodo_pagamento radio to PIX and set pix_chave hidden
+          const pixRadio = document.querySelector('input[name="metodo_pagamento"][value="PIX"]');
+          if (pixRadio) { pixRadio.checked = true; pixRadio.dispatchEvent(new Event('change')); }
+          setHiddenField(document.getElementById('checkoutForm'), 'pix_chave', radio.dataset.pix || '');
+        } else if (radio.dataset.tipo === 'CARTAO') {
+          // set metodo_pagamento radio to CARTAO
+          const cartRadio = document.querySelector('input[name="metodo_pagamento"][value="CARTAO"]');
+          if (cartRadio) { cartRadio.checked = true; cartRadio.dispatchEvent(new Event('change')); }
+          // fill only non-sensitive fields in hidden inputs
+          setHiddenField(document.getElementById('checkoutForm'), 'cartao_nome_hidden', radio.dataset.nome || '');
+          setHiddenField(document.getElementById('checkoutForm'), 'cartao_validade_hidden', radio.dataset.validade || '');
+        }
+      }
+    });
+  });
+
+  // When user explicitly changes metodo_pagamento to CARTAO, show cartaoBox if not using a saved payment
+  document.querySelectorAll('input[name="metodo_pagamento"]').forEach(r => {
+    r.addEventListener('change', () => {
+      const pagamentoSelecionado = document.querySelector('input[name="pagamento_selecionado"]:checked');
+      const usingSaved = pagamentoSelecionado && pagamentoSelecionado.value !== 'novo';
+      if (r.value === 'CARTAO') {
+        if (!usingSaved) cartaoBox.style.display = 'block';
+        else cartaoBox.style.display = 'none';
+      } else {
+        cartaoBox.style.display = 'none';
+      }
+    });
+  });
+
+  // Ensure initial state matches 'novo' (if any)
+  const pagoInit = document.querySelector('input[name="pagamento_selecionado"]:checked');
+  if (pagoInit && pagoInit.value !== 'novo') pagoInit.dispatchEvent(new Event('change'));
+  const endInit = document.querySelector('input[name="endereco_selecionado"]:checked');
+  if (endInit && endInit.value !== 'novo') endInit.dispatchEvent(new Event('change'));
+
+  // When user toggles "lembrar_endereco" while using saved address: it won't do anything here because we hide the checkbox with the hidden form.
+  // The checkbox for remembering exists only when the new-address form is visible (per design). If you want a checkbox for saved addresses, we can add it.
+
 });
 </script>
 
