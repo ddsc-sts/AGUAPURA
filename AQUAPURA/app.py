@@ -19,8 +19,8 @@ def conectar():
     return mysql.connector.connect(
         host="localhost",
         user="root",
-        port=3407,
-        password="root",   # altere se tiver senha
+        port=3406,
+        password="",   # altere se tiver senha
         database="aguapura"
     )
 
