@@ -1,13 +1,14 @@
 alterações aguapura:
 
-precisa de ajustar as compras e simular a compra
+
+decidir e arrumar o rodapé
+alinhar o cabeçalho
 criar novas imagens para o carrossel
-criar novas imagens para os produtos
-painel do adm com crud
-adcionar gestão de pedidos no painel do adm
-definir no perfil os campos de cpf endereço e etc para quando for finalizar a compra ja ter la para ele adcionar
-colocar uma opçao de lembrar o metodo de pagamento para proxima compra
-na parte do checkout colocar as tabelas de cidade e estado no modo escuro e adcionar todas as cidades
+criar novos produtos no banco de dados
+fazer o calculo do frete, e aplicar a condição caso for pra santa catarina
+definir os avatar de cliente e de admin por padrao
+arrumar o sobre
+mostrar a foto no perfil que esta bugado
 
 
 

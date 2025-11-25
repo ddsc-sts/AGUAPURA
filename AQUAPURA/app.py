@@ -19,8 +19,8 @@ def conectar():
     return mysql.connector.connect(
         host="localhost",
         user="root",
-        port=3406,
-        password="",   # altere se tiver senha
+        port=3407,
+        password="root",   # altere se tiver senha
         database="aguapura"
     )
 
@@ -968,9 +968,6 @@ def buscar():
 
     return render_template("buscar.html", termo=termo, resultados=resultados)
 
-# ---------------------------
-# Checkout (dados do cliente + escolha método) - GET mostra o form, POST processa
-# ---------------------------
 @app.route("/checkout", methods=["GET", "POST"])
 def checkout():
     db = conectar()
@@ -1040,17 +1037,17 @@ def checkout():
                                pagamentos=pagamentos)
 
     # ---------------- POST ----------------
-    # ler dados do formulário (endereços separados)
+    # Dados básicos do cliente
     nome = request.form.get("nome", "").strip()
     cpf = request.form.get("cpf", "").strip()
     email = request.form.get("email", "").strip()
     telefone = request.form.get("telefone", "").strip()
 
-    # Verificar se foi selecionado um endereco salvo
+    # ========== ENDEREÇO ==========
     endereco_selecionado = request.form.get("endereco_selecionado", "novo")
 
     if endereco_selecionado != "novo":
-        # buscar endereço no banco e preencher variáveis
+        # Usa endereço salvo
         cursor.execute("SELECT * FROM enderecos_usuarios WHERE id = %s", (endereco_selecionado,))
         endereco_row = cursor.fetchone()
         if endereco_row:
@@ -1068,27 +1065,95 @@ def checkout():
             db.close()
             return redirect(url_for("checkout"))
     else:
+        # Usa endereço novo do formulário
         rua = request.form.get("rua", "").strip()
         numero = request.form.get("numero", "").strip()
         bairro = request.form.get("bairro", "").strip()
         estado = request.form.get("estado", "").strip()
         cidade = request.form.get("cidade", "").strip()
         cep = request.form.get("cep", "").strip()
-        nome_destinatario = nome  # usa nome do formulário
+        nome_destinatario = nome
 
-    metodo = request.form.get("metodo_pagamento")  # "PIX" ou "CARTAO"
+    # ========== PAGAMENTO ==========
+    pagamento_selecionado = request.form.get("pagamento_selecionado", "pix_padrao")
+    
+    # Determinar método de pagamento
+    metodo_pagamento = None
+    pix_chave = None
+    cartao_info = {}
 
-    # Se usuário escolheu método salvo
-    pagamento_selecionado = request.form.get("pagamento_selecionado", "novo")
+    if pagamento_selecionado == "pix_padrao":
+        # PIX padrão (sem chave salva)
+        metodo_pagamento = "PIX"
+        
+    elif pagamento_selecionado == "novo":
+        # Novo método - ler do campo metodo_pagamento
+        metodo_pagamento = request.form.get("metodo_pagamento", "").strip()
+        
+        if metodo_pagamento == "PIX":
+            pix_chave = request.form.get("pix_chave", "").strip()
+            if not pix_chave:
+                flash("Informe a chave PIX.", "erro")
+                cursor.close()
+                db.close()
+                return redirect(url_for("checkout"))
+                
+        elif metodo_pagamento == "CARTAO":
+            cartao_num = request.form.get("cartao_num", "").strip()
+            cartao_nome = request.form.get("cartao_nome", "").strip()
+            cartao_validade = request.form.get("cartao_validade", "").strip()
+            cartao_cvv = request.form.get("cartao_cvv", "").strip()
+            
+            # Validação básica
+            cartao_num_digits = re.sub(r"\D", "", cartao_num)
+            if len(cartao_num_digits) < 12:
+                flash("Número do cartão inválido.", "erro")
+                cursor.close()
+                db.close()
+                return redirect(url_for("checkout"))
+            
+            cartao_info = {
+                "nome_impresso": cartao_nome,
+                "numero": cartao_num_digits,
+                "numero_mascarado": '**** **** **** ' + cartao_num_digits[-4:],
+                "validade": cartao_validade,
+                "cvv": cartao_cvv
+            }
+        else:
+            flash("Método de pagamento inválido.", "erro")
+            cursor.close()
+            db.close()
+            return redirect(url_for("checkout"))
+            
+    else:
+        # Método salvo - buscar no banco
+        cursor.execute("SELECT * FROM pagamentos_usuarios WHERE id = %s", (pagamento_selecionado,))
+        p_row = cursor.fetchone()
+        
+        if p_row:
+            metodo_pagamento = p_row.get("tipo")
+            if metodo_pagamento == "PIX":
+                pix_chave = p_row.get("chave_pix")
+            else:
+                cartao_info = {
+                    "nome_impresso": p_row.get("nome_impresso"),
+                    "numero_mascarado": p_row.get("numero_mascarado"),
+                    "validade": p_row.get("validade")
+                }
+        else:
+            flash("Método de pagamento não encontrado.", "erro")
+            cursor.close()
+            db.close()
+            return redirect(url_for("checkout"))
 
-    # val server-side mínimo
-    if not nome or not cpf or not rua or not numero or not estado or not cidade or not cep or not metodo:
+    # Validações básicas
+    if not nome or not cpf or not rua or not numero or not estado or not cidade or not cep or not metodo_pagamento:
         flash("Preencha todos os campos obrigatórios.", "erro")
         cursor.close()
         db.close()
         return redirect(url_for("checkout"))
 
-    # normaliza cpf/cep (apenas dígitos)
+    # Normaliza cpf/cep
     cpf_digits = re.sub(r"\D", "", cpf)
     cep_digits = re.sub(r"\D", "", cep)
 
@@ -1103,7 +1168,7 @@ def checkout():
         db.close()
         return redirect(url_for("checkout"))
 
-    # recalcular total e validar estoque antes de criar pedido
+    # Recalcular total e validar estoque
     subtotal = Decimal("0.00")
     for item in itens:
         preco = Decimal(item["preco"])
@@ -1126,67 +1191,33 @@ def checkout():
     frete = Decimal("12.00") if subtotal > 0 else Decimal("0.00")
     total = subtotal + frete
 
-    # monta endereço final
+    # Monta endereço completo
     endereco_texto = f"{rua}, {numero}" + (f" - {bairro}" if bairro else "") + f" - {cidade}/{estado} - CEP {cep_digits}"
 
-    # ------ NOVO: Salvar endereço se marcado ------
+    # ========== SALVAR ENDEREÇO SE MARCADO ==========
     lembrar_endereco = request.form.get("lembrar_endereco")
+    user_id = session.get("usuario_id")
 
-    if lembrar_endereco and "usuario_id" in session and endereco_selecionado == "novo":
+    if lembrar_endereco and user_id and endereco_selecionado == "novo":
         try:
             cursor.execute("""
                 INSERT INTO enderecos_usuarios 
                 (usuario_id, nome_destinatario, cpf, rua, numero, bairro, cidade, estado, cep)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """, (
-                session["usuario_id"],
-                nome_destinatario,
-                cpf_digits,
-                rua,
-                numero,
-                bairro,
-                cidade,
-                estado,
-                cep_digits
-            ))
+            """, (user_id, nome_destinatario, cpf_digits, rua, numero, bairro, cidade, estado, cep_digits))
             db.commit()
         except Exception as e:
             print("Erro salvando endereço:", e)
             db.rollback()
 
-    # se pagamento selecionado salvo, sobrescreve dados do método (não pega número real)
-    pix_chave = None
-    cartao_info = {}
-    if pagamento_selecionado != "novo":
-        cursor.execute("SELECT * FROM pagamentos_usuarios WHERE id = %s", (pagamento_selecionado,))
-        p_row = cursor.fetchone()
-        if p_row:
-            if p_row.get("tipo") == "PIX":
-                pix_chave = p_row.get("chave_pix")
-            else:
-                cartao_info = {
-                    "nome_impresso": p_row.get("nome_impresso"),
-                    "numero_mascarado": p_row.get("numero_mascarado"),
-                    "validade": p_row.get("validade")
-                }
-
-    # Caso o usuário tenha marcado "lembrar_pagamento" e esteja usando novo cartão/PIX, salvar no banco
-    lembrar = request.form.get("lembrar_pagamento")
-    user_id = session.get("usuario_id")
-
+    # ========== CRIAR PEDIDO ==========
     try:
-        # criar pedido
         usuario_for_insert = user_id if user_id else None
-
-        if pagamento_selecionado != "novo" and p_row:
-            metodo_para_salvar = p_row.get("tipo")
-        else:
-            metodo_para_salvar = metodo
 
         cursor.execute("""
             INSERT INTO pedidos (usuario_id, valor_total, status, pagamento_metodo, cliente_nome, cliente_cpf, cliente_endereco)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """, (usuario_for_insert, str(total), "aguardando_pagamento", metodo_para_salvar, nome_destinatario or nome, cpf_digits, endereco_texto))
+        """, (usuario_for_insert, str(total), "aguardando_pagamento", metodo_pagamento, nome_destinatario or nome, cpf_digits, endereco_texto))
         db.commit()
     except Exception as e:
         db.rollback()
@@ -1198,7 +1229,7 @@ def checkout():
 
     pedido_id = cursor.lastrowid
 
-    # inserir itens do pedido e reduzir estoque
+    # ========== INSERIR ITENS E REDUZIR ESTOQUE ==========
     try:
         for item in itens:
             produto_id = item["produto_id"]
@@ -1212,28 +1243,23 @@ def checkout():
 
             cursor.execute("UPDATE produtos SET estoque = estoque - %s WHERE id = %s", (qtd, produto_id))
 
-        # salvar método de pagamento se solicitado
-        if lembrar and user_id and pagamento_selecionado == "novo":
-            if metodo == "PIX":
-                chave_pix = request.form.get("pix_chave") or request.form.get("chave_pix") or None
-                if chave_pix:
-                    cursor.execute("""
-                        INSERT INTO pagamentos_usuarios (usuario_id, tipo, chave_pix)
-                        VALUES (%s, %s, %s)
-                    """, (user_id, 'PIX', chave_pix))
+        # ========== SALVAR MÉTODO DE PAGAMENTO SE MARCADO ==========
+        lembrar_pagamento = request.form.get("lembrar_pagamento")
 
-            elif metodo == "CARTAO":
-                nome_impresso = request.form.get("cartao_nome", "").strip()
-                numero = request.form.get("cartao_num", "").strip()
-                validade = request.form.get("cartao_validade", "").strip()
-                numero_digits = re.sub(r"\D", "", numero)
-                if len(numero_digits) >= 12:
-                    numero_mascarado = '**** **** **** ' + numero_digits[-4:]
-                    cursor.execute("""
-                        INSERT INTO pagamentos_usuarios (usuario_id, tipo, nome_impresso, numero_mascarado, validade)
-                        VALUES (%s, %s, %s, %s, %s)
-                    """, (user_id, 'CARTAO', nome_impresso, numero_mascarado, validade))
+        if lembrar_pagamento and user_id and pagamento_selecionado == "novo":
+            if metodo_pagamento == "PIX" and pix_chave:
+                cursor.execute("""
+                    INSERT INTO pagamentos_usuarios (usuario_id, tipo, chave_pix)
+                    VALUES (%s, %s, %s)
+                """, (user_id, 'PIX', pix_chave))
 
+            elif metodo_pagamento == "CARTAO" and cartao_info:
+                cursor.execute("""
+                    INSERT INTO pagamentos_usuarios (usuario_id, tipo, nome_impresso, numero_mascarado, validade)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (user_id, 'CARTAO', cartao_info["nome_impresso"], cartao_info["numero_mascarado"], cartao_info["validade"]))
+
+        # Limpar carrinho
         cursor.execute("DELETE FROM carrinho WHERE session_id = %s", (session_id,))
         db.commit()
 

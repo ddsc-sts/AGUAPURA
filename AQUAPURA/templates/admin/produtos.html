@@ -5,187 +5,195 @@
 {% block painel_content %}
 
 <style>
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 30px;
-        padding-bottom: 20px;
-        border-bottom: 2px solid var(--border);
-    }
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--border);
+}
 
-    .page-header h1 {
-        color: var(--texto);
-        font-size: 2.2em;
-    }
+.page-header h1 {
+    color: var(--text);
+    font-size: 2.2em;
+    font-weight: 700;
+}
 
-    .btn-novo {
-        padding: 14px 28px;
-        background: var(--azul);
-        color: white;
-        text-decoration: none;
-        border-radius: 10px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-    }
+/* BOTÃO NOVO */
+.btn-novo {
+    padding: 14px 28px;
+    background: var(--primary);
+    color: white;
+    text-decoration: none;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 12px rgba(8, 145, 178, 0.2);
+}
 
-    .btn-novo:hover {
-        background: var(--azul-escuro);
-        transform: translateY(-2px);
-        box-shadow: 0 5px 20px rgba(110, 168, 254, 0.4);
-    }
+.btn-novo:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(8, 145, 178, 0.35);
+}
 
-    .produtos-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 25px;
-    }
+/* GRID DE PRODUTOS */
+.produtos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 25px;
+}
 
-    .produto-card {
-        background: var(--card-bg);
-        border-radius: 15px;
-        overflow: hidden;
-        box-shadow: 0 4px 15px var(--shadow);
-        border: 2px solid var(--border);
-        transition: all 0.3s ease;
-    }
+.produto-card {
+    background: var(--card);
+    border-radius: 15px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    transition: all 0.3s ease;
+}
 
-    .produto-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px var(--shadow);
-    }
+.produto-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+}
 
-    .produto-imagem {
-        width: 100%;
-        height: 200px;
-        object-fit: cover;
-    }
+.produto-imagem {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
 
-    .produto-info {
-        padding: 20px;
-    }
+/* INFO DO PRODUTO */
+.produto-info {
+    padding: 20px;
+}
 
-    .produto-info h3 {
-        color: var(--texto);
-        font-size: 1.2em;
-        margin-bottom: 10px;
-    }
+.produto-info h3 {
+    color: var(--text);
+    font-size: 1.2em;
+    margin-bottom: 10px;
+}
 
-    .produto-categoria {
-        display: inline-block;
-        padding: 5px 12px;
-        background: var(--cinza);
-        color: var(--texto);
-        border-radius: 15px;
-        font-size: 0.85em;
-        margin-bottom: 12px;
-        font-weight: 600;
-    }
+.produto-categoria {
+    display: inline-block;
+    padding: 5px 12px;
+    background: var(--sidebar-hover);
+    color: var(--text);
+    border-radius: 15px;
+    font-size: 0.85em;
+    margin-bottom: 12px;
+    font-weight: 600;
+}
 
-    .produto-preco {
-        font-size: 1.6em;
-        color: var(--azul);
-        font-weight: 700;
-        margin-bottom: 8px;
-    }
+.produto-preco {
+    font-size: 1.6em;
+    color: var(--primary);
+    font-weight: 700;
+    margin-bottom: 8px;
+}
 
-    .produto-estoque {
-        font-size: 0.9em;
-        color: var(--texto);
-        opacity: 0.8;
-        margin-bottom: 15px;
-    }
+.produto-estoque {
+    font-size: 0.9em;
+    color: var(--text-light);
+    margin-bottom: 15px;
+}
 
-    .produto-estoque.baixo {
-        color: #dc3545;
-        font-weight: 600;
-    }
+.produto-estoque.baixo {
+    color: #dc3545;
+    font-weight: 600;
+}
 
-    .produto-estoque.esgotado {
-        color: #842029;
-        font-weight: 700;
-    }
+.produto-estoque.esgotado {
+    color: #842029;
+    font-weight: 700;
+}
 
-    .produto-acoes {
-        display: flex;
-        gap: 10px;
-        padding-top: 15px;
-        border-top: 2px solid var(--border);
-    }
+/* AÇÕES */
+.produto-acoes {
+    display: flex;
+    gap: 10px;
+    padding-top: 15px;
+    border-top: 2px solid var(--border);
+}
 
-    .btn-editar,
-    .btn-excluir {
-        flex: 1;
-        padding: 10px;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        text-decoration: none;
-        text-align: center;
-    }
+.btn-editar,
+.btn-excluir {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    text-align: center;
+}
 
-    .btn-editar {
-        background: var(--azul);
-        color: white;
-    }
+/* EDITAR */
+.btn-editar {
+    background: var(--primary);
+    color: white;
+}
 
-    .btn-editar:hover {
-        background: var(--azul-escuro);
-    }
+.btn-editar:hover {
+    background: var(--primary-dark);
+}
 
-    .btn-excluir {
-        background: #dc3545;
-        color: white;
-    }
+/* EXCLUIR */
+.btn-excluir {
+    background: #dc3545;
+    color: white;
+}
 
-    .btn-excluir:hover {
-        background: #c82333;
-    }
+.btn-excluir:hover {
+    background: #c82333;
+}
 
-    .stats-resumo {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 20px;
-        margin-bottom: 30px;
-    }
+/* RESUMO */
+.stats-resumo {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
 
-    .stat-box {
-        background: var(--card-bg);
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px var(--shadow);
-        border: 2px solid var(--border);
-        text-align: center;
-    }
+.stat-box {
+    background: var(--card);
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
 
-    .stat-box .valor {
-        font-size: 2em;
-        font-weight: 700;
-        color: var(--azul);
-        margin-bottom: 8px;
-    }
+.stat-box .valor {
+    font-size: 2em;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 8px;
+}
 
-    .stat-box .label {
-        color: var(--texto);
-        opacity: 0.8;
-    }
+.stat-box .label {
+    color: var(--text-light);
+}
 
-    .sem-produtos {
-        text-align: center;
-        padding: 80px 20px;
-        color: var(--texto);
-    }
+/* SEM PRODUTOS */
+.sem-produtos {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--text-light);
+}
 
-    .sem-produtos-icon {
-        font-size: 5em;
-        margin-bottom: 20px;
-        opacity: 0.5;
-    }
+.sem-produtos-icon {
+    font-size: 5em;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
 </style>
 
 <div class="page-header">
@@ -219,7 +227,7 @@
 <div class="produtos-grid">
     {% for produto in produtos %}
     <div class="produto-card">
-        <img src="{{ url_for('static', filename=produto.imagem_principal) }}" 
+        <img src="{{ produto.imagem_principal }}" alt="{{ produto.nome }}"
              alt="{{ produto.nome }}" 
              class="produto-imagem">
         

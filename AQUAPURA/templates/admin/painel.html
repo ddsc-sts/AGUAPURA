@@ -3,167 +3,180 @@
 {% block title %}Painel Administrativo - AquaPura{% endblock %}
 
 {% block painel_content %}
-
 <style>
-    .dashboard-header {
-        margin-bottom: 40px;
-    }
+/* HEADER DO DASHBOARD */
+.dashboard-header {
+    margin-bottom: 40px;
+}
 
-    .dashboard-header h1 {
-        color: var(--texto);
-        font-size: 2.5em;
-        margin-bottom: 10px;
-    }
+.dashboard-header h1 {
+    color: var(--text);
+    font-size: 2.5em;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
 
-    .dashboard-header p {
-        color: var(--texto);
-        opacity: 0.7;
-        font-size: 1.1em;
-    }
+.dashboard-header p {
+    color: var(--text-light);
+    font-size: 1.1em;
+}
 
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 25px;
-        margin-bottom: 40px;
-    }
+/* GRID DE ESTATÍSTICAS */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 25px;
+    margin-bottom: 40px;
+}
 
-    .stat-card {
-        background: var(--card-bg);
-        padding: 30px;
-        border-radius: 15px;
-        box-shadow: 0 4px 15px var(--shadow);
-        border: 2px solid var(--border);
-        transition: transform 0.3s ease;
-    }
+.stat-card {
+    background: var(--card);
+    padding: 30px;
+    border-radius: 15px;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    transition: transform 0.3s ease;
+}
 
-    .stat-card:hover {
-        transform: translateY(-5px);
-    }
+.stat-card:hover {
+    transform: translateY(-5px);
+}
 
-    .stat-icon {
-        font-size: 3em;
-        margin-bottom: 15px;
-    }
+.stat-icon {
+    font-size: 3em;
+    margin-bottom: 15px;
+    color: var(--primary);
+}
 
-    .stat-valor {
-        font-size: 2.5em;
-        font-weight: 700;
-        color: var(--azul);
-        margin-bottom: 10px;
-    }
+.stat-valor {
+    font-size: 2.4em;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 5px;
+}
 
-    .stat-label {
-        color: var(--texto);
-        font-size: 1.1em;
-        opacity: 0.8;
-    }
+.stat-label {
+    color: var(--text-light);
+    font-size: 1.1em;
+}
 
-    .secao-titulo {
-        color: var(--texto);
-        font-size: 1.8em;
-        margin: 40px 0 25px 0;
-        padding-bottom: 15px;
-        border-bottom: 2px solid var(--border);
-    }
+/* TÍTULOS DE SEÇÃO */
+.secao-titulo {
+    color: var(--text);
+    font-size: 1.7em;
+    margin: 40px 0 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--border);
+}
 
+/* GRID CONTEÚDO */
+.conteudo-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+}
+
+.card-secao {
+    background: var(--card);
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    border: 1px solid var(--border);
+}
+
+.card-secao h3 {
+    color: var(--text);
+    font-size: 1.4em;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* LISTA DE PEDIDOS */
+.pedido-item {
+    padding: 15px;
+    background: var(--sidebar-hover);
+    border-radius: 10px;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content:space-between;
+    align-items: center;
+}
+
+.pedido-info {
+    color: var(--text);
+}
+
+.pedido-info strong {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.pedido-info small {
+    color: var(--text-light);
+}
+
+/* BADGE MINI STATUS */
+.status-mini {
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 0.8em;
+    font-weight: 600;
+    color: white;
+    background: var(--primary);
+}
+
+/* PRODUTOS MAIS VENDIDOS */
+.produto-top {
+    display: flex;
+    gap: 15px;
+    padding: 15px;
+    background: var(--sidebar-hover);
+    border-radius: 10px;
+    margin-bottom: 12px;
+}
+
+.produto-top img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.produto-top-info {
+    flex: 1;
+    color: var(--text);
+}
+
+.produto-top-info h4 {
+    margin-bottom: 5px;
+    color: var(--text);
+}
+
+.produto-top-info p {
+    color: var(--text-light);
+    font-size: 0.9em;
+}
+
+/* BADGE DE VENDAS */
+.vendas-badge {
+    background: var(--primary);
+    color: white;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+/* RESPONSIVO */
+@media (max-width: 968px) {
     .conteudo-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 25px;
+        grid-template-columns: 1fr;
     }
+}
 
-    .card-secao {
-        background: var(--card-bg);
-        padding: 25px;
-        border-radius: 15px;
-        box-shadow: 0 4px 15px var(--shadow);
-    }
-
-    .card-secao h3 {
-        color: var(--texto);
-        font-size: 1.4em;
-        margin-bottom: 20px;
-        padding-bottom: 15px;
-        border-bottom: 2px solid var(--border);
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .pedido-item {
-        padding: 15px;
-        background: var(--cinza);
-        border-radius: 10px;
-        margin-bottom: 12px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .pedido-info {
-        color: var(--texto);
-    }
-
-    .pedido-info strong {
-        display: block;
-        margin-bottom: 5px;
-    }
-
-    .pedido-info small {
-        opacity: 0.7;
-    }
-
-    .status-mini {
-        padding: 5px 12px;
-        border-radius: 15px;
-        font-size: 0.8em;
-        font-weight: 600;
-    }
-
-    .produto-top {
-        display: flex;
-        gap: 15px;
-        padding: 15px;
-        background: var(--cinza);
-        border-radius: 10px;
-        margin-bottom: 12px;
-    }
-
-    .produto-top img {
-        width: 60px;
-        height: 60px;
-        object-fit: cover;
-        border-radius: 8px;
-    }
-
-    .produto-top-info {
-        flex: 1;
-        color: var(--texto);
-    }
-
-    .produto-top-info h4 {
-        margin-bottom: 5px;
-    }
-
-    .produto-top-info p {
-        opacity: 0.7;
-        font-size: 0.9em;
-    }
-
-    .vendas-badge {
-        background: var(--azul);
-        color: white;
-        padding: 8px 15px;
-        border-radius: 20px;
-        font-weight: 600;
-    }
-
-    @media (max-width: 968px) {
-        .conteudo-grid {
-            grid-template-columns: 1fr;
-        }
-    }
 </style>
 
 <div class="dashboard-header">

@@ -371,60 +371,7 @@
             </form>
         </div>
 
-        <!-- ENDEREÇO -->
-        <div class="config-section">
-            <h3 class="section-title">
-                <span>📍</span>
-                Endereço de Entrega
-            </h3>
 
-            <form method="POST" action="/config/atualizar-endereco">
-                <div class="form-group">
-                    <label>CEP</label>
-                    <input type="text" 
-                           name="cep" 
-                           placeholder="00000-000" 
-                           maxlength="9"
-                           id="cep">
-                </div>
-
-                <div class="form-group">
-                    <label>Rua</label>
-                    <input type="text" name="rua" id="rua">
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                    <div class="form-group">
-                        <label>Número</label>
-                        <input type="text" name="numero">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Complemento</label>
-                        <input type="text" name="complemento" placeholder="Opcional">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Bairro</label>
-                    <input type="text" name="bairro" id="bairro">
-                </div>
-
-                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
-                    <div class="form-group">
-                        <label>Cidade</label>
-                        <input type="text" name="cidade" id="cidade">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Estado</label>
-                        <input type="text" name="estado" id="estado" maxlength="2">
-                    </div>
-                </div>
-
-                <button type="submit" class="btn btn-primary">📍 Salvar Endereço</button>
-            </form>
-        </div>
 
         <!-- PREFERÊNCIAS -->
         <div class="config-section">

@@ -1,43 +1,54 @@
--- ============================
--- RESET DO BANCO
--- ============================
+-- ===============================================
+--   CRIAÇÃO DO BANCO DE DADOS
+-- ===============================================
+
 DROP DATABASE IF EXISTS aguapura;
-CREATE DATABASE aguapura;
+CREATE DATABASE aguapura CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 USE aguapura;
 
--- ============================
--- TABELA DE USUÁRIOS (ADMIN)
--- ============================
+-- ===============================================
+--   TABELA: usuarios
+-- ===============================================
+
+DROP TABLE IF EXISTS usuarios;
 CREATE TABLE usuarios (
-    id INT PRIMARY KEY AUTO_INCREMENT,
+    id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(150) NOT NULL,
-    email VARCHAR(150) UNIQUE NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
     senha VARCHAR(255) NOT NULL,
     avatar VARCHAR(255),
     tipo ENUM('admin', 'cliente') DEFAULT 'cliente',
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Criar administrador padrão
-INSERT INTO usuarios (nome, email, senha, tipo) VALUES
-('Administrador', 'admin@aguapura.com', 'admin123', 'admin');
+INSERT INTO usuarios VALUES
+(1,'Administrador','admin@aguapura.com',
+'scrypt:32768:8:1$so3Bg6a8P0OXkBQg$d336d5fe08059bf79b0d3ae47e11260030706a2c9b010b1d1dd66ae79cac169e4040b74cd8a888bbac3a6f2eff263749a018e4084310bb8cc69fd3785b3f5bc6',
+'uploads/avatars/user_admin.png','admin','2025-11-24 18:42:17'),
+(2,'daniel','teste@teste.com',
+'scrypt:32768:8:1$8wRrR5kCYscW53Rv$df2a6f41c305f1854908af5f3d0eba7bdd7f1910ec387001baff74255c4556f61cf0c7582c9cb7273616aad87d0cc5db075ca4ab4862b837d8fed82442e1c9d7',
+'uploads/avatars/user.png','cliente','2025-11-24 19:12:44');
 
--- ============================
--- TABELA DE CATEGORIAS
--- ============================
+-- ===============================================
+--   TABELA: categorias
+-- ===============================================
+
+DROP TABLE IF EXISTS categorias;
 CREATE TABLE categorias (
-    id INT PRIMARY KEY AUTO_INCREMENT,
+    id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(150) NOT NULL
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT INTO categorias (nome) VALUES
-('Garrafa'),
-('Copo'),
-('Acessório');
+INSERT INTO categorias VALUES
+(1,'Garrafa'),
+(2,'Copo'),
+(3,'Acessório');
 
--- ============================
--- TABELA DE PRODUTOS
--- ============================
+-- ===============================================
+--   TABELA: produtos
+-- ===============================================
+
+DROP TABLE IF EXISTS produtos;
 CREATE TABLE produtos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(150) NOT NULL,
@@ -47,140 +58,116 @@ CREATE TABLE produtos (
     imagem_principal VARCHAR(255) NOT NULL,
     estoque INT DEFAULT 0,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ============================
--- TABELA DE IMAGENS ADICIONAIS
--- ============================
-CREATE TABLE imagens_produto (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    produto_id INT NOT NULL,
-    imagem VARCHAR(255),
-    FOREIGN KEY (produto_id) REFERENCES produtos(id) ON DELETE CASCADE
-);
 
--- ============================
--- TABELA DE PEDIDOS
--- ============================
-CREATE TABLE pedidos (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    usuario_id INT,
-    valor_total DECIMAL(10,2),
-    status VARCHAR(50) DEFAULT 'pendente',
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    pagamento_metodo VARCHAR(30) NULL,
-    cliente_nome VARCHAR(150) NULL,
-    cliente_cpf VARCHAR(30) NULL,
-    cliente_endereco TEXT NULL,
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
-);
+INSERT INTO produtos VALUES
+-- 4
+(1,'Copo Térmico Classic 600ml',
+'Copo térmico com parede dupla e vedação superior. Mantém bebidas quentes ou frias por longos períodos.',
+94.90,'Copo','/static/img/copo_classic.png',15,'2025-11-25 16:10:00'),
 
--- ============================
--- ITENS DO PEDIDO
--- ============================
-CREATE TABLE pedido_itens (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    pedido_id INT NOT NULL,
-    produto_id INT NOT NULL,
-    quantidade INT NOT NULL,
-    valor DECIMAL(10,2) NOT NULL,
-    FOREIGN KEY (pedido_id) REFERENCES pedidos(id) ON DELETE CASCADE,
-    FOREIGN KEY (produto_id) REFERENCES produtos(id)
-);
+-- 5
+(2,'Copo Térmico Hexagonal 450ml',
+'Copo térmico estiloso com design hexagonal e isolamento de alto desempenho. Ideal para uso diário.',
+79.90,'Copo','/static/img/copo_hexagonal.png',20,'2025-11-25 16:10:00'),
 
--- ============================
--- CARRINHO
--- ============================
+-- 6
+(3,'Copo Térmico Grip 500ml',
+'Copo térmico com anel de silicone antiderrapante. Excelente para bebidas quentes e geladas.',
+89.90,'Copo','/static/img/copo_grip.png',18,'2025-11-25 16:10:00'),
+
+-- 7
+(4,'Garrafa com Canudo 900ml Travel',
+'Garrafa térmico grande com alça lateral e canudo. Ideal para hidratação diária e atividades ao ar livre.',
+119.90,'Garrafa','/static/img/garrafa_canudo.png',14,'2025-11-25 16:10:00'),
+
+-- 8
+(5,'Taça Térmica Wine 350ml',
+'Taça térmica premium, ideal para vinho, drinks ou bebidas geladas. Parede dupla e acabamento fosco.',
+74.90,'Copo','/static/img/copo_wine.png',22,'2025-11-25 16:10:00'),
+
+-- 9
+(6,'Caneca Térmica Café 350ml',
+'Caneca térmica com alça ergonômica. Mantém a temperatura ideal para café, chá e outras bebidas.',
+69.90,'Copo','/static/img/copo_caneca.png',25,'2025-11-25 16:10:00'),
+
+-- 10
+(7,'Garrafa Térmica Slim 500ml',
+'Garrafa térmica compacta com tampa translúcida. Perfeita para levar na bolsa ou mochila.',
+109.90,'Garrafa','/static/img/garrafa_slim.png',16,'2025-11-25 16:10:00'),
+
+-- 11
+(8,'Garrafa Térmica Tritan 600ml',
+'Garrafa com corpo resistente e tampa flip com trava. Ideal para esportes e uso diário.',
+79.90,'Garrafa','/static/img/garrafa_tritan.png',19,'2025-11-25 16:10:00'),
+
+-- 12
+(9,'Garrafa Esportiva Outdoor 950ml',
+'Garrafa térmica de grande capacidade com alça integrada. Perfeita para trilhas, academia e longas rotinas.',
+139.90,'Garrafa','/static/img/garrafa_esportiva.png',12,'2025-11-25 16:10:00'),
+
+-- 13
+(10,'Tampa Extra para Copos e Garrafas',
+'Tampa extra universal compatível com diversos modelos AquaPura. Material resistente, livre de BPA.',
+24.90,'Acessório','/static/img/copo_tampa.png',30,'2025-11-25 16:10:00');
+
+
+-- ===============================================
+--   TABELA: carrinho
+-- ===============================================
+
+DROP TABLE IF EXISTS carrinho;
 CREATE TABLE carrinho (
     id INT AUTO_INCREMENT PRIMARY KEY,
     session_id VARCHAR(255) NOT NULL,
     produto_id INT NOT NULL,
     quantidade INT DEFAULT 1,
     cor VARCHAR(30) NOT NULL,
-    FOREIGN KEY (produto_id) REFERENCES produtos(id)
-);
+    CONSTRAINT fk_carrinho_produto
+        FOREIGN KEY (produto_id) REFERENCES produtos(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ============================
--- MÉTODOS DE PAGAMENTO SALVOS
--- ============================
-CREATE TABLE pagamentos_usuarios (
+INSERT INTO carrinho VALUES
+(3,'d2ea2769-981b-4f7d-808f-0c39c9772f16',1,1,'Preto'),
+(7,'832a56c4-b3e1-4563-b1df-61a875edf26a',1,1,'Preto');
+
+-- ===============================================
+--   TABELA: imagens_produto
+-- ===============================================
+
+DROP TABLE IF EXISTS imagens_produto;
+CREATE TABLE imagens_produto (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    usuario_id INT NOT NULL,
-    tipo ENUM('PIX', 'CARTAO') NOT NULL,
+    produto_id INT NOT NULL,
+    imagem VARCHAR(255),
+    CONSTRAINT fk_img_produto
+        FOREIGN KEY (produto_id) REFERENCES produtos(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-    -- CARTÃO
-    nome_impresso VARCHAR(150),
-    numero_mascarado VARCHAR(30),
-    validade VARCHAR(7),
+-- (Sem registros)
 
-    -- PIX
-    chave_pix VARCHAR(150),
+-- ===============================================
+--   TABELA: favoritos
+-- ===============================================
 
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
-);
-
--- ============================
--- INSERÇÃO DE PRODUTOS
--- ============================
-INSERT INTO produtos (nome, descricao, preco, categoria, imagem_principal, estoque) VALUES
-(
-    'Garrafa Térmica aqua 750ml',
-    'Garrafa térmica de alta durabilidade, ideal para uso diário. Mantém líquidos frios ou quentes por até 12 horas.',
-    119.90,
-    'Garrafa',
-    '/static/img/garrafas.png',
-    20
-);
-
-INSERT INTO produtos (nome, descricao, preco, categoria, imagem_principal, estoque) VALUES
-(
-    'Copo Térmico Agua 500ml',
-    'Copo térmico com isolamento duplo ideal para bebidas quentes ou frias. Perfeito para seu dia a dia.',
-    89.90,
-    'Copo',
-    '/static/img/copos.png',
-    18
-);
-
-INSERT INTO produtos (nome, descricao, preco, categoria, imagem_principal, estoque) VALUES
-(
-    'Tampa Extra de Silicone',
-    'Tampa de silicone compatível com garrafas térmicas AguaPura. Material resistente e livre de BPA.',
-    29.90,
-    'Acessório',
-    '/static/img/acessorios.png',
-    35
-);
-
--- ============================
--- TABELA FAVORITOS
--- ============================
+DROP TABLE IF EXISTS favoritos;
 CREATE TABLE favoritos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT,
     produto_id INT,
     criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
-    FOREIGN KEY (produto_id) REFERENCES produtos(id)
-);
+    CONSTRAINT fk_fav_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+    CONSTRAINT fk_fav_produto FOREIGN KEY (produto_id) REFERENCES produtos(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ============================
--- TABELA COMPRAS (HISTÓRICO)
--- ============================
-CREATE TABLE compras (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    usuario_id INT,
-    produto VARCHAR(150),
-    quantidade INT,
-    valor DECIMAL(10,2),
-    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
-);
+-- (Sem registros)
 
--- ============================
--- ENDEREÇOS SALVOS DOS USUÁRIOS
--- ============================
+-- ===============================================
+--   TABELA: enderecos_usuarios
+-- ===============================================
+
+DROP TABLE IF EXISTS enderecos_usuarios;
 CREATE TABLE enderecos_usuarios (
     id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT NOT NULL,
@@ -193,69 +180,98 @@ CREATE TABLE enderecos_usuarios (
     estado VARCHAR(2) NOT NULL,
     cep VARCHAR(20) NOT NULL,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
-);
+    CONSTRAINT fk_end_usuario
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ============================
--- ATUALIZAR SENHA DO ADMIN
--- ============================
-UPDATE usuarios 
-SET senha = 'scrypt:32768:8:1$so3Bg6a8P0OXkBQg$d336d5fe08059bf79b0d3ae47e11260030706a2c9b010b1d1dd66ae79cac169e4040b74cd8a888bbac3a6f2eff263749a018e4084310bb8cc69fd3785b3f5bc6',
-    tipo = 'admin'
-WHERE email = 'admin@aguapura.com';
+INSERT INTO enderecos_usuarios VALUES
+(1,1,'DANIEL DOS SANTOS COSTA','16000763948','Rua Janaúba','704','Jardim Iririu','Joinville','SC','89224280','2025-11-24 19:10:41'),
+(2,1,'Administrador','16000763948','Rua areia Branca','704','Jardim Iririu','Joinville','SC','89224280','2025-11-24 19:42:16');
 
--- ============================
--- CONSULTAS
--- ============================
-SELECT id, nome, avatar, criado_em FROM usuarios;
-SELECT nome FROM produtos;
-SELECT id, usuario_id, valor_total, status, pagamento_metodo FROM pedidos WHERE id = 8;
-SELECT * FROM usuarios;
+-- ===============================================
+--   TABELA: pagamentos_usuarios
+-- ===============================================
 
--- ============================
--- LIMPAR PEDIDOS INVÁLIDOS
--- ============================
-DELETE FROM pedidos WHERE usuario_id = 6;
+DROP TABLE IF EXISTS pagamentos_usuarios;
+CREATE TABLE pagamentos_usuarios (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT NOT NULL,
+    tipo ENUM('PIX','CARTAO') NOT NULL,
+    nome_impresso VARCHAR(150),
+    numero_mascarado VARCHAR(30),
+    validade VARCHAR(7),
+    chave_pix VARCHAR(150),
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_pag_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ============================
--- CRIAÇÃO DE PEDIDOS DE EXEMPLO
--- ============================
+INSERT INTO pagamentos_usuarios VALUES
+(1,1,'CARTAO','DANIEL DOS SANTOS COSTA','**** **** **** 2523','10/23',NULL,'2025-11-24 19:12:02'),
+(2,1,'CARTAO','DANIEL DOS SANTOS COSTA','**** **** **** 5235','22/22',NULL,'2025-11-24 19:35:40');
 
--- Pedido 1 (Janeiro)
-INSERT INTO pedidos (usuario_id, valor_total, status, pagamento_metodo, cliente_nome, cliente_cpf, cliente_endereco, criado_em)
-VALUES (6, 239.80, 'Concluído', 'PIX', 'Seu Nome', '12345678900', 'Rua das Flores, 123 - Joinville/SC', '2025-01-15 14:30:00');
+-- ===============================================
+--   TABELA: pedidos
+-- ===============================================
 
-INSERT INTO pedido_itens (pedido_id, produto_id, quantidade, valor) VALUES
-(LAST_INSERT_ID(), 1, 2, 119.90),
-(LAST_INSERT_ID(), 2, 1, 89.90);
+DROP TABLE IF EXISTS pedidos;
+CREATE TABLE pedidos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT,
+    valor_total DECIMAL(10,2),
+    status VARCHAR(50) DEFAULT 'pendente',
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    pagamento_metodo VARCHAR(30),
+    cliente_nome VARCHAR(150),
+    cliente_cpf VARCHAR(30),
+    cliente_endereco TEXT,
+    CONSTRAINT fk_pedido_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Pedido 2 (Fevereiro)
-INSERT INTO pedidos (usuario_id, valor_total, status, pagamento_metodo, cliente_nome, cliente_cpf, cliente_endereco, criado_em)
-VALUES (6, 149.80, 'Aguardando Pagamento', 'CARTAO', 'Seu Nome', '12345678900', 'Rua das Flores, 123 - Joinville/SC', '2025-02-10 10:00:00');
+INSERT INTO pedidos VALUES
+(2,1,161.80,'entregue','2025-11-24 19:25:45','CARTAO','DANIEL DOS SANTOS COSTA','16000763948',
+'Rua Janaúba, 704 - Jardim Iririu - Joinville/SC - CEP 89224280'),
 
-INSERT INTO pedido_itens (pedido_id, produto_id, quantidade, valor) VALUES
-(LAST_INSERT_ID(), 1, 1, 119.90),
-(LAST_INSERT_ID(), 3, 1, 29.90);
+(3,1,161.80,'aguardando_pagamento','2025-11-24 19:35:40','CARTAO','Administrador','16000763948',
+'Rua areia Branca, 704 - Jardim Iririu - Joinville/SC - CEP 89224280'),
 
--- Pedido 3 (Março)
-INSERT INTO pedidos (usuario_id, valor_total, status, pagamento_metodo, cliente_nome, cliente_cpf, cliente_endereco, criado_em)
-VALUES (6, 329.70, 'Concluído', 'PIX', 'Seu Nome', '12345678900', 'Rua das Flores, 123 - Joinville/SC', '2025-03-05 16:45:00');
+(4,1,131.90,'aguardando_pagamento','2025-11-24 19:42:16','CARTAO','Administrador','16000763948',
+'Rua areia Branca, 704 - Jardim Iririu - Joinville/SC - CEP 89224280');
 
-INSERT INTO pedido_itens (pedido_id, produto_id, quantidade, valor) VALUES
-(LAST_INSERT_ID(), 1, 2, 119.90),
-(LAST_INSERT_ID(), 2, 1, 89.90);
+-- ===============================================
+--   TABELA: pedido_itens
+-- ===============================================
 
--- Verificar pedidos
-SELECT * FROM pedidos WHERE usuario_id = 6;
+DROP TABLE IF EXISTS pedido_itens;
+CREATE TABLE pedido_itens (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    pedido_id INT NOT NULL,
+    produto_id INT NOT NULL,
+    quantidade INT NOT NULL,
+    valor DECIMAL(10,2) NOT NULL,
+    CONSTRAINT fk_item_pedido FOREIGN KEY (pedido_id) REFERENCES pedidos(id) ON DELETE CASCADE,
+    CONSTRAINT fk_item_produto FOREIGN KEY (produto_id) REFERENCES produtos(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ============================
--- ATUALIZAR ENUM DE USUÁRIOS
--- ============================
-ALTER TABLE usuarios
-MODIFY COLUMN tipo ENUM('admin', 'cliente', 'funcionario') DEFAULT 'cliente';
+INSERT INTO pedido_itens VALUES
+(1,2,1,1,119.90),
+(2,2,3,1,29.90),
+(3,3,1,1,119.90),
+(4,3,3,1,29.90),
+(5,4,1,1,119.90);
 
--- Ver todos os usuários
-SELECT id, nome, email, tipo FROM usuarios;
+-- ===============================================
+--   TABELA: compras
+-- ===============================================
 
--- Promover usuário específico
-UPDATE usuarios SET tipo = 'funcionario' WHERE id = 8;
+DROP TABLE IF EXISTS compras;
+CREATE TABLE compras (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT,
+    produto VARCHAR(150),
+    quantidade INT,
+    valor DECIMAL(10,2),
+    criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_compra_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- (Sem registros)

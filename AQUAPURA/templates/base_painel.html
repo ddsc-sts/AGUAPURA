@@ -4,19 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Painel - AquaPura{% endblock %}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --fundo: #f5f9ff;
-            --texto: #222;
-            --cinza: #eef3fb;
-            --azul: #6ea8fe;
-            --azul-escuro: #3b6fb6;
-            --card-bg: #ffffff;
-            --border: #d0dce9;
-            --shadow: rgba(0, 0, 0, 0.1);
-            --sidebar-bg: linear-gradient(180deg, #1a2838 0%, #0d1419 100%);
-            --sidebar-text: #f0f4ff;
+            --primary: #1e40af;
+            --primary-dark: #1e3a8a;
+            --primary-light: #3b82f6;
+            --accent: #059669;
+            --bg: #f8fafc;
+            --bg-secondary: #f1f5f9;
+            --sidebar-bg: #0f172a;
+            --card: #ffffff;
+            --text: #0f172a;
+            --text-light: #64748b;
+            --text-sidebar: #e2e8f0;
+            --text-sidebar-muted: #94a3b8;
+            --border: #e2e8f0;
+            --success: #059669;
+            --warning: #d97706;
+            --error: #dc2626;
+            --info: #0284c7;
         }
 
         * {
@@ -26,134 +33,193 @@
         }
 
         body {
-            font-family: 'Poppins', sans-serif;
-            background: var(--fundo);
-            color: var(--texto);
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
             display: flex;
             min-height: 100vh;
         }
 
-        /* SIDEBAR */
+        /* SIDEBAR PROFISSIONAL */
         .sidebar {
-            width: 280px;
+            width: 260px;
             background: var(--sidebar-bg);
-            color: var(--sidebar-text);
-            padding: 30px 0;
             position: fixed;
             height: 100vh;
             overflow-y: auto;
-            box-shadow: 2px 0 20px rgba(0, 0, 0, 0.2);
             z-index: 1000;
+            display: flex;
+            flex-direction: column;
         }
 
-        .sidebar-logo {
-            text-align: center;
-            padding: 0 20px 30px;
-            border-bottom: 2px solid rgba(110, 168, 254, 0.3);
-            margin-bottom: 30px;
+        .sidebar-header {
+            padding: 24px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .sidebar-logo h2 {
-            color: var(--azul);
-            font-size: 1.8em;
-            margin-bottom: 8px;
-            font-weight: 700;
-            text-shadow: 0 2px 8px rgba(110, 168, 254, 0.3);
-        }
-
-        .sidebar-logo p {
-            opacity: 0.8;
-            font-size: 0.9em;
-            font-weight: 400;
-        }
-
-        .sidebar-menu {
-            list-style: none;
-        }
-
-        .sidebar-menu li {
-            margin-bottom: 8px;
-            padding: 0 15px;
-        }
-
-        .sidebar-menu a {
+        .logo-container {
             display: flex;
             align-items: center;
-            gap: 15px;
-            padding: 14px 18px;
-            color: var(--sidebar-text);
-            text-decoration: none;
-            transition: all 0.3s ease;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
             border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3em;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .logo-text h2 {
+            color: var(--text-sidebar);
+            font-size: 1.3em;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .user-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--text-sidebar);
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 0.75em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .user-badge::before {
+            content: '●';
+            color: var(--accent);
+            font-size: 1.2em;
+        }
+
+        /* NAVEGAÇÃO */
+        .sidebar-nav {
+            padding: 20px 0;
+            flex: 1;
+        }
+
+        .nav-section {
+            margin-bottom: 28px;
+        }
+
+        .section-title {
+            padding: 0 20px 10px;
+            color: var(--text-sidebar-muted);
+            font-size: 0.7em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+        }
+
+        .nav-list {
+            list-style: none;
+            padding: 0 12px;
+        }
+
+        .nav-list li {
+            margin-bottom: 4px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            color: var(--text-sidebar-muted);
+            text-decoration: none;
+            border-radius: 8px;
             font-weight: 500;
+            font-size: 0.9em;
+            transition: all 0.2s ease;
             position: relative;
         }
 
-        .sidebar-menu a::before {
+        .nav-link:hover {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--text-sidebar);
+        }
+
+        .nav-link.active {
+            background: linear-gradient(90deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%);
+            color: var(--text-sidebar);
+            font-weight: 600;
+        }
+
+        .nav-link.active::before {
             content: '';
             position: absolute;
             left: 0;
             top: 50%;
             transform: translateY(-50%);
-            width: 4px;
-            height: 0;
-            background: var(--azul);
+            width: 3px;
+            height: 60%;
+            background: var(--primary-light);
             border-radius: 0 4px 4px 0;
-            transition: height 0.3s ease;
         }
 
-        .sidebar-menu a:hover,
-        .sidebar-menu a.active {
-            background: rgba(110, 168, 254, 0.15);
-            color: var(--azul);
+        .nav-icon {
+            font-size: 1.2em;
+            width: 20px;
+            text-align: center;
         }
 
-        .sidebar-menu a:hover::before,
-        .sidebar-menu a.active::before {
-            height: 70%;
+        /* DIVIDER */
+        .nav-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 20px 20px;
         }
 
-        .sidebar-menu .icone {
-            font-size: 1.3em;
+        /* FOOTER SIDEBAR */
+        .sidebar-footer {
+            padding: 20px 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .sidebar-logout {
-            position: absolute;
-            bottom: 30px;
-            left: 0;
-            right: 0;
-            padding: 0 25px;
-        }
-
-        .sidebar-logout a {
+        .btn-logout {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
-            padding: 14px 20px;
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-            color: white;
+            gap: 10px;
+            width: 100%;
+            padding: 12px;
+            background: rgba(220, 38, 38, 0.1);
+            color: #fca5a5;
             text-decoration: none;
-            border-radius: 10px;
-            transition: all 0.3s ease;
+            border-radius: 8px;
             font-weight: 600;
-            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+            font-size: 0.9em;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(220, 38, 38, 0.2);
         }
 
-        .sidebar-logout a:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(220, 53, 69, 0.4);
+        .btn-logout:hover {
+            background: rgba(220, 38, 38, 0.2);
+            color: #fef2f2;
+            border-color: rgba(220, 38, 38, 0.3);
         }
 
         /* CONTEÚDO PRINCIPAL */
         .main-content {
-            margin-left: 280px;
+            margin-left: 260px;
             flex: 1;
-            padding: 40px;
-            background: var(--fundo);
+            padding: 32px;
+            min-height: 100vh;
         }
 
-        /* MENSAGENS FLASH */
+        /* MENSAGENS FLASH PROFISSIONAIS */
         .mensagens {
             position: fixed;
             top: 20px;
@@ -161,25 +227,24 @@
             z-index: 9999;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 12px;
             max-width: 400px;
         }
 
         .msg {
-            padding: 16px 24px;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px var(--shadow);
+            padding: 16px 20px 16px 52px;
+            border-radius: 12px;
             font-weight: 500;
-            animation: slideIn 0.5s ease;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 0.95em;
+            animation: slideIn 0.3s ease;
+            font-size: 0.9em;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            position: relative;
+            border-left: 4px solid;
         }
 
         @keyframes slideIn {
             from {
-                transform: translateX(120%);
+                transform: translateX(100%);
                 opacity: 0;
             }
             to {
@@ -188,42 +253,181 @@
             }
         }
 
+        .msg::before {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
         .msg.sucesso {
-            background: linear-gradient(135deg, #d1e7dd 0%, #c3e6cb 100%);
-            color: #0f5132;
-            border-left: 4px solid #28a745;
+            background: #f0fdf4;
+            color: #166534;
+            border-color: var(--success);
         }
 
         .msg.sucesso::before {
             content: '✓';
-            background: #28a745;
+            background: var(--success);
             color: white;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
         }
 
         .msg.erro {
-            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
-            color: #842029;
-            border-left: 4px solid #dc3545;
+            background: #fef2f2;
+            color: #991b1b;
+            border-color: var(--error);
         }
 
         .msg.erro::before {
             content: '✕';
-            background: #dc3545;
+            background: var(--error);
             color: white;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            display: flex;
+        }
+
+        .msg.info {
+            background: #f0f9ff;
+            color: #075985;
+            border-color: var(--info);
+        }
+
+        .msg.info::before {
+            content: 'ℹ';
+            background: var(--info);
+            color: white;
+        }
+
+        .msg.warning {
+            background: #fffbeb;
+            color: #92400e;
+            border-color: var(--warning);
+        }
+
+        .msg.warning::before {
+            content: '⚠';
+            background: var(--warning);
+            color: white;
+        }
+
+        /* BADGES DE STATUS PROFISSIONAIS */
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.8em;
+            font-weight: 600;
+            display: inline-flex;
             align-items: center;
-            justify-content: center;
-            font-weight: bold;
+            gap: 6px;
+            border: 1px solid;
+        }
+
+        .status-badge::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-aguardando_pagamento {
+            background: #fffbeb;
+            color: #92400e;
+            border-color: #fbbf24;
+        }
+
+        .status-aguardando_pagamento::before {
+            background: var(--warning);
+        }
+
+        .status-em_separacao {
+            background: #eff6ff;
+            color: #1e40af;
+            border-color: #60a5fa;
+        }
+
+        .status-em_separacao::before {
+            background: var(--primary-light);
+        }
+
+        .status-enviado {
+            background: #f0f9ff;
+            color: #075985;
+            border-color: #38bdf8;
+        }
+
+        .status-enviado::before {
+            background: var(--info);
+        }
+
+        .status-entregue {
+            background: #f0fdf4;
+            color: #166534;
+            border-color: #4ade80;
+        }
+
+        .status-entregue::before {
+            background: var(--success);
+        }
+
+        .status-cancelado {
+            background: #fef2f2;
+            color: #991b1b;
+            border-color: #f87171;
+        }
+
+        .status-cancelado::before {
+            background: var(--error);
+        }
+
+        /* MENU TOGGLE */
+        .menu-toggle {
+            display: none;
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            background: var(--sidebar-bg);
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            z-index: 9999;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            font-size: 1.2em;
+            transition: all 0.2s ease;
+        }
+
+        .menu-toggle:hover {
+            background: #1e293b;
+        }
+
+        .menu-toggle:active {
+            transform: scale(0.95);
+        }
+
+        /* OVERLAY */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .sidebar-overlay.active {
+            opacity: 1;
         }
 
         /* RESPONSIVO */
@@ -237,82 +441,43 @@
                 transform: translateX(0);
             }
 
+            .sidebar-overlay {
+                display: block;
+            }
+
             .main-content {
                 margin-left: 0;
+                padding: 80px 16px 24px;
             }
 
             .menu-toggle {
                 display: block;
-                position: fixed;
-                top: 20px;
-                left: 20px;
-                background: linear-gradient(135deg, var(--azul) 0%, var(--azul-escuro) 100%);
-                color: white;
-                border: none;
-                padding: 15px;
-                border-radius: 10px;
-                cursor: pointer;
-                z-index: 999;
-                box-shadow: 0 4px 12px rgba(110, 168, 254, 0.4);
-                font-size: 1.2em;
             }
 
-            .menu-toggle:hover {
-                transform: scale(1.05);
+            .mensagens {
+                top: 80px;
+                right: 16px;
+                left: 16px;
+                max-width: none;
             }
         }
 
-        .menu-toggle {
-            display: none;
-        }
-
-        /* Classes de status - estilo AquaPura */
-        .status-aguardando_pagamento {
-            background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
-            color: #856404;
-            border: 1px solid #ffeaa7;
-        }
-
-        .status-em_separacao {
-            background: linear-gradient(135deg, #cfe2ff 0%, #b8daff 100%);
-            color: #084298;
-            border: 1px solid #b8daff;
-        }
-
-        .status-enviado {
-            background: linear-gradient(135deg, #d1e7dd 0%, #c3e6cb 100%);
-            color: #0f5132;
-            border: 1px solid #c3e6cb;
-        }
-
-        .status-entregue {
-            background: linear-gradient(135deg, #d1e7dd 0%, #c3e6cb 100%);
-            color: #0f5132;
-            border: 1px solid #c3e6cb;
-        }
-
-        .status-cancelado {
-            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
-            color: #842029;
-            border: 1px solid #f5c6cb;
-        }
-
-        /* Scrollbar personalizada */
+        /* SCROLLBAR */
         .sidebar::-webkit-scrollbar {
-            width: 8px;
+            width: 6px;
         }
 
         .sidebar::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.2);
+            background: transparent;
         }
 
         .sidebar::-webkit-scrollbar-thumb {
-            background: var(--azul);
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 10px;
         }
 
         .sidebar::-webkit-scrollbar-thumb:hover {
-            background: var(--azul-escuro);
+            background: rgba(255, 255, 255, 0.2);
         }
     </style>
 </head>
@@ -328,37 +493,95 @@
     {% endif %}
     {% endwith %}
 
+    <!-- Overlay para mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
     <!-- Toggle menu mobile -->
     <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
 
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
-        <div class="sidebar-logo">
-            <h2>🌊 Agua Pura</h2>
-            <p>{% if session.get('tipo') == 'admin' %}Painel Administrativo{% else %}Painel do Funcionário{% endif %}</p>
+        <div class="sidebar-header">
+            <div class="logo-container">
+                <div class="logo-icon">💧</div>
+                <div class="logo-text">
+                    <h2>AquaPura</h2>
+                </div>
+            </div>
+            <span class="user-badge">
+                {% if session.get('tipo') == 'admin' %}Administrador{% else %}Funcionário{% endif %}
+            </span>
         </div>
 
-        <ul class="sidebar-menu">
+        <nav class="sidebar-nav">
             {% if session.get('tipo') == 'funcionario' %}
-                <li><a href="/funcionario/painel"><span class="icone">📊</span> Dashboard</a></li>
-                <li><a href="/funcionario/pedidos"><span class="icone">📦</span> Pedidos</a></li>
-                <li><a href="/funcionario/clientes"><span class="icone">👥</span> Clientes</a></li>
-                <li><a href="/funcionario/estoque"><span class="icone">📦</span> Estoque</a></li>
-            {% elif session.get('tipo') == 'admin' %}
-                <li><a href="/admin/painel"><span class="icone">📊</span> Dashboard</a></li>
-                <li><a href="/admin/produtos"><span class="icone">🛍️</span> Produtos</a></li>
-                <li><a href="/funcionario/pedidos"><span class="icone">📦</span> Pedidos</a></li>
-                <li><a href="/admin/usuarios"><span class="icone">👥</span> Usuários</a></li>
-                <li><a href="/admin/relatorios"><span class="icone">📈</span> Relatórios</a></li>
-                <li><a href="/funcionario/estoque"><span class="icone">📦</span> Estoque</a></li>
-            {% endif %}
-            <li><a href="/"><span class="icone">🏠</span> Ver Site</a></li>
-        </ul>
+                <!-- VISÃO GERAL -->
+                <div class="nav-section">
+                    <div class="section-title">Visão Geral</div>
+                    <ul class="nav-list">
+                        <li><a href="/funcionario/painel" class="nav-link"><span class="nav-icon">📊</span> Dashboard</a></li>
+                    </ul>
+                </div>
 
-        <div class="sidebar-logout">
-            <a href="/logout">
-                <span class="icone">🚪</span>
-                Sair
+                <!-- OPERAÇÕES -->
+                <div class="nav-section">
+                    <div class="section-title">Operações</div>
+                    <ul class="nav-list">
+                        <li><a href="/funcionario/pedidos" class="nav-link"><span class="nav-icon">📦</span> Pedidos</a></li>
+                        <li><a href="/funcionario/estoque" class="nav-link"><span class="nav-icon">📋</span> Estoque</a></li>
+                    </ul>
+                </div>
+
+                <!-- CLIENTES -->
+                <div class="nav-section">
+                    <div class="section-title">Clientes</div>
+                    <ul class="nav-list">
+                        <li><a href="/funcionario/clientes" class="nav-link"><span class="nav-icon">👥</span> Lista de Clientes</a></li>
+                    </ul>
+                </div>
+
+            {% elif session.get('tipo') == 'admin' %}
+                <!-- VISÃO GERAL -->
+                <div class="nav-section">
+                    <div class="section-title">Visão Geral</div>
+                    <ul class="nav-list">
+                        <li><a href="/admin/painel" class="nav-link"><span class="nav-icon">📊</span> Dashboard</a></li>
+                        <li><a href="/admin/relatorios" class="nav-link"><span class="nav-icon">📈</span> Relatórios</a></li>
+                    </ul>
+                </div>
+
+                <!-- VENDAS -->
+                <div class="nav-section">
+                    <div class="section-title">Vendas</div>
+                    <ul class="nav-list">
+                        <li><a href="/funcionario/pedidos" class="nav-link"><span class="nav-icon">📦</span> Pedidos</a></li>
+                        <li><a href="/admin/produtos" class="nav-link"><span class="nav-icon">🛍️</span> Produtos</a></li>
+                    </ul>
+                </div>
+
+                <!-- GESTÃO -->
+                <div class="nav-section">
+                    <div class="section-title">Gestão</div>
+                    <ul class="nav-list">
+                        <li><a href="/funcionario/estoque" class="nav-link"><span class="nav-icon">📋</span> Estoque</a></li>
+                        <li><a href="/admin/usuarios" class="nav-link"><span class="nav-icon">👤</span> Usuários</a></li>
+                    </ul>
+                </div>
+            {% endif %}
+
+            <!-- OUTROS -->
+            <div class="nav-divider"></div>
+            <div class="nav-section">
+                <ul class="nav-list">
+                    <li><a href="/" class="nav-link"><span class="nav-icon">🌐</span> Visitar Site</a></li>
+                </ul>
+            </div>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="/logout" class="btn-logout">
+                <span>🚪</span>
+                Sair do Sistema
             </a>
         </div>
     </aside>
@@ -375,25 +598,46 @@
             if (mensagens.length > 0) {
                 setTimeout(() => {
                     mensagens.forEach(msg => {
-                        msg.style.transition = "opacity 0.6s ease, transform 0.6s ease";
+                        msg.style.transition = "all 0.3s ease";
                         msg.style.opacity = "0";
-                        msg.style.transform = "translateX(120%)";
-                        setTimeout(() => msg.remove(), 600);
+                        msg.style.transform = "translateX(100%)";
+                        setTimeout(() => msg.remove(), 300);
                     });
-                }, 3500);
+                }, 5000);
             }
         });
 
         // Toggle sidebar mobile
         function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('open');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+            
+            if (sidebar.classList.contains('open')) {
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.style.overflow = '';
+            }
         }
 
         // Marcar link ativo
         const currentPath = window.location.pathname;
-        document.querySelectorAll('.sidebar-menu a').forEach(link => {
+        document.querySelectorAll('.nav-link').forEach(link => {
             if (link.getAttribute('href') === currentPath) {
                 link.classList.add('active');
+            }
+        });
+
+        // Fechar sidebar ao redimensionar para desktop
+        window.addEventListener('resize', function() {
+            if (window.innerWidth > 968) {
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+                document.body.style.overflow = '';
             }
         });
     </script>
