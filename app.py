@@ -17,10 +17,10 @@ from werkzeug.utils import secure_filename
 # ============================
 def conectar():
     return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        port=3406,
-        password="",   # altere se tiver senha
+        host="tini.click",
+        user="aguapura",
+        port=3306,
+        password="020132c02298eb272e046aea148cacda",   # altere se tiver senha
         database="aguapura"
     )
 
