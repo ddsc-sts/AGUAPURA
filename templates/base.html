@@ -1,0 +1,196 @@
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{% block title %}AquaPura{% endblock %}</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    </head>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const mensagens = document.querySelectorAll(".msg");
+
+            if (mensagens.length > 0) {
+                setTimeout(() => {
+                    mensagens.forEach(msg => {
+                        msg.style.transition = "opacity 0.6s ease";
+                        msg.style.opacity = "0";
+
+                        setTimeout(() => msg.remove(), 600); // remove após a animação
+                    });
+                }, 1750); // tempo na tela (3s)
+            }
+        });
+    </script>
+
+    <body>
+        
+        {% with msgs = get_flashed_messages(with_categories=True) %}
+        {% if msgs %}
+            <div class="mensagens">
+                {% for categoria, texto in msgs %}
+                    <p class="msg {{ categoria }}">{{ texto }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+        {% endwith %}
+
+
+        <header class="site-header">
+            <div class="top-bar">
+                <div class="logo-container">
+                    <a href="{{ url_for('home') }}">
+                        <img 
+    src="{{ url_for('static', filename='img/logo1.png') }}" 
+    alt="Logo AquaPura" 
+    class="logo-img" 
+    id="site-logo"
+    data-light="{{ url_for('static', filename='img/logo1.png') }}"
+    data-dark="{{ url_for('static', filename='img/logo-dark.png') }}"
+    >
+                        </a>
+                </div>
+            
+                <form action="{{ url_for('buscar') }}" method="get" class="search-box">
+                    <input type="text" name="q" placeholder="O que você está buscando?" required>
+                </form>
+                <button id="theme-toggle" class="theme-btn" aria-label="Alternar tema">🌙</button>
+                <a href="{{ url_for('carrinho') }}" class="cart">
+                    <img src="{{ url_for('static', filename='icons/cart.svg') }}" class="cart-icon">
+                
+                    <span class="cart-count">
+                        {{ total_carrinho }}
+                    </span>
+                </a>
+                
+            
+
+            </div>
+            
+            <nav class="main-nav">
+                <ul class="menu-links">
+                    <li><a href="{{ url_for('garrafas') }}">GARRAFAS</a></li>
+                    <li><a href="{{ url_for('copos') }}">COPOS</a></li>
+                    <li><a href="{{ url_for('acessorios') }}">ACESSÓRIOS</a></li>
+                    <li><a href="{{ url_for('sobre') }}">SOBRE</a></li>
+                </ul>
+                
+            
+                <div class="nav-right">
+                    {% if session.get("logado") %}
+    
+                    <div class="user-menu">
+                        <img src="{{ usuario_avatar }}" alt="Avatar" class="user-avatar">
+                    
+                        <div class="user-dropdown" id="userDropdown">
+                            <p class="user-name">👤 {{ session.get('usuario_nome', 'Visitante') }}</p>
+                            <a href="/perfil">Meu Perfil</a>
+                            <a href="/config">Configurações</a>
+                    
+                            {% if session.get("admin") %}
+                                <a href="/admin">Painel Admin</a>
+                            {% endif %}
+                    
+                            <a href="/logout" class="logout">Sair</a>
+                        </div>
+                    </div>
+                    
+                    </div>
+                    
+                    {% else %}
+                        <a href="/login" class="btn-login">Entrar</a>
+                        <a href="/cadastro" class="btn-cadastro">Criar conta</a>
+                    {% endif %}
+                    
+                    </div>
+            </nav>
+            
+
+            <div class="shipping-info">
+                Frete Grátis em compras acima de R$129,90 para Santa Catarina
+            </div>
+        </header>
+
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+
+        <footer class="site-footer">
+            <div class="footer-top">
+                <div>
+                    <i>💬</i>
+                    <a href="https://wa.me/5547992315501?text=Olá!%20Gostaria%20de%20saber%20mais%20sobre%20os%20produtos%20da%20AquaPura."
+                    target="_blank" rel="noopener noreferrer">
+                    Fale Conosco
+                    </a>
+                </div>
+                <div>
+                <i>🔄</i> 
+                <a href="{{ url_for('politica_troca') }}">Política de Troca</a>
+                
+                </div>
+                <div><i>🔒</i> 
+                    <a href="{{ url_for('politica_privacidade') }}">Política de Privacidade</a>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <div class="footer-col">
+                    <h4>Siga-nos</h4>
+                    <p>📸 Instagram</p>
+                </div>
+                <div class="footer-col">
+                    <h4>Navegação</h4>
+                    <ul>
+                        <li>Início</li>
+                        <li>Política de Privacidade</li>
+                        <li>Termos de Uso</li>
+                        <li>Política de Troca</li>
+                        <li>Produtos</li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Entre em contato</h4>
+                    <p>+55 47 99999-9999</p>
+                    <p>contato@aquapura.com.br</p>
+                </div>
+                <div class="footer-col">
+                    <h4>Assine nossa newsletter</h4>
+                    <form>
+                        <input type="email" placeholder="E-mail">
+                        <button type="submit">Enviar</button>
+                    </form>
+                </div>
+            </div>
+        </footer>
+        <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+        <!-- Chat de Suporte -->
+    <div id="chat-container" class="chat-container hidden">
+        <div class="chat-header">
+            <span>Atendimento Agua Pura</span>
+            <button id="chat-close">×</button>
+        </div>
+
+        <div class="chat-body" id="chat-body">
+            <div class="bot-message">Olá! Como posso ajudar hoje?</div>
+        </div>
+
+        <div class="chat-input-area">
+            <input type="text" id="chat-input" placeholder="Digite sua mensagem...">
+            <button id="chat-send">Enviar</button>
+        </div>
+    </div>
+
+    <button id="chat-open" class="chat-open-btn">Suporte</button>
+
+
+
+
+
+
+
+    </body>
+    </html>
