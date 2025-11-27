@@ -2,7 +2,6 @@
 --   CRIAÇÃO DO BANCO DE DADOS
 -- ===============================================
 
-DROP DATABASE IF EXISTS aguapura;
 CREATE DATABASE aguapura CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 USE aguapura;
 
@@ -124,13 +123,32 @@ CREATE TABLE carrinho (
     produto_id INT NOT NULL,
     quantidade INT DEFAULT 1,
     cor VARCHAR(30) NOT NULL,
+    personalizacao VARCHAR(100) DEFAULT NULL,
     CONSTRAINT fk_carrinho_produto
-        FOREIGN KEY (produto_id) REFERENCES produtos(id)
+	FOREIGN KEY (produto_id) REFERENCES produtos(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO carrinho VALUES
 (3,'d2ea2769-981b-4f7d-808f-0c39c9772f16',1,1,'Preto'),
 (7,'832a56c4-b3e1-4563-b1df-61a875edf26a',1,1,'Preto');
+
+DROP TABLE IF EXISTS cupons;
+-- Criar tabela de cupons
+CREATE TABLE cupons (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    codigo VARCHAR(50) UNIQUE NOT NULL,
+    tipo ENUM('percentual', 'fixo') NOT NULL,
+    valor DECIMAL(10,2) NOT NULL,
+    ativo BOOLEAN DEFAULT TRUE,
+    data_expiracao DATE DEFAULT NULL,
+    uso_maximo INT DEFAULT NULL,
+    uso_atual INT DEFAULT 0,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Inserir alguns cupons de exemplo
+INSERT INTO cupons (codigo, tipo, valor, ativo) VALUES 
+('NATAL10', 'percentual', 10.00, TRUE);
 
 -- ===============================================
 --   TABELA: imagens_produto
@@ -224,18 +242,20 @@ CREATE TABLE pedidos (
     cliente_nome VARCHAR(150),
     cliente_cpf VARCHAR(30),
     cliente_endereco TEXT,
+    cupom_usado VARCHAR(50) DEFAULT NULL,
+    desconto DECIMAL(10,2) DEFAULT 0.00,
     CONSTRAINT fk_pedido_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO pedidos VALUES
 (2,1,161.80,'entregue','2025-11-24 19:25:45','CARTAO','DANIEL DOS SANTOS COSTA','16000763948',
-'Rua Janaúba, 704 - Jardim Iririu - Joinville/SC - CEP 89224280'),
+'Rua Janaúba, 704 - Jardim Iririu - Joinville/SC - CEP 89224280',NULL),
 
 (3,1,161.80,'aguardando_pagamento','2025-11-24 19:35:40','CARTAO','Administrador','16000763948',
-'Rua areia Branca, 704 - Jardim Iririu - Joinville/SC - CEP 89224280'),
+'Rua areia Branca, 704 - Jardim Iririu - Joinville/SC - CEP 89224280',NULL),
 
 (4,1,131.90,'aguardando_pagamento','2025-11-24 19:42:16','CARTAO','Administrador','16000763948',
-'Rua areia Branca, 704 - Jardim Iririu - Joinville/SC - CEP 89224280');
+'Rua areia Branca, 704 - Jardim Iririu - Joinville/SC - CEP 89224280',NULL);
 
 -- ===============================================
 --   TABELA: pedido_itens
@@ -248,6 +268,7 @@ CREATE TABLE pedido_itens (
     produto_id INT NOT NULL,
     quantidade INT NOT NULL,
     valor DECIMAL(10,2) NOT NULL,
+    personalizacao VARCHAR(100) DEFAULT NULL,
     CONSTRAINT fk_item_pedido FOREIGN KEY (pedido_id) REFERENCES pedidos(id) ON DELETE CASCADE,
     CONSTRAINT fk_item_produto FOREIGN KEY (produto_id) REFERENCES produtos(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -275,3 +296,10 @@ CREATE TABLE compras (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- (Sem registros)
+
+SELECT DISTINCT estado FROM enderecos_usuarios;
+
+DESCRIBE pedidos;
+DESCRIBE pedido_itens;
+SHOW TABLES LIKE '%pagamento%';
+

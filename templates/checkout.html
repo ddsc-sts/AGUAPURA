@@ -34,12 +34,12 @@
             <div style="margin-top:8px;">
               {% for e in enderecos %}
               <label class="saved-label" style="display:block; margin-bottom:6px; border:1px solid var(--border); padding:8px; border-radius:8px; cursor:pointer;">
-                <input type="radio" name="endereco_selecionado" value="{{ e.id }}" data-rua="{{ e.rua|e }}" data-numero="{{ e.numero|e }}" data-bairro="{{ e.bairro|e }}" data-cidade="{{ e.cidade|e }}" data-estado="{{ e.estado|e }}" data-cep="{{ e.cep|e }}" style="margin-right:8px;">
+                <input type="radio" name="endereco_selecionado" value="{{ e.id }}" data-rua="{{ e.rua|e }}" data-numero="{{ e.numero|e }}" data-bairro="{{ e.bairro|e }}" data-cidade="{{ e.cidade|e }}" data-estado="{{ e.estado|e }}" data-cep="{{ e.cep|e }}" style="margin-right:8px;" {% if loop.first %}checked{% endif %}>
                 <strong>{{ e.nome_destinatario }}</strong> — {{ e.rua }}, {{ e.numero }} {% if e.bairro %} - {{ e.bairro }}{% endif %} — {{ e.cidade }}/{{ e.estado }} • CEP {{ e.cep }}
               </label>
               {% endfor %}
               <label style="display:block; margin-top:6px; cursor:pointer;">
-                <input type="radio" name="endereco_selecionado" value="novo" checked style="margin-right:8px;"> Usar/Inserir novo endereço
+                <input type="radio" name="endereco_selecionado" value="novo" style="margin-right:8px;"> Usar/Inserir novo endereço
               </label>
             </div>
           </div>
@@ -64,11 +64,15 @@
             <div style="display:flex; gap:8px; margin-top:8px;">
               <div style="flex:1">
                 <label>Estado *</label>
-                <select name="estado" id="estado" class="glass-input"></select>
+                <select name="estado" id="estado" class="glass-input glass-select" required>
+                  <option value="">Selecione...</option>
+                </select>
               </div>
               <div style="flex:2">
                 <label>Cidade *</label>
-                <select name="cidade" id="cidade" class="glass-input"></select>
+                <select name="cidade" id="cidade" class="glass-input glass-select" required>
+                  <option value="">Selecione o estado primeiro</option>
+                </select>
               </div>
               <div style="width:120px">
                 <label>CEP *</label>
@@ -112,13 +116,24 @@
             <div>Subtotal</div>
             <div>R$ {{ "%.2f"|format(subtotal) }}</div>
           </div>
+          
           <div style="display:flex; justify-content:space-between; margin-top:6px;">
             <div>Frete</div>
-            <div>R$ {{ "%.2f"|format(frete) }}</div>
+            <div id="freteDisplay">
+              R$ {{ "%.2f"|format(frete) }}
+            </div>
           </div>
+          
+          {% if cupom_info %}
+          <div style="display:flex; justify-content:space-between; margin-top:6px; color: #28a745;">
+            <div>Desconto ({{ cupom_info.codigo }})</div>
+            <div>- R$ {{ "%.2f"|format(desconto) }}</div>
+          </div>
+          {% endif %}
+          
           <div style="display:flex; justify-content:space-between; margin-top:8px; font-weight:700;">
             <div>Total</div>
-            <div>R$ {{ "%.2f"|format(total) }}</div>
+            <div id="totalDisplay">R$ {{ "%.2f"|format(total) }}</div>
           </div>
         </div>
 
@@ -150,36 +165,14 @@
           
           <!-- Opção para adicionar novo -->
           <label style="display:block; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); cursor:pointer;">
-            <input type="radio" name="pagamento_selecionado" value="novo" style="margin-right:8px;"> ➕ Adicionar novo método
+            <input type="radio" name="pagamento_selecionado" value="novo" style="margin-right:8px;"> ➕ Adicionar novo método (Cartão)
           </label>
         </div>
 
-        <!-- Novo método - escolher tipo -->
-        <div class="glass-card" id="novoMetodoBox" style="padding:12px; border-radius:10px; display:none; margin-bottom:12px;">
-          <strong style="display:block; margin-bottom:12px;">Escolha o método</strong>
-          
-          <label style="display:block; margin-bottom:8px; padding:10px; border:1px solid var(--border); border-radius:8px; cursor:pointer;">
-            <input type="radio" name="metodo_pagamento" value="PIX" style="margin-right:8px;">
-            🔷 PIX
-          </label>
-          
-          <label style="display:block; padding:10px; border:1px solid var(--border); border-radius:8px; cursor:pointer;">
-            <input type="radio" name="metodo_pagamento" value="CARTAO" style="margin-right:8px;">
-            💳 Cartão de Crédito
-          </label>
-        </div>
-
-        <!-- Campos do PIX -->
-        <div class="glass-card" id="pixBox" style="padding:12px; border-radius:10px; display:none; margin-bottom:12px;">
-          <strong style="display:block; margin-bottom:12px;">Dados do PIX</strong>
-          
-          <label>Chave PIX</label>
-          <input name="pix_chave" id="pix_chave" class="glass-input" placeholder="email@exemplo.com, CPF, telefone ou chave aleatória">
-        </div>
-
-        <!-- Campos do cartão -->
-        <div class="glass-card" id="cartaoBox" style="padding:12px; border-radius:10px; display:none; margin-bottom:12px;">
+        <!-- Novo método - apenas cartão -->
+        <div class="glass-card" id="novoCartaoBox" style="padding:12px; border-radius:10px; display:none; margin-bottom:12px;">
           <strong style="display:block; margin-bottom:12px;">Dados do Cartão</strong>
+          <input type="hidden" name="metodo_pagamento" value="CARTAO">
           
           <label>Número do cartão</label>
           <input name="cartao_num" id="cartao_num" maxlength="19" class="glass-input" placeholder="0000 0000 0000 0000">
@@ -191,11 +184,8 @@
             <input name="cartao_validade" id="cartao_validade" placeholder="MM/AA" class="glass-input" style="flex:1;">
             <input name="cartao_cvv" id="cartao_cvv" placeholder="CVV" maxlength="4" class="glass-input" style="width:100px;">
           </div>
-        </div>
-
-        <!-- Checkbox para lembrar -->
-        <div id="lembrarPagamentoBox" style="display:none; margin-bottom:12px;">
-          <label style="display:block;">
+          
+          <label style="margin-top:12px;">
             <input type="checkbox" name="lembrar_pagamento" id="lembrar_pagamento">
             Salvar este método para próximas compras
           </label>
@@ -216,6 +206,7 @@
   border: 1px solid var(--border);
   box-shadow: 0 6px 20px var(--shadow);
 }
+
 .glass-input{
   width:100%;
   padding:10px;
@@ -227,9 +218,63 @@
   outline:none;
   transition: border 0.2s;
 }
+
 .glass-input:focus{
   border-color: var(--azul);
 }
+
+/* Estilização específica para selects */
+.glass-select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 20px;
+  padding-right: 35px;
+  cursor: pointer;
+}
+
+/* Modo claro - Select */
+body:not(.dark) .glass-select {
+  background-color: #ffffff;
+  color: #333333;
+  border: 1px solid #d1d5db;
+}
+
+body:not(.dark) .glass-select option {
+  background-color: #ffffff;
+  color: #333333;
+}
+
+/* Modo escuro - Select */
+body.dark .glass-select {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+  border: 1px solid #444 !important;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e0e0e0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+}
+
+body.dark .glass-select option {
+  background-color: #2d2d2d !important;
+  color: #e0e0e0 !important;
+}
+
+/* Correção do dropdown select no modo escuro */
+body.dark select:focus,
+body.dark .glass-select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.4);
+}
+
+/* Remove background branco do select dropdown no modo escuro */
+body.dark select option,
+body.dark .glass-select option {
+  background: #2d2d2d;
+  color: #e0e0e0;
+}
+
 .btn-primary{
   padding:14px 24px;
   border-radius:12px;
@@ -277,7 +322,7 @@
   transform: none;
 }
 
-/* Modo escuro */
+/* Modo escuro - Botão */
 body.dark .btn-primary {
   background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
   box-shadow: 0 4px 15px rgba(13, 110, 253, 0.4);
@@ -292,15 +337,14 @@ body.dark .btn-primary:hover {
   background: rgba(0,0,0,0.03);
 }
 
+body.dark .saved-label:hover, 
+body.dark .saved-pay-label:hover{
+  background: rgba(255,255,255,0.05);
+}
+
 .saved-pay-label:has(input:checked) {
   border-color: var(--azul) !important;
   background: rgba(0, 123, 255, 0.05);
-}
-
-body.dark select {
-  background-color: #1e1e1e !important;
-  color: #fff !important;
-  border: 1px solid #444 !important;
 }
 </style>
 
@@ -393,12 +437,62 @@ document.addEventListener("DOMContentLoaded", () => {
   if(val) val.addEventListener('input', e => e.target.value = maskMMYY(e.target.value));
 
   const enderecoFormWrapper = document.getElementById('enderecoFormWrapper');
-  const novoMetodoBox = document.getElementById('novoMetodoBox');
-  const pixBox = document.getElementById('pixBox');
-  const cartaoBox = document.getElementById('cartaoBox');
-  const lembrarPagamentoBox = document.getElementById('lembrarPagamentoBox');
+  const novoCartaoBox = document.getElementById('novoCartaoBox');
+
+  // ========== VALORES DO RESUMO ==========
+  const subtotal = {{ subtotal }};
+  const descontoAplicado = {{ desconto if desconto else 0 }};
+  
+  // Função para atualizar frete e total
+  function atualizarFrete() {
+    const estadoSelecionado = document.getElementById('estado').value;
+    const enderecoSalvoRadio = document.querySelector('input[name="endereco_selecionado"]:checked');
+    
+    let estadoFinal = '';
+    
+    // Verifica se está usando endereço salvo ou novo
+    if (enderecoSalvoRadio && enderecoSalvoRadio.value !== 'novo') {
+      // Pega o estado do endereço salvo
+      estadoFinal = enderecoSalvoRadio.getAttribute('data-estado') || '';
+    } else {
+      // Pega o estado do select
+      estadoFinal = estadoSelecionado;
+    }
+    
+    let frete = 12.00;
+    
+    // Verifica se é SC e valor > 129.90
+    if (estadoFinal.toUpperCase() === 'SC' && subtotal > 129.90) {
+      frete = 0.00;
+      document.getElementById('freteDisplay').innerHTML = '<span style="color: #28a745; font-weight: 600;">GRÁTIS</span>';
+    } else {
+      document.getElementById('freteDisplay').textContent = 'R$ ' + frete.toFixed(2);
+    }
+    
+    // Atualizar total
+    const total = subtotal + frete - descontoAplicado;
+    document.getElementById('totalDisplay').textContent = 'R$ ' + total.toFixed(2);
+  }
 
   // ========== ENDEREÇO ==========
+  // Verificar se há endereços salvos ao carregar
+  const enderecosRadios = document.querySelectorAll('input[name="endereco_selecionado"]');
+  if (enderecosRadios.length > 0) {
+    const primeiroEndereco = enderecosRadios[0];
+    if (primeiroEndereco.checked && primeiroEndereco.value !== 'novo') {
+      // Se o primeiro endereço está marcado, esconde o formulário
+      enderecoFormWrapper.style.display = 'none';
+      document.getElementById('rua').required = false;
+      document.getElementById('numero').required = false;
+      document.getElementById('estado').required = false;
+      document.getElementById('cidade').required = false;
+      document.getElementById('cep').required = false;
+      
+      // Atualizar frete imediatamente
+      atualizarFrete();
+    }
+  }
+
   document.querySelectorAll('input[name="endereco_selecionado"]').forEach(r => {
     r.addEventListener('change', () => {
       const selected = document.querySelector('input[name="endereco_selecionado"]:checked').value;
@@ -419,44 +513,29 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('cidade').required = false;
         document.getElementById('cep').required = false;
       }
+      
+      // Atualizar frete quando mudar endereço
+      atualizarFrete();
     });
   });
+  
+  // Atualizar frete quando mudar o estado no select
+  const estadoSelect = document.getElementById('estado');
+  if (estadoSelect) {
+    estadoSelect.addEventListener('change', atualizarFrete);
+  }
 
   // ========== PAGAMENTO ==========
   document.querySelectorAll('input[name="pagamento_selecionado"]').forEach(r => {
     r.addEventListener('change', () => {
       const sel = document.querySelector('input[name="pagamento_selecionado"]:checked').value;
       
-      // Resetar tudo
-      novoMetodoBox.style.display = 'none';
-      pixBox.style.display = 'none';
-      cartaoBox.style.display = 'none';
-      lembrarPagamentoBox.style.display = 'none';
-      
-      // Desmarcar métodos
-      document.querySelectorAll('input[name="metodo_pagamento"]').forEach(m => m.checked = false);
-      
       if (sel === 'novo') {
-        // Mostra box para escolher tipo
-        novoMetodoBox.style.display = 'block';
-      }
-    });
-  });
-
-  // Quando escolhe tipo de novo método
-  document.querySelectorAll('input[name="metodo_pagamento"]').forEach(r => {
-    r.addEventListener('change', () => {
-      const tipo = document.querySelector('input[name="metodo_pagamento"]:checked').value;
-      
-      pixBox.style.display = 'none';
-      cartaoBox.style.display = 'none';
-      
-      if (tipo === 'PIX') {
-        pixBox.style.display = 'block';
-        lembrarPagamentoBox.style.display = 'block';
-      } else if (tipo === 'CARTAO') {
-        cartaoBox.style.display = 'block';
-        lembrarPagamentoBox.style.display = 'block';
+        // Mostra box de cartão
+        novoCartaoBox.style.display = 'block';
+      } else {
+        // Esconde box de cartão
+        novoCartaoBox.style.display = 'none';
       }
     });
   });
@@ -475,43 +554,28 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     
-    // Se escolheu "novo", precisa ter selecionado o tipo
+    // Se escolheu "novo", precisa ter cartão preenchido
     if (pagoSel.value === 'novo') {
-      const metodoNovo = document.querySelector('input[name="metodo_pagamento"]:checked');
-      if (!metodoNovo) {
-        alert('Por favor, escolha PIX ou Cartão.');
+      const cartaoNum = document.getElementById('cartao_num').value.replace(/\s/g, '');
+      const cartaoNome = document.getElementById('cartao_nome').value.trim();
+      const cartaoVal = document.getElementById('cartao_validade').value.trim();
+      const cartaoCVV = document.getElementById('cartao_cvv').value.trim();
+      
+      if (!cartaoNum || cartaoNum.length < 12) {
+        alert('Número do cartão inválido.');
         return;
       }
-      
-      // Validar campos específicos
-      if (metodoNovo.value === 'PIX') {
-        const pixChave = document.getElementById('pix_chave').value.trim();
-        if (!pixChave) {
-          alert('Por favor, informe a chave PIX.');
-          return;
-        }
-      } else if (metodoNovo.value === 'CARTAO') {
-        const cartaoNum = document.getElementById('cartao_num').value.replace(/\s/g, '');
-        const cartaoNome = document.getElementById('cartao_nome').value.trim();
-        const cartaoVal = document.getElementById('cartao_validade').value.trim();
-        const cartaoCVV = document.getElementById('cartao_cvv').value.trim();
-        
-        if (!cartaoNum || cartaoNum.length < 12) {
-          alert('Número do cartão inválido.');
-          return;
-        }
-        if (!cartaoNome) {
-          alert('Informe o nome no cartão.');
-          return;
-        }
-        if (!cartaoVal || cartaoVal.length !== 5) {
-          alert('Informe a validade (MM/AA).');
-          return;
-        }
-        if (!cartaoCVV || cartaoCVV.length < 3) {
-          alert('Informe o CVV.');
-          return;
-        }
+      if (!cartaoNome) {
+        alert('Informe o nome no cartão.');
+        return;
+      }
+      if (!cartaoVal || cartaoVal.length !== 5) {
+        alert('Informe a validade (MM/AA).');
+        return;
+      }
+      if (!cartaoCVV || cartaoCVV.length < 3) {
+        alert('Informe o CVV.');
+        return;
       }
     }
     

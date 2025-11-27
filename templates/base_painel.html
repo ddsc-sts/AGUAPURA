@@ -11,10 +11,10 @@
             --primary-dark: #1e3a8a;
             --primary-light: #3b82f6;
             --accent: #059669;
-            --bg: #f8fafc;
-            --bg-secondary: #f1f5f9;
+            --bg: #0a0e1a;
+            --bg-secondary: #0f172a;
             --sidebar-bg: #0f172a;
-            --card: #ffffff;
+            --card: #1e293b;
             --text: #0f172a;
             --text-light: #64748b;
             --text-sidebar: #e2e8f0;
@@ -35,7 +35,7 @@
         body {
             font-family: 'Inter', sans-serif;
             background: var(--bg);
-            color: var(--text);
+            color: var(--text-sidebar);
             display: flex;
             min-height: 100vh;
         }
@@ -50,6 +50,7 @@
             z-index: 1000;
             display: flex;
             flex-direction: column;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .sidebar-header {
@@ -217,6 +218,7 @@
             flex: 1;
             padding: 32px;
             min-height: 100vh;
+            background: var(--bg);
         }
 
         /* MENSAGENS FLASH PROFISSIONAIS */
@@ -237,7 +239,7 @@
             font-weight: 500;
             animation: slideIn 0.3s ease;
             font-size: 0.9em;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
             position: relative;
             border-left: 4px solid;
         }
@@ -269,8 +271,8 @@
         }
 
         .msg.sucesso {
-            background: #f0fdf4;
-            color: #166534;
+            background: rgba(5, 150, 105, 0.15);
+            color: #4ade80;
             border-color: var(--success);
         }
 
@@ -281,8 +283,8 @@
         }
 
         .msg.erro {
-            background: #fef2f2;
-            color: #991b1b;
+            background: rgba(220, 38, 38, 0.15);
+            color: #f87171;
             border-color: var(--error);
         }
 
@@ -293,8 +295,8 @@
         }
 
         .msg.info {
-            background: #f0f9ff;
-            color: #075985;
+            background: rgba(2, 132, 199, 0.15);
+            color: #38bdf8;
             border-color: var(--info);
         }
 
@@ -305,8 +307,8 @@
         }
 
         .msg.warning {
-            background: #fffbeb;
-            color: #92400e;
+            background: rgba(217, 119, 6, 0.15);
+            color: #fbbf24;
             border-color: var(--warning);
         }
 
@@ -337,53 +339,53 @@
         }
 
         .status-aguardando_pagamento {
-            background: #fffbeb;
-            color: #92400e;
+            background: rgba(217, 119, 6, 0.2);
+            color: #fbbf24;
             border-color: #fbbf24;
         }
 
         .status-aguardando_pagamento::before {
-            background: var(--warning);
+            background: #fbbf24;
         }
 
         .status-em_separacao {
-            background: #eff6ff;
-            color: #1e40af;
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
             border-color: #60a5fa;
         }
 
         .status-em_separacao::before {
-            background: var(--primary-light);
+            background: #60a5fa;
         }
 
         .status-enviado {
-            background: #f0f9ff;
-            color: #075985;
+            background: rgba(56, 189, 248, 0.2);
+            color: #38bdf8;
             border-color: #38bdf8;
         }
 
         .status-enviado::before {
-            background: var(--info);
+            background: #38bdf8;
         }
 
         .status-entregue {
-            background: #f0fdf4;
-            color: #166534;
+            background: rgba(34, 197, 94, 0.2);
+            color: #4ade80;
             border-color: #4ade80;
         }
 
         .status-entregue::before {
-            background: var(--success);
+            background: #4ade80;
         }
 
         .status-cancelado {
-            background: #fef2f2;
-            color: #991b1b;
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
             border-color: #f87171;
         }
 
         .status-cancelado::before {
-            background: var(--error);
+            background: #f87171;
         }
 
         /* MENU TOGGLE */
@@ -399,9 +401,10 @@
             border-radius: 8px;
             cursor: pointer;
             z-index: 9999;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             font-size: 1.2em;
             transition: all 0.2s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .menu-toggle:hover {
@@ -420,7 +423,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.7);
             z-index: 999;
             opacity: 0;
             transition: opacity 0.3s ease;
@@ -477,6 +480,24 @@
         }
 
         .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* SCROLLBAR DO CONTEÚDO PRINCIPAL */
+        .main-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .main-content::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+
+        .main-content::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .main-content::-webkit-scrollbar-thumb:hover {
             background: rgba(255, 255, 255, 0.2);
         }
     </style>

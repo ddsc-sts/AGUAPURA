@@ -11,11 +11,11 @@
         align-items: center;
         margin-bottom: 30px;
         padding-bottom: 20px;
-        border-bottom: 2px solid var(--borde);
+        border-bottom: 2px solid #2d3748;
     }
 
     .page-header h1 {
-        color: var(--texto);
+        color: #e2e8f0;
         font-size: 28px;
         display: flex;
         align-items: center;
@@ -32,16 +32,37 @@
     .filters select,
     .filters input {
         padding: 10px 15px;
-        border: 1px solid var(--borde);
+        border: 2px solid #2d3748;
         border-radius: 8px;
         font-size: 14px;
-        background: var(--fondo-card);
-        color: var(--texto);
+        background: #0f172a;
+        color: #e2e8f0;
+        transition: all 0.2s ease;
     }
 
     .filters input {
         flex: 1;
         min-width: 250px;
+    }
+
+    .filters input:focus,
+    .filters select:focus {
+        outline: none;
+        border-color: #0891b2;
+        box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.15);
+    }
+
+    .filters input::placeholder {
+        color: #64748b;
+    }
+
+    .filters select {
+        cursor: pointer;
+    }
+
+    .filters select option {
+        background: #0f172a;
+        color: #e2e8f0;
     }
 
     .stats-grid {
@@ -52,30 +73,37 @@
     }
 
     .stat-card {
-        background: var(--fondo-card);
+        background: #1e293b;
         padding: 20px;
         border-radius: 12px;
-        border: 1px solid var(--borde);
+        border: 1px solid #2d3748;
         text-align: center;
+        transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+        border-color: #0891b2;
+        transform: translateY(-2px);
     }
 
     .stat-card .number {
         font-size: 32px;
         font-weight: bold;
-        color: var(--azul);
+        color: #22d3ee;
         margin-bottom: 8px;
     }
 
     .stat-card .label {
-        color: var(--texto-secundario);
+        color: #94a3b8;
         font-size: 14px;
     }
 
     .users-table {
-        background: var(--fondo-card);
+        background: #1e293b;
         border-radius: 12px;
         overflow: hidden;
-        border: 1px solid var(--borde);
+        border: 1px solid #2d3748;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
 
     .users-table table {
@@ -84,23 +112,29 @@
     }
 
     .users-table th {
-        background: var(--fondo-secundario);
-        color: var(--texto);
+        background: #0f172a;
+        color: #94a3b8;
         font-weight: 600;
         text-align: left;
         padding: 15px;
         font-size: 14px;
-        border-bottom: 2px solid var(--borde);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #2d3748;
     }
 
     .users-table td {
         padding: 15px;
-        border-bottom: 1px solid var(--borde);
-        color: var(--texto);
+        border-bottom: 1px solid #2d3748;
+        color: #e2e8f0;
     }
 
-    .users-table tr:hover {
-        background: var(--fondo-hover);
+    .users-table tbody tr {
+        transition: all 0.2s ease;
+    }
+
+    .users-table tbody tr:hover {
+        background: #0f172a;
     }
 
     .user-info {
@@ -114,18 +148,18 @@
         height: 40px;
         border-radius: 50%;
         object-fit: cover;
-        border: 2px solid var(--azul);
+        border: 2px solid #0891b2;
     }
 
     .user-details h4 {
         font-size: 14px;
         margin-bottom: 3px;
-        color: var(--texto);
+        color: #e2e8f0;
     }
 
     .user-details p {
         font-size: 12px;
-        color: var(--texto-secundario);
+        color: #64748b;
     }
 
     .badge {
@@ -137,18 +171,21 @@
     }
 
     .badge.admin {
-        background: #ff4444;
-        color: white;
+        background: rgba(239, 68, 68, 0.2);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.3);
     }
 
     .badge.funcionario {
-        background: #ff9800;
-        color: white;
+        background: rgba(251, 191, 36, 0.2);
+        color: #fbbf24;
+        border: 1px solid rgba(251, 191, 36, 0.3);
     }
 
     .badge.cliente {
-        background: #4caf50;
-        color: white;
+        background: rgba(34, 197, 94, 0.2);
+        color: #22c55e;
+        border: 1px solid rgba(34, 197, 94, 0.3);
     }
 
     .actions {
@@ -170,22 +207,22 @@
     }
 
     .btn-icon.edit {
-        background: #2196f3;
+        background: #0891b2;
         color: white;
     }
 
     .btn-icon.edit:hover {
-        background: #1976d2;
+        background: #0e7490;
         transform: translateY(-2px);
     }
 
     .btn-icon.delete {
-        background: #f44336;
+        background: #dc2626;
         color: white;
     }
 
     .btn-icon.delete:hover {
-        background: #d32f2f;
+        background: #b91c1c;
         transform: translateY(-2px);
     }
 
@@ -196,7 +233,8 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0,0,0,0.7);
+        background: rgba(0,0,0,0.75);
+        backdrop-filter: blur(4px);
         z-index: 10000;
         align-items: center;
         justify-content: center;
@@ -207,13 +245,15 @@
     }
 
     .modal-content {
-        background: var(--fondo-card);
+        background: #1e293b;
         padding: 30px;
         border-radius: 15px;
         max-width: 500px;
         width: 90%;
         max-height: 90vh;
         overflow-y: auto;
+        border: 1px solid #2d3748;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.5);
     }
 
     .modal-header {
@@ -221,9 +261,14 @@
     }
 
     .modal-header h2 {
-        color: var(--texto);
+        color: #e2e8f0;
         font-size: 24px;
         margin-bottom: 10px;
+    }
+
+    .modal-header p {
+        color: #94a3b8;
+        font-size: 14px;
     }
 
     .form-group {
@@ -233,7 +278,7 @@
     .form-group label {
         display: block;
         margin-bottom: 8px;
-        color: var(--texto);
+        color: #e2e8f0;
         font-weight: 600;
         font-size: 14px;
     }
@@ -241,11 +286,24 @@
     .form-group select {
         width: 100%;
         padding: 12px;
-        border: 1px solid var(--borde);
+        border: 2px solid #2d3748;
         border-radius: 8px;
         font-size: 14px;
-        background: var(--fondo);
-        color: var(--texto);
+        background: #0f172a;
+        color: #e2e8f0;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .form-group select:focus {
+        outline: none;
+        border-color: #0891b2;
+        box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.15);
+    }
+
+    .form-group select option {
+        background: #0f172a;
+        color: #e2e8f0;
     }
 
     .modal-actions {
@@ -266,34 +324,51 @@
     }
 
     .btn-primary {
-        background: var(--azul);
+        background: #0891b2;
         color: white;
     }
 
     .btn-primary:hover {
-        background: #5c8fd8;
+        background: #0e7490;
         transform: translateY(-2px);
     }
 
     .btn-secondary {
-        background: var(--borde);
-        color: var(--texto);
+        background: #2d3748;
+        color: #e2e8f0;
+        border: 1px solid #374151;
     }
 
     .btn-secondary:hover {
-        background: #555;
+        background: #374151;
+    }
+
+    .btn-danger {
+        background: #dc2626;
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background: #b91c1c;
+        transform: translateY(-2px);
     }
 
     .empty-state {
         text-align: center;
         padding: 60px 20px;
-        color: var(--texto-secundario);
+        color: #64748b;
     }
 
-    .empty-state svg {
+    .empty-state div {
         font-size: 64px;
         margin-bottom: 20px;
         opacity: 0.5;
+    }
+
+    .alert-text {
+        color: #ef4444;
+        font-size: 12px;
+        margin-top: 10px;
     }
 
     @media (max-width: 768px) {
@@ -311,6 +386,10 @@
 
         .stats-grid {
             grid-template-columns: 1fr;
+        }
+
+        .modal-content {
+            padding: 20px;
         }
     }
 </style>
@@ -428,7 +507,7 @@
     <div class="modal-content">
         <div class="modal-header">
             <h2>✏️ Editar Usuário</h2>
-            <p style="color: var(--texto-secundario); font-size: 14px;" id="editUserName"></p>
+            <p id="editUserName"></p>
         </div>
         <form method="POST" action="/admin/usuarios/editar">
             <input type="hidden" name="user_id" id="editUserId">
@@ -455,10 +534,10 @@
     <div class="modal-content">
         <div class="modal-header">
             <h2>⚠️ Confirmar Exclusão</h2>
-            <p style="color: var(--texto-secundario); font-size: 14px;">
-                Tem certeza que deseja excluir o usuário <strong id="deleteUserName"></strong>?
+            <p>
+                Tem certeza que deseja excluir o usuário <strong id="deleteUserName" style="color: #22d3ee;"></strong>?
             </p>
-            <p style="color: #f44336; font-size: 12px; margin-top: 10px;">
+            <p class="alert-text">
                 ⚠️ Esta ação não pode ser desfeita!
             </p>
         </div>
@@ -467,7 +546,7 @@
             
             <div class="modal-actions">
                 <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancelar</button>
-                <button type="submit" class="btn btn-primary" style="background: #f44336;">Excluir Usuário</button>
+                <button type="submit" class="btn btn-danger">Excluir Usuário</button>
             </div>
         </form>
     </div>
@@ -532,4 +611,4 @@
     }
 </script>
 
-{% endblock %}
+{% endblock %}  

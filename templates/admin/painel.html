@@ -10,14 +10,14 @@
 }
 
 .dashboard-header h1 {
-    color: var(--text);
+    color: var(--text-sidebar);
     font-size: 2.5em;
     font-weight: 700;
     margin-bottom: 10px;
 }
 
 .dashboard-header p {
-    color: var(--text-light);
+    color: var(--text-sidebar-muted);
     font-size: 1.1em;
 }
 
@@ -30,43 +30,44 @@
 }
 
 .stat-card {
-    background: var(--card);
+    background: var(--sidebar-bg);
     padding: 30px;
     border-radius: 15px;
-    border: 1px solid var(--border);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-    transition: transform 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .stat-card:hover {
     transform: translateY(-5px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3);
 }
 
 .stat-icon {
     font-size: 3em;
     margin-bottom: 15px;
-    color: var(--primary);
+    color: var(--primary-light);
 }
 
 .stat-valor {
     font-size: 2.4em;
     font-weight: 700;
-    color: var(--primary);
+    color: var(--primary-light);
     margin-bottom: 5px;
 }
 
 .stat-label {
-    color: var(--text-light);
+    color: var(--text-sidebar-muted);
     font-size: 1.1em;
 }
 
 /* TÍTULOS DE SEÇÃO */
 .secao-titulo {
-    color: var(--text);
+    color: var(--text-sidebar);
     font-size: 1.7em;
     margin: 40px 0 25px;
     padding-bottom: 15px;
-    border-bottom: 2px solid var(--border);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
 }
 
 /* GRID CONTEÚDO */
@@ -77,19 +78,19 @@
 }
 
 .card-secao {
-    background: var(--card);
+    background: var(--sidebar-bg);
     padding: 25px;
     border-radius: 15px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-    border: 1px solid var(--border);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .card-secao h3 {
-    color: var(--text);
+    color: var(--text-sidebar);
     font-size: 1.4em;
     margin-bottom: 20px;
     padding-bottom: 15px;
-    border-bottom: 2px solid var(--border);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
     display: flex;
     align-items: center;
     gap: 10px;
@@ -98,35 +99,103 @@
 /* LISTA DE PEDIDOS */
 .pedido-item {
     padding: 15px;
-    background: var(--sidebar-hover);
+    background: rgba(59, 130, 246, 0.1);
     border-radius: 10px;
     margin-bottom: 12px;
     display: flex;
-    justify-content:space-between;
+    justify-content: space-between;
     align-items: center;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    transition: all 0.2s ease;
+}
+
+.pedido-item:hover {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.3);
 }
 
 .pedido-info {
-    color: var(--text);
+    color: var(--text-sidebar);
 }
 
 .pedido-info strong {
     display: block;
     margin-bottom: 5px;
+    color: var(--text-sidebar);
 }
 
 .pedido-info small {
-    color: var(--text-light);
+    color: var(--text-sidebar-muted);
 }
 
 /* BADGE MINI STATUS */
 .status-mini {
-    padding: 5px 12px;
-    border-radius: 15px;
+    padding: 6px 12px;
+    border-radius: 6px;
     font-size: 0.8em;
     font-weight: 600;
-    color: white;
-    background: var(--primary);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid;
+}
+
+.status-mini::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.status-aguardando_pagamento {
+    background: rgba(217, 119, 6, 0.2);
+    color: #fbbf24;
+    border-color: #fbbf24;
+}
+
+.status-aguardando_pagamento::before {
+    background: #fbbf24;
+}
+
+.status-em_separacao {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+    border-color: #60a5fa;
+}
+
+.status-em_separacao::before {
+    background: #60a5fa;
+}
+
+.status-enviado {
+    background: rgba(56, 189, 248, 0.2);
+    color: #38bdf8;
+    border-color: #38bdf8;
+}
+
+.status-enviado::before {
+    background: #38bdf8;
+}
+
+.status-entregue {
+    background: rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+    border-color: #4ade80;
+}
+
+.status-entregue::before {
+    background: #4ade80;
+}
+
+.status-cancelado {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    border-color: #f87171;
+}
+
+.status-cancelado::before {
+    background: #f87171;
 }
 
 /* PRODUTOS MAIS VENDIDOS */
@@ -134,9 +203,16 @@
     display: flex;
     gap: 15px;
     padding: 15px;
-    background: var(--sidebar-hover);
+    background: rgba(59, 130, 246, 0.1);
     border-radius: 10px;
     margin-bottom: 12px;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    transition: all 0.2s ease;
+}
+
+.produto-top:hover {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.3);
 }
 
 .produto-top img {
@@ -144,34 +220,62 @@
     height: 60px;
     object-fit: cover;
     border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .produto-top-info {
     flex: 1;
-    color: var(--text);
+    color: var(--text-sidebar);
 }
 
 .produto-top-info h4 {
     margin-bottom: 5px;
-    color: var(--text);
+    color: var(--text-sidebar);
+    font-weight: 600;
 }
 
 .produto-top-info p {
-    color: var(--text-light);
+    color: var(--text-sidebar-muted);
     font-size: 0.9em;
 }
 
 /* BADGE DE VENDAS */
 .vendas-badge {
-    background: var(--primary);
+    background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
     color: white;
     padding: 8px 15px;
     border-radius: 20px;
     font-weight: 600;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+/* MENSAGEM VAZIA */
+.mensagem-vazia {
+    text-align: center;
+    padding: 30px 20px;
+    color: var(--text-sidebar-muted);
+    font-style: italic;
 }
 
 /* RESPONSIVO */
 @media (max-width: 968px) {
+    .dashboard-header h1 {
+        font-size: 2em;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+    }
+
+    .stat-card {
+        padding: 20px;
+    }
+
+    .stat-valor {
+        font-size: 2em;
+    }
+
     .conteudo-grid {
         grid-template-columns: 1fr;
     }
@@ -227,7 +331,7 @@
             </div>
         </div>
         {% else %}
-        <p style="text-align: center; padding: 20px; color: var(--texto); opacity: 0.7;">
+        <p class="mensagem-vazia">
             Nenhum pedido recente
         </p>
         {% endfor %}
@@ -247,7 +351,7 @@
             <span class="vendas-badge">{{ produto.vendas }}</span>
         </div>
         {% else %}
-        <p style="text-align: center; padding: 20px; color: var(--texto); opacity: 0.7;">
+        <p class="mensagem-vazia">
             Nenhuma venda registrada
         </p>
         {% endfor %}

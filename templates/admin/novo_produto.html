@@ -1,0 +1,581 @@
+{% extends "base_painel.html" %}
+
+{% block title %}Adicionar Produto - AquaPura{% endblock %}
+
+{% block painel_content %}
+<style>
+    .page-header {
+        margin-bottom: 32px;
+    }
+
+    .page-title {
+        font-size: 2em;
+        font-weight: 800;
+        color: #e2e8f0;
+        margin-bottom: 8px;
+    }
+
+    .page-subtitle {
+        color: #94a3b8;
+        font-size: 1em;
+    }
+
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9em;
+        color: #64748b;
+        margin-bottom: 16px;
+    }
+
+    .breadcrumb a {
+        color: #0891b2;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s ease;
+    }
+
+    .breadcrumb a:hover {
+        color: #22d3ee;
+        text-decoration: underline;
+    }
+
+    .form-card {
+        background: #1e293b;
+        border-radius: 16px;
+        padding: 32px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+        border: 1px solid #2d3748;
+    }
+
+    .form-section {
+        margin-bottom: 32px;
+    }
+
+    .section-title {
+        font-size: 1.1em;
+        font-weight: 700;
+        color: #e2e8f0;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #2d3748;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .form-grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #e2e8f0;
+        font-size: 0.9em;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .required {
+        color: #ef4444;
+        font-weight: 700;
+    }
+
+    .form-input,
+    .form-textarea,
+    .form-select {
+        padding: 12px 16px;
+        border: 2px solid #2d3748;
+        border-radius: 10px;
+        font-size: 1em;
+        font-family: 'Inter', sans-serif;
+        transition: all 0.2s ease;
+        background: #0f172a;
+        color: #e2e8f0;
+    }
+
+    .form-input:focus,
+    .form-textarea:focus,
+    .form-select:focus {
+        outline: none;
+        border-color: #0891b2;
+        background: #1e293b;
+        box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.15);
+    }
+
+    .form-input::placeholder,
+    .form-textarea::placeholder {
+        color: #64748b;
+    }
+
+    .form-select {
+        cursor: pointer;
+    }
+
+    .form-select option {
+        background: #0f172a;
+        color: #e2e8f0;
+    }
+
+    .form-textarea {
+        resize: vertical;
+        min-height: 120px;
+    }
+
+    .form-helper {
+        font-size: 0.85em;
+        color: #64748b;
+    }
+
+    .input-group {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-prefix {
+        position: absolute;
+        left: 16px;
+        color: #94a3b8;
+        font-weight: 600;
+        pointer-events: none;
+    }
+
+    .input-with-prefix {
+        padding-left: 40px;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 2px solid #2d3748;
+    }
+
+    .btn {
+        padding: 14px 28px;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.95em;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+        color: white;
+        box-shadow: 0 4px 12px rgba(8, 145, 178, 0.3);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(8, 145, 178, 0.4);
+    }
+
+    .btn-primary:active {
+        transform: translateY(0);
+    }
+
+    .btn-secondary {
+        background: #2d3748;
+        color: #e2e8f0;
+        border: 1px solid #374151;
+    }
+
+    .btn-secondary:hover {
+        background: #374151;
+    }
+
+    .image-preview-container {
+        margin-top: 12px;
+    }
+
+    .image-preview {
+        max-width: 200px;
+        max-height: 200px;
+        border-radius: 10px;
+        border: 2px solid #2d3748;
+        display: none;
+        background: #0f172a;
+    }
+
+    .image-preview.show {
+        display: block;
+    }
+
+    .alert {
+        padding: 16px 20px;
+        border-radius: 10px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 500;
+        font-size: 0.9em;
+    }
+
+    .alert-info {
+        background: rgba(8, 145, 178, 0.15);
+        color: #22d3ee;
+        border: 1px solid rgba(8, 145, 178, 0.3);
+    }
+
+    /* Estilo para input file */
+    .form-input[type="file"] {
+        padding: 10px;
+        cursor: pointer;
+    }
+
+    .form-input[type="file"]::file-selector-button {
+        padding: 8px 16px;
+        background: #0891b2;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        margin-right: 12px;
+        transition: all 0.2s ease;
+    }
+
+    .form-input[type="file"]::file-selector-button:hover {
+        background: #0e7490;
+    }
+
+    @media (max-width: 968px) {
+        .page-header {
+            margin-bottom: 24px;
+        }
+
+        .page-title {
+            font-size: 1.5em;
+        }
+
+        .page-subtitle {
+            font-size: 0.9em;
+        }
+
+        .breadcrumb {
+            font-size: 0.8em;
+            flex-wrap: wrap;
+        }
+
+        .form-card {
+            padding: 24px 16px;
+            border-radius: 12px;
+        }
+
+        .form-section {
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 1em;
+        }
+
+        .form-grid-2 {
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .form-grid {
+            gap: 16px;
+        }
+
+        .form-actions {
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 24px;
+            padding-top: 20px;
+        }
+
+        .btn {
+            width: 100%;
+            justify-content: center;
+            padding: 16px 24px;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            font-size: 0.85em;
+        }
+
+        .image-preview {
+            max-width: 100%;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .page-title {
+            font-size: 1.3em;
+        }
+
+        .form-card {
+            padding: 20px 12px;
+        }
+
+        .form-input,
+        .form-textarea,
+        .form-select {
+            padding: 10px 14px;
+            font-size: 0.95em;
+        }
+
+        .btn {
+            padding: 14px 20px;
+            font-size: 0.9em;
+        }
+    }
+</style>
+
+<div class="page-header">
+    <div class="breadcrumb">
+        <a href="/admin/painel">Dashboard</a>
+        <span>›</span>
+        <a href="/admin/produtos">Produtos</a>
+        <span>›</span>
+        <span>Adicionar Produto</span>
+    </div>
+    <h1 class="page-title">➕ Adicionar Novo Produto</h1>
+    <p class="page-subtitle">Preencha os dados abaixo para cadastrar um novo produto no sistema</p>
+</div>
+
+<div class="form-card">
+    <div class="alert alert-info">
+        <span style="font-size: 1.3em;">ℹ️</span>
+        <span>Todos os campos marcados com <span class="required">*</span> são obrigatórios</span>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" id="formProduto">
+        <!-- INFORMAÇÕES BÁSICAS -->
+        <div class="form-section">
+            <h2 class="section-title">📝 Informações Básicas</h2>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label" for="nome">
+                        Nome do Produto <span class="required">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        class="form-input" 
+                        id="nome" 
+                        name="nome" 
+                        placeholder="Ex: Água Mineral Natural 500ml"
+                        required
+                        maxlength="200"
+                    >
+                    <span class="form-helper">Nome completo que aparecerá no site</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="descricao">
+                        Descrição <span class="required">*</span>
+                    </label>
+                    <textarea 
+                        class="form-textarea" 
+                        id="descricao" 
+                        name="descricao" 
+                        placeholder="Descreva as características do produto..."
+                        required
+                    ></textarea>
+                    <span class="form-helper">Descrição detalhada para os clientes</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- PRECIFICAÇÃO -->
+        <div class="form-section">
+            <h2 class="section-title">💰 Precificação</h2>
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label class="form-label" for="preco">
+                        Preço <span class="required">*</span>
+                    </label>
+                    <div class="input-group">
+                        <span class="input-prefix">R$</span>
+                        <input 
+                            type="number" 
+                            class="form-input input-with-prefix" 
+                            id="preco" 
+                            name="preco" 
+                            step="0.01" 
+                            min="0.01"
+                            placeholder="0,00"
+                            required
+                        >
+                    </div>
+                    <span class="form-helper">Valor unitário do produto</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="estoque">
+                        Estoque Inicial <span class="required">*</span>
+                    </label>
+                    <input 
+                        type="number" 
+                        class="form-input" 
+                        id="estoque" 
+                        name="estoque" 
+                        min="0"
+                        placeholder="0"
+                        required
+                    >
+                    <span class="form-helper">Quantidade disponível em estoque</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ESPECIFICAÇÕES -->
+        <div class="form-section">
+            <h2 class="section-title">📦 Especificações</h2>
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label class="form-label" for="categoria">
+                        Categoria <span class="required">*</span>
+                    </label>
+                    <select class="form-select" id="categoria" name="categoria" required>
+                        <option value="">Selecione uma categoria</option>
+                        <option value="Garrafa">Garrafa</option>
+                        <option value="Copo">Copo</option>
+                        <option value="Acessório">Acessório</option>
+                    </select>
+                    <span class="form-helper">Categoria principal do produto</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="volume">
+                        Volume/Tamanho
+                    </label>
+                    <input 
+                        type="text" 
+                        class="form-input" 
+                        id="volume" 
+                        name="volume" 
+                        placeholder="Ex: 500ml, 1.5L, 20L"
+                        maxlength="50"
+                    >
+                    <span class="form-helper">Volume ou dimensão do produto</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- IMAGEM -->
+        <div class="form-section">
+            <h2 class="section-title">🖼️ Imagem do Produto</h2>
+            <div class="form-group">
+                <div class="form-group">
+                    <label class="form-label" for="imagem_principal">
+                        Imagem Principal <span class="required">*</span>
+                    </label>
+                    <input 
+                        type="file" 
+                        class="form-input" 
+                        id="imagem_principal" 
+                        name="imagem_principal" 
+                        accept="image/*"
+                        required
+                        onchange="previewImage(event)"
+                    >
+                    <span class="form-helper">Formatos aceitos: JPG, PNG, WebP (máx. 5MB) - Esta será a imagem principal do produto</span>
+                    <div class="image-preview-container">
+                        <img id="imagePreview" class="image-preview" alt="Preview da imagem">
+                    </div>
+                </div>
+        </div>
+
+        <!-- AÇÕES -->
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <span>✓</span>
+                Cadastrar Produto
+            </button>
+            <a href="/admin/produtos" class="btn btn-secondary">
+                <span>✕</span>
+                Cancelar
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Preview de imagem
+    function previewImage(event) {
+        const preview = document.getElementById('imagePreview');
+        const file = event.target.files[0];
+        
+        if (file) {
+            // Validar tamanho (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('⚠️ A imagem deve ter no máximo 5MB');
+                event.target.value = '';
+                preview.classList.remove('show');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.classList.add('show');
+            }
+            reader.readAsDataURL(file);
+        } else {
+            preview.classList.remove('show');
+        }
+    }
+
+    // Validação do formulário
+    document.getElementById('formProduto').addEventListener('submit', function(e) {
+        const preco = parseFloat(document.getElementById('preco').value);
+        const estoque = parseInt(document.getElementById('estoque').value);
+        
+        if (preco <= 0) {
+            e.preventDefault();
+            alert('⚠️ O preço deve ser maior que zero');
+            return false;
+        }
+        
+        if (estoque < 0) {
+            e.preventDefault();
+            alert('⚠️ O estoque não pode ser negativo');
+            return false;
+        }
+        
+        // Confirmar cadastro
+        if (!confirm('✓ Confirma o cadastro deste produto?')) {
+            e.preventDefault();
+            return false;
+        }
+    });
+
+    // Formatar input de preço
+    const precoInput = document.getElementById('preco');
+    precoInput.addEventListener('blur', function() {
+        if (this.value) {
+            this.value = parseFloat(this.value).toFixed(2);
+        }
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% block title %}Pagamento PIX - AQUAPURA{% endblock %}
+
+{% block content %}
+<div style="max-width:700px; margin:40px auto; padding:20px;">
+  
+  <!-- Header -->
+  <div style="text-align:center; margin-bottom:30px;">
+    <div style="display:inline-flex; align-items:center; justify-content:center; width:60px; height:60px; background:linear-gradient(135deg, #32BCAD 0%, #28a89a 100%); border-radius:50%; margin-bottom:16px;">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <path d="M3 9h18M9 21V9"/>
+      </svg>
+    </div>
+    <h2 style="margin:0 0 8px 0;">Pagamento via PIX</h2>
+    <p style="color:var(--texto); opacity:0.8; margin:0;">Pedido #{{ pedido.id }}</p>
+  </div>
+
+  <!-- Timer -->
+  <div class="glass-card" style="padding:20px; border-radius:16px; text-align:center; margin-bottom:24px; background:linear-gradient(135deg, rgba(255,193,7,0.1) 0%, rgba(255,152,0,0.1) 100%); border:2px solid #ffc107;">
+    <div style="font-size:0.9rem; color:#f57c00; font-weight:600; margin-bottom:8px;">⏱️ TEMPO RESTANTE PARA PAGAMENTO</div>
+    <div id="timer" style="font-size:2rem; font-weight:700; color:#f57c00; font-family:monospace;">05:00</div>
+    <div style="font-size:0.85rem; color:var(--texto); opacity:0.7; margin-top:4px;">O QR Code expira em 5 minutos</div>
+  </div>
+
+  <!-- QR Code Section -->
+  <div class="glass-card" style="padding:24px; border-radius:16px; text-align:center; margin-bottom:20px;">
+    <p style="font-weight:600; margin-bottom:16px; font-size:1.05rem;">Escaneie o QR Code com o app do seu banco</p>
+    
+    <div style="display:inline-block; background:#ffffff; padding:20px; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.1); margin-bottom:20px;">
+      <img 
+        src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=00020126580014BR.GOV.BCB.PIX0136{{ pedido.id }}{{ '%014d' | format(pedido.id) }}5204000053039865802BR5925AQUAPURA%20ECOMMERCE6009SAO%20PAULO62070503***6304{{ '%04d' | format(pedido.id) }}"
+        alt="QR Code PIX"
+        width="220"
+        height="220"
+        style="display:block;"
+      >
+    </div>
+
+    <div style="border-top:1px solid var(--border); padding-top:20px; margin-top:20px;">
+      <p style="font-weight:600; margin-bottom:12px; font-size:0.95rem;">Ou copie o código PIX Copia e Cola</p>
+      
+      <div style="position:relative;">
+        <input 
+          type="text" 
+          id="pixCode" 
+          readonly 
+          value="00020126580014BR.GOV.BCB.PIX0136{{ pedido.id }}{{ '%014d' | format(pedido.id) }}5204000053039865802BR5925AQUAPURA ECOMMERCE6009SAO PAULO62070503***6304{{ '%04d' | format(pedido.id) }}"
+          style="width:100%; padding:14px; border-radius:10px; border:1px solid var(--border); background:var(--card-bg); color:var(--texto); font-size:0.85rem; font-family:monospace; padding-right:120px;"
+        >
+        <button 
+          onclick="copiarCodigoPix()" 
+          id="btnCopiar"
+          style="position:absolute; right:8px; top:50%; transform:translateY(-50%); padding:10px 20px; background:linear-gradient(135deg, #32BCAD 0%, #28a89a 100%); color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer; transition:all 0.3s;"
+        >
+          📋 Copiar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Instruções -->
+  <div class="glass-card" style="padding:20px; border-radius:16px; margin-bottom:20px;">
+    <h4 style="margin:0 0 12px 0; font-size:1rem;">📱 Como pagar com PIX:</h4>
+    <ol style="margin:0; padding-left:20px; line-height:1.8;">
+      <li>Abra o app do seu banco</li>
+      <li>Escolha pagar com PIX QR Code ou Copia e Cola</li>
+      <li>Escaneie o código ou cole o código acima</li>
+      <li>Confirme as informações e finalize o pagamento</li>
+      <li>Clique em "Já paguei" após confirmar o pagamento</li>
+    </ol>
+  </div>
+
+  <!-- Informações do Pagamento -->
+  <div class="glass-card" style="padding:20px; border-radius:16px; margin-bottom:20px;">
+    <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+      <span style="color:var(--texto); opacity:0.8;">Valor do pedido:</span>
+      <strong style="font-size:1.1rem;">R$ {{ "%.2f"|format(pedido.valor_total) }}</strong>
+    </div>
+    <div style="display:flex; justify-content:space-between; padding-top:8px; border-top:1px solid var(--border);">
+      <span style="color:var(--texto); opacity:0.8;">Beneficiário:</span>
+      <strong>AQUAPURA</strong>
+    </div>
+  </div>
+
+  <!-- Botão Principal -->
+  <button 
+    onclick="verificarPagamento()" 
+    id="btnVerificar"
+    style="width:100%; padding:18px; background:linear-gradient(135deg, #28a745 0%, #20923a 100%); color:white; border:none; border-radius:12px; font-size:1.1rem; font-weight:700; cursor:pointer; margin-bottom:12px; transition:all 0.3s; box-shadow:0 4px 15px rgba(40,167,69,0.3);"
+    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(40,167,69,0.4)';"
+    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(40,167,69,0.3)';"
+  >
+    ✓ Já paguei / Verificar pagamento
+  </button>
+
+  <!-- Link Voltar -->
+  <div style="text-align:center;">
+    <a href="{{ url_for('home') }}" style="color:var(--texto); opacity:0.7; text-decoration:none; font-size:0.9rem;">
+      ← Voltar para a página inicial
+    </a>
+  </div>
+
+</div>
+
+<style>
+.glass-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  box-shadow: 0 6px 20px var(--shadow);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+#timer.expiring {
+  animation: pulse 1s infinite;
+  color: #dc3545 !important;
+}
+</style>
+
+<script>
+// Timer de 5 minutos
+let tempoRestante = 300; // 5 minutos em segundos
+const timerElement = document.getElementById('timer');
+
+const countdown = setInterval(() => {
+  const minutos = Math.floor(tempoRestante / 60);
+  const segundos = tempoRestante % 60;
+  
+  timerElement.textContent = `${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
+  
+  // Adiciona classe de alerta quando faltar 1 minuto
+  if (tempoRestante <= 60) {
+    timerElement.classList.add('expiring');
+  }
+  
+  if (tempoRestante <= 0) {
+    clearInterval(countdown);
+    timerElement.textContent = 'EXPIRADO';
+    timerElement.style.color = '#dc3545';
+    document.getElementById('btnVerificar').disabled = true;
+    document.getElementById('btnVerificar').style.opacity = '0.5';
+    document.getElementById('btnVerificar').style.cursor = 'not-allowed';
+    alert('⚠️ O tempo para pagamento expirou. Por favor, faça um novo pedido.');
+  }
+  
+  tempoRestante--;
+}, 1000);
+
+// Copiar código PIX
+function copiarCodigoPix() {
+  const pixCode = document.getElementById('pixCode');
+  pixCode.select();
+  pixCode.setSelectionRange(0, 99999); // Mobile
+  
+  navigator.clipboard.writeText(pixCode.value).then(() => {
+    const btn = document.getElementById('btnCopiar');
+    const textoOriginal = btn.innerHTML;
+    btn.innerHTML = '✓ Copiado!';
+    btn.style.background = '#28a745';
+    
+    setTimeout(() => {
+      btn.innerHTML = textoOriginal;
+      btn.style.background = 'linear-gradient(135deg, #32BCAD 0%, #28a89a 100%)';
+    }, 2000);
+  });
+}
+
+// Verificar pagamento
+function verificarPagamento() {
+  const btn = document.getElementById('btnVerificar');
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Verificando pagamento...';
+  
+  // Simula verificação (2 segundos)
+  setTimeout(() => {
+    window.location.href = "{{ url_for('pedido_finalizado', pedido_id=pedido.id) }}?pago=true";
+  }, 2000);
+}
+
+// Prevenir refresh acidental
+window.addEventListener('beforeunload', (e) => {
+  if (tempoRestante > 0) {
+    e.preventDefault();
+    e.returnValue = 'Você tem um pagamento PIX pendente. Tem certeza que deseja sair?';
+  }
+});
+</script>
+
+{% endblock %}

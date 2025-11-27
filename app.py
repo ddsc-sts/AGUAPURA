@@ -341,10 +341,9 @@ def admin_relatorios():
         SELECT 
             MONTH(criado_em) as mes,
             YEAR(criado_em) as ano,
-            COUNT(*) as total_pedidos,
+            COUNT(DISTINCT pedido_id) as total_pedidos,
             SUM(valor_total) as faturamento
-        FROM pedidos
-        WHERE status = 'concluido'
+        FROM compras
         GROUP BY ano, mes
         ORDER BY ano DESC, mes DESC
         LIMIT 12
@@ -354,15 +353,13 @@ def admin_relatorios():
     # Produtos mais vendidos
     cursor.execute("""
         SELECT 
-            pr.nome,
-            pr.categoria,
-            SUM(pi.quantidade) as total_vendido,
-            SUM(pi.quantidade * pi.valor) as receita
-        FROM pedido_itens pi
-        JOIN produtos pr ON pr.id = pi.produto_id
-        JOIN pedidos p ON p.id = pi.pedido_id
-        WHERE p.status = 'concluido'
-        GROUP BY pi.produto_id
+            p.nome,
+            p.categoria,
+            SUM(c.quantidade) as total_vendido,
+            SUM(c.valor_total) as receita
+        FROM compras c
+        JOIN produtos p ON p.id = c.produto_id
+        GROUP BY c.produto_id
         ORDER BY total_vendido DESC
         LIMIT 10
     """)
@@ -371,8 +368,7 @@ def admin_relatorios():
     return render_template("admin/relatorios.html",
                          vendas_mensais=vendas_mensais,
                          produtos_top=produtos_top)
-
-
+    
 @app.route("/admin/produtos/editar/<int:produto_id>", methods=["GET", "POST"])
 @admin_required
 def admin_editar_produto(produto_id):
@@ -605,6 +601,10 @@ def politica_privacidade():
 # CARRINHO
 # ---------------------------
 
+# ============================================
+# ROTAS DO CARRINHO - VERSÃO MELHORADA
+# ============================================
+
 @app.route("/carrinho")
 @login_required
 def carrinho():
@@ -613,8 +613,9 @@ def carrinho():
 
     session_id = get_session_id()
 
+    # Buscar itens com personalização
     cursor.execute("""
-        SELECT c.id AS carrinho_id, c.quantidade, c.cor,
+        SELECT c.id AS carrinho_id, c.quantidade, c.cor, c.personalizacao,
                p.id AS produto_id, p.nome, p.preco, p.imagem_principal, p.estoque
         FROM carrinho c
         JOIN produtos p ON p.id = c.produto_id
@@ -622,7 +623,7 @@ def carrinho():
     """, (session_id,))
     itens = cursor.fetchall()
 
-    # Calcular subtotal com Decimal
+    # Calcular subtotal
     subtotal = Decimal("0.00")
     for item in itens:
         preco = Decimal(item["preco"])
@@ -630,14 +631,123 @@ def carrinho():
         subtotal += preco * quantidade
 
     frete = Decimal("12.00") if subtotal > 0 else Decimal("0.00")
-    total = subtotal + frete
+    
+    # Verificar se há cupom aplicado na sessão
+    desconto = Decimal("0.00")
+    cupom_info = None
+    if 'cupom_codigo' in session:
+        cursor.execute("""
+            SELECT * FROM cupons 
+            WHERE codigo = %s AND ativo = TRUE
+            AND (data_expiracao IS NULL OR data_expiracao >= CURDATE())
+            AND (uso_maximo IS NULL OR uso_atual < uso_maximo)
+        """, (session['cupom_codigo'],))
+        cupom = cursor.fetchone()
+        
+        if cupom:
+            if cupom['tipo'] == 'percentual':
+                desconto = subtotal * (Decimal(cupom['valor']) / Decimal("100"))
+            else:  # fixo
+                desconto = Decimal(cupom['valor'])
+            
+            cupom_info = {
+                'codigo': cupom['codigo'],
+                'tipo': cupom['tipo'],
+                'valor': cupom['valor']
+            }
+        else:
+            # Cupom inválido, remover da sessão
+            session.pop('cupom_codigo', None)
+    
+    total = subtotal + frete - desconto
+    if total < 0:
+        total = Decimal("0.00")
 
-    return render_template("carrinho.html", itens=itens, subtotal=subtotal, frete=frete, total=total)
+    cursor.close()
+    db.close()
 
+    return render_template("carrinho.html", 
+                          itens=itens, 
+                          subtotal=subtotal, 
+                          frete=frete, 
+                          desconto=desconto,
+                          cupom_info=cupom_info,
+                          total=total)
 
 
 # ---------------------------
-# Atualizar carrinho (agora aceita POST, salva cor e itens do kit como itens normais)
+# APLICAR CUPOM
+# ---------------------------
+@app.route("/carrinho/aplicar_cupom", methods=["POST"])
+@login_required
+def aplicar_cupom():
+    codigo = request.form.get("codigo_cupom", "").strip().upper()
+    
+    if not codigo:
+        flash("Digite um código de cupom.", "erro")
+        return redirect(url_for("carrinho"))
+    
+    db = conectar()
+    cursor = db.cursor(dictionary=True)
+    
+    cursor.execute("""
+        SELECT * FROM cupons 
+        WHERE codigo = %s AND ativo = TRUE
+        AND (data_expiracao IS NULL OR data_expiracao >= CURDATE())
+        AND (uso_maximo IS NULL OR uso_atual < uso_maximo)
+    """, (codigo,))
+    cupom = cursor.fetchone()
+    
+    cursor.close()
+    db.close()
+    
+    if cupom:
+        session['cupom_codigo'] = codigo
+        flash(f"Cupom '{codigo}' aplicado com sucesso!", "sucesso")
+    else:
+        flash("Cupom inválido ou expirado.", "erro")
+    
+    return redirect(url_for("carrinho"))
+
+
+# ---------------------------
+# REMOVER CUPOM
+# ---------------------------
+@app.route("/carrinho/remover_cupom")
+@login_required
+def remover_cupom():
+    session.pop('cupom_codigo', None)
+    flash("Cupom removido.", "info")
+    return redirect(url_for("carrinho"))
+
+
+# ---------------------------
+# ATUALIZAR PERSONALIZAÇÃO
+# ---------------------------
+@app.route("/carrinho/personalizar/<int:id>", methods=["POST"])
+@login_required
+def atualizar_personalizacao(id):
+    personalizacao = request.form.get("personalizacao", "").strip()
+    
+    db = conectar()
+    cursor = db.cursor()
+    
+    cursor.execute("""
+        UPDATE carrinho 
+        SET personalizacao = %s 
+        WHERE id = %s
+    """, (personalizacao if personalizacao else None, id))
+    
+    db.commit()
+    cursor.close()
+    db.close()
+    
+    flash("Personalização salva!", "sucesso")
+    return redirect(url_for("carrinho"))
+
+
+# ---------------------------
+# Atualizar add_carrinho para incluir personalização
 # ---------------------------
 @app.route("/add_carrinho/<int:produto_id>", methods=["POST"])
 def add_carrinho(produto_id):
@@ -646,17 +756,14 @@ def add_carrinho(produto_id):
 
     session_id = get_session_id()
 
-    # quantidade do produto principal
     qtd_form = int(request.form.get("quantidade", 1))
-    cor = request.form.get("cor", "") or ""  # salva string vazia se não tiver cor
+    cor = request.form.get("cor", "") or ""
+    personalizacao = request.form.get("personalizacao", "").strip() or None
 
-    # kit (se vier): listas paralelas de ids e quantidades
     kit_produtos = request.form.getlist("kit_produtos")
     kit_qtds = request.form.getlist("kit_qtds")
 
-    # --- Função util: inserir/atualizar um item no carrinho levando em conta 'cor' ---
-    def upsert_carrinho(prod_id, qtd, cor_value=""):
-        # pegar estoque atual do produto
+    def upsert_carrinho(prod_id, qtd, cor_value="", person_value=None):
         cursor.execute("SELECT estoque FROM produtos WHERE id = %s", (prod_id,))
         r = cursor.fetchone()
         if not r:
@@ -664,11 +771,13 @@ def add_carrinho(produto_id):
 
         estoque = int(r["estoque"])
 
-        # procurar item com mesma session, produto e cor
+        # Procurar item com mesma session, produto, cor E personalização
         cursor.execute("""
             SELECT id, quantidade FROM carrinho
-            WHERE session_id = %s AND produto_id = %s AND IFNULL(cor, '') = %s
-        """, (session_id, prod_id, cor_value))
+            WHERE session_id = %s AND produto_id = %s 
+            AND IFNULL(cor, '') = %s
+            AND IFNULL(personalizacao, '') = %s
+        """, (session_id, prod_id, cor_value, person_value or ''))
         existing = cursor.fetchone()
 
         nova_qtd = qtd + (existing["quantidade"] if existing else 0)
@@ -682,40 +791,34 @@ def add_carrinho(produto_id):
             """, (nova_qtd, existing["id"]))
         else:
             cursor.execute("""
-                INSERT INTO carrinho (session_id, produto_id, quantidade, cor)
-                VALUES (%s, %s, %s, %s)
-            """, (session_id, prod_id, nova_qtd, cor_value))
+                INSERT INTO carrinho (session_id, produto_id, quantidade, cor, personalizacao)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (session_id, prod_id, nova_qtd, cor_value, person_value))
 
         return True, None
 
-    # Primeiro, adiciona/atualiza produto principal
-    ok, err = upsert_carrinho(produto_id, qtd_form, cor)
+    ok, err = upsert_carrinho(produto_id, qtd_form, cor, personalizacao)
     if not ok:
         flash(err, "erro")
         return redirect(url_for("produto", id=produto_id))
 
-    # Em seguida, adiciona itens do kit (se houver)
     if kit_produtos and kit_qtds:
-        # kit_produtos and kit_qtds são lists de strings; iterar de forma segura
         for idx, pid_str in enumerate(kit_produtos):
             try:
                 pid = int(pid_str)
                 qtd_kit = int(kit_qtds[idx]) if idx < len(kit_qtds) else 1
             except:
                 continue
-            ok, err = upsert_carrinho(pid, qtd_kit, "")  # acessórios sem cor por padrão
+            ok, err = upsert_carrinho(pid, qtd_kit, "", None)
             if not ok:
                 flash(f"Erro ao adicionar item do kit: {err}", "erro")
-                # continuar tentando os outros, mas informar o usuário
+
     db.commit()
+    cursor.close()
+    db.close()
+    
     flash("Produto(s) adicionados ao carrinho!", "sucesso")
     return redirect(url_for("carrinho"))
-
-
-
-
-
-
 
 # ---------------------------
 # AUMENTAR QUANTIDADE (CHECK DE ESTOQUE)
@@ -968,6 +1071,8 @@ def buscar():
 
     return render_template("buscar.html", termo=termo, resultados=resultados)
 
+
+
 @app.route("/checkout", methods=["GET", "POST"])
 def checkout():
     db = conectar()
@@ -975,9 +1080,10 @@ def checkout():
 
     session_id = get_session_id()
 
-    # obter itens do carrinho
+    # Obter itens do carrinho COM PERSONALIZAÇÃO
     cursor.execute("""
-        SELECT c.id AS carrinho_id, c.quantidade, c.cor, p.id AS produto_id, p.nome, p.preco, p.imagem_principal, p.estoque
+        SELECT c.id AS carrinho_id, c.quantidade, c.cor, c.personalizacao,
+               p.id AS produto_id, p.nome, p.preco, p.imagem_principal, p.estoque
         FROM carrinho c
         JOIN produtos p ON p.id = c.produto_id
         WHERE c.session_id = %s
@@ -985,29 +1091,62 @@ def checkout():
     itens = cursor.fetchall()
 
     if request.method == "GET":
-        # se não houver itens, redireciona
+        # Se não houver itens, redireciona
         if not itens:
             flash("Seu carrinho está vazio.", "erro")
             cursor.close()
             db.close()
             return redirect(url_for("home"))
 
-        # calcula subtotal / frete / total aqui e passa pro template
+        # Calcula subtotal
         subtotal = Decimal("0.00")
         for item in itens:
             preco = Decimal(item["preco"])
             qtd = int(item["quantidade"])
             subtotal += preco * qtd
 
+        # Frete padrão
         frete = Decimal("12.00") if subtotal > 0 else Decimal("0.00")
-        total = subtotal + frete
+        
+        # ========== VERIFICAR CUPOM APLICADO ==========
+        desconto = Decimal("0.00")
+        cupom_info = None
+        
+        if 'cupom_codigo' in session:
+            cursor.execute("""
+                SELECT * FROM cupons 
+                WHERE codigo = %s AND ativo = TRUE
+                AND (data_expiracao IS NULL OR data_expiracao >= CURDATE())
+                AND (uso_maximo IS NULL OR uso_atual < uso_maximo)
+            """, (session['cupom_codigo'],))
+            cupom = cursor.fetchone()
+            
+            if cupom:
+                if cupom['tipo'] == 'percentual':
+                    desconto = subtotal * (Decimal(cupom['valor']) / Decimal("100"))
+                else:  # fixo
+                    desconto = Decimal(cupom['valor'])
+                
+                cupom_info = {
+                    'codigo': cupom['codigo'],
+                    'tipo': cupom['tipo'],
+                    'valor': cupom['valor']
+                }
+            else:
+                # Cupom inválido, remover da sessão
+                session.pop('cupom_codigo', None)
+        
+        total = subtotal + frete - desconto
+        if total < 0:
+            total = Decimal("0.00")
 
         # Se usuário logado, buscar endereços e pagamentos salvos
         enderecos = []
         pagamentos = []
         if "usuario_id" in session:
             user_id = session["usuario_id"]
-            # enderecos
+            
+            # Endereços
             cursor.execute("""
                 SELECT id, nome_destinatario, cpf, rua, numero, bairro, cidade, estado, cep
                 FROM enderecos_usuarios
@@ -1016,7 +1155,7 @@ def checkout():
             """, (user_id,))
             enderecos = cursor.fetchall()
 
-            # pagamentos
+            # Pagamentos
             cursor.execute("""
                 SELECT id, tipo, nome_impresso, numero_mascarado, validade, chave_pix
                 FROM pagamentos_usuarios
@@ -1032,11 +1171,16 @@ def checkout():
                                itens=itens,
                                subtotal=subtotal,
                                frete=frete,
+                               desconto=desconto,
+                               cupom_info=cupom_info,
                                total=total,
                                enderecos=enderecos,
                                pagamentos=pagamentos)
 
-    # ---------------- POST ----------------
+    # ============================================================
+    # ---------------- POST - PROCESSAR PEDIDO -------------------
+    # ============================================================
+    
     # Dados básicos do cliente
     nome = request.form.get("nome", "").strip()
     cpf = request.form.get("cpf", "").strip()
@@ -1087,43 +1231,29 @@ def checkout():
         metodo_pagamento = "PIX"
         
     elif pagamento_selecionado == "novo":
-        # Novo método - ler do campo metodo_pagamento
-        metodo_pagamento = request.form.get("metodo_pagamento", "").strip()
+        # Novo cartão
+        metodo_pagamento = "CARTAO"
         
-        if metodo_pagamento == "PIX":
-            pix_chave = request.form.get("pix_chave", "").strip()
-            if not pix_chave:
-                flash("Informe a chave PIX.", "erro")
-                cursor.close()
-                db.close()
-                return redirect(url_for("checkout"))
-                
-        elif metodo_pagamento == "CARTAO":
-            cartao_num = request.form.get("cartao_num", "").strip()
-            cartao_nome = request.form.get("cartao_nome", "").strip()
-            cartao_validade = request.form.get("cartao_validade", "").strip()
-            cartao_cvv = request.form.get("cartao_cvv", "").strip()
-            
-            # Validação básica
-            cartao_num_digits = re.sub(r"\D", "", cartao_num)
-            if len(cartao_num_digits) < 12:
-                flash("Número do cartão inválido.", "erro")
-                cursor.close()
-                db.close()
-                return redirect(url_for("checkout"))
-            
-            cartao_info = {
-                "nome_impresso": cartao_nome,
-                "numero": cartao_num_digits,
-                "numero_mascarado": '**** **** **** ' + cartao_num_digits[-4:],
-                "validade": cartao_validade,
-                "cvv": cartao_cvv
-            }
-        else:
-            flash("Método de pagamento inválido.", "erro")
+        cartao_num = request.form.get("cartao_num", "").strip()
+        cartao_nome = request.form.get("cartao_nome", "").strip()
+        cartao_validade = request.form.get("cartao_validade", "").strip()
+        cartao_cvv = request.form.get("cartao_cvv", "").strip()
+        
+        # Validação básica
+        cartao_num_digits = re.sub(r"\D", "", cartao_num)
+        if len(cartao_num_digits) < 12:
+            flash("Número do cartão inválido.", "erro")
             cursor.close()
             db.close()
             return redirect(url_for("checkout"))
+        
+        cartao_info = {
+            "nome_impresso": cartao_nome,
+            "numero": cartao_num_digits,
+            "numero_mascarado": '**** **** **** ' + cartao_num_digits[-4:],
+            "validade": cartao_validade,
+            "cvv": cartao_cvv
+        }
             
     else:
         # Método salvo - buscar no banco
@@ -1188,8 +1318,40 @@ def checkout():
             return redirect(url_for("carrinho"))
         subtotal += preco * Decimal(qtd)
 
-    frete = Decimal("12.00") if subtotal > 0 else Decimal("0.00")
-    total = subtotal + frete
+    # ========== CALCULAR FRETE (GRÁTIS SE SC E > R$129,90) ==========
+    frete = Decimal("12.00")
+    estado_limpo = estado.strip().upper()
+    
+    if estado_limpo == "SC" and subtotal > Decimal("129.90"):
+        frete = Decimal("0.00")
+    
+    # ========== APLICAR CUPOM DE DESCONTO ==========
+    desconto = Decimal("0.00")
+    cupom_usado = None
+    cupom_id = None
+    
+    if 'cupom_codigo' in session:
+        cursor.execute("""
+            SELECT * FROM cupons 
+            WHERE codigo = %s AND ativo = TRUE
+            AND (data_expiracao IS NULL OR data_expiracao >= CURDATE())
+            AND (uso_maximo IS NULL OR uso_atual < uso_maximo)
+        """, (session['cupom_codigo'],))
+        cupom = cursor.fetchone()
+        
+        if cupom:
+            if cupom['tipo'] == 'percentual':
+                desconto = subtotal * (Decimal(cupom['valor']) / Decimal("100"))
+            else:  # fixo
+                desconto = Decimal(cupom['valor'])
+            
+            cupom_usado = cupom['codigo']
+            cupom_id = cupom['id']
+    
+    # Calcular total final
+    total = subtotal + frete - desconto
+    if total < 0:
+        total = Decimal("0.00")
 
     # Monta endereço completo
     endereco_texto = f"{rua}, {numero}" + (f" - {bairro}" if bairro else "") + f" - {cidade}/{estado} - CEP {cep_digits}"
@@ -1210,14 +1372,18 @@ def checkout():
             print("Erro salvando endereço:", e)
             db.rollback()
 
-    # ========== CRIAR PEDIDO ==========
+    # ========== CRIAR PEDIDO COM CUPOM ==========
     try:
         usuario_for_insert = user_id if user_id else None
 
         cursor.execute("""
-            INSERT INTO pedidos (usuario_id, valor_total, status, pagamento_metodo, cliente_nome, cliente_cpf, cliente_endereco)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """, (usuario_for_insert, str(total), "aguardando_pagamento", metodo_pagamento, nome_destinatario or nome, cpf_digits, endereco_texto))
+            INSERT INTO pedidos (usuario_id, valor_total, status, pagamento_metodo, 
+                                 cliente_nome, cliente_cpf, cliente_endereco, 
+                                 cupom_usado, desconto)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (usuario_for_insert, str(total), "aguardando_pagamento", metodo_pagamento, 
+              nome_destinatario or nome, cpf_digits, endereco_texto, 
+              cupom_usado, str(desconto)))
         db.commit()
     except Exception as e:
         db.rollback()
@@ -1229,31 +1395,33 @@ def checkout():
 
     pedido_id = cursor.lastrowid
 
-    # ========== INSERIR ITENS E REDUZIR ESTOQUE ==========
+    # ========== INSERIR ITENS COM PERSONALIZAÇÃO E REDUZIR ESTOQUE ==========
     try:
         for item in itens:
             produto_id = item["produto_id"]
             qtd = int(item["quantidade"])
             preco = Decimal(item["preco"])
+            personalizacao = item.get("personalizacao")
 
             cursor.execute("""
-                INSERT INTO pedido_itens (pedido_id, produto_id, quantidade, valor)
-                VALUES (%s, %s, %s, %s)
-            """, (pedido_id, produto_id, qtd, str(preco)))
+                INSERT INTO pedido_itens (pedido_id, produto_id, quantidade, valor, personalizacao)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (pedido_id, produto_id, qtd, str(preco), personalizacao))
 
             cursor.execute("UPDATE produtos SET estoque = estoque - %s WHERE id = %s", (qtd, produto_id))
+
+        # ========== INCREMENTAR USO DO CUPOM ==========
+        if cupom_id:
+            cursor.execute("""
+                UPDATE cupons SET uso_atual = uso_atual + 1 
+                WHERE id = %s
+            """, (cupom_id,))
 
         # ========== SALVAR MÉTODO DE PAGAMENTO SE MARCADO ==========
         lembrar_pagamento = request.form.get("lembrar_pagamento")
 
         if lembrar_pagamento and user_id and pagamento_selecionado == "novo":
-            if metodo_pagamento == "PIX" and pix_chave:
-                cursor.execute("""
-                    INSERT INTO pagamentos_usuarios (usuario_id, tipo, chave_pix)
-                    VALUES (%s, %s, %s)
-                """, (user_id, 'PIX', pix_chave))
-
-            elif metodo_pagamento == "CARTAO" and cartao_info:
+            if metodo_pagamento == "CARTAO" and cartao_info:
                 cursor.execute("""
                     INSERT INTO pagamentos_usuarios (usuario_id, tipo, nome_impresso, numero_mascarado, validade)
                     VALUES (%s, %s, %s, %s, %s)
@@ -1261,6 +1429,10 @@ def checkout():
 
         # Limpar carrinho
         cursor.execute("DELETE FROM carrinho WHERE session_id = %s", (session_id,))
+        
+        # Remover cupom da sessão após usar
+        session.pop('cupom_codigo', None)
+        
         db.commit()
 
     except Exception as e:
@@ -1275,67 +1447,72 @@ def checkout():
     db.close()
 
     flash("Pedido criado com sucesso!", "sucesso")
-    return redirect(url_for("pedido_finalizado", pedido_id=pedido_id))
+    
+    # Se for PIX, redireciona para página de pagamento PIX
+    if metodo_pagamento == "PIX":
+        return redirect(url_for("pagamento_pix", pedido_id=pedido_id))
+    else:
+        # Se for CARTÃO, vai direto para pedido finalizado com flag de pagamento
+        return redirect(url_for("pedido_finalizado", pedido_id=pedido_id) + "?pago=true")
 
 
-
-
-# ---------------------------
-# Página "Pedido Feito"
-# ---------------------------
-@app.route("/finalizar_pedido", methods=["POST"])
-def finalizar_pedido():
-    if "usuario_id" not in session:
-        flash("Você precisa estar logado.", "erro")
-        return redirect("/login")
-
-    usuario_id = session["usuario_id"]
-    carrinho = session.get("carrinho", [])
-
-    if not carrinho:
-        flash("Carrinho vazio!", "erro")
-        return redirect("/carrinho")
-
-    valor_total = sum(item["preco"] * item["quantidade"] for item in carrinho)
-
+# ============================================================
+# ROTA: PÁGINA DE PAGAMENTO PIX
+# ============================================================
+@app.route("/pagamento_pix/<int:pedido_id>")
+def pagamento_pix(pedido_id):
+    """
+    Exibe a tela de pagamento PIX com QR Code e timer
+    """
     db = conectar()
     cursor = db.cursor(dictionary=True)
 
-    # 🔥 AGORA O usuario_id ESTÁ SENDO SALVO
-    cursor.execute("""
-        INSERT INTO pedidos (usuario_id, valor_total, status, pagamento_metodo)
-        VALUES (%s, %s, 'Aguradando Pagamento', %s)
-    """, (usuario_id, valor_total, "PIX"))
-
-    pedido_id = cursor.lastrowid
-
-    # Salva cada item do pedido
-    for item in carrinho:
-        cursor.execute("""
-            INSERT INTO pedido_itens (pedido_id, produto_id, quantidade, preco_unitario)
-            VALUES (%s, %s, %s, %s)
-        """, (pedido_id, item["id"], item["quantidade"], item["preco"]))
-
-    db.commit()
-    cursor.close()
-    db.close()
-
-    session["carrinho"] = []  # limpa carrinho
-
-    return redirect(url_for("pedido_finalizado", pedido_id=pedido_id))
-
-@app.route("/pedido_finalizado/<int:pedido_id>")
-def pedido_finalizado(pedido_id):
-    db = conectar()
-    cursor = db.cursor(dictionary=True)
-
+    # Buscar dados do pedido
     cursor.execute("SELECT * FROM pedidos WHERE id = %s", (pedido_id,))
     pedido = cursor.fetchone()
 
     if not pedido:
         flash("Pedido não encontrado.", "erro")
-        return redirect("/")
+        cursor.close()
+        db.close()
+        return redirect(url_for("home"))
 
+    # Verificar se é pagamento PIX
+    if pedido["pagamento_metodo"] != "PIX":
+        flash("Este pedido não é pagamento via PIX.", "erro")
+        cursor.close()
+        db.close()
+        return redirect(url_for("pedido_finalizado", pedido_id=pedido_id))
+
+    cursor.close()
+    db.close()
+
+    return render_template("pagamento_pix.html", pedido=pedido)
+
+
+# ============================================================
+# ROTA: PÁGINA DE PEDIDO FINALIZADO (NOTA FISCAL)
+# ============================================================
+@app.route("/pedido_finalizado/<int:pedido_id>")
+def pedido_finalizado(pedido_id):
+    """
+    Exibe a nota fiscal / cupom fiscal do pedido
+    Mostra mensagem de confirmação se vier com ?pago=true
+    """
+    db = conectar()
+    cursor = db.cursor(dictionary=True)
+
+    # Buscar dados do pedido
+    cursor.execute("SELECT * FROM pedidos WHERE id = %s", (pedido_id,))
+    pedido = cursor.fetchone()
+
+    if not pedido:
+        flash("Pedido não encontrado.", "erro")
+        cursor.close()
+        db.close()
+        return redirect(url_for("home"))
+
+    # Buscar itens do pedido com informações do produto
     cursor.execute("""
         SELECT pi.*, p.nome, p.imagem_principal
         FROM pedido_itens pi
@@ -1344,7 +1521,86 @@ def pedido_finalizado(pedido_id):
     """, (pedido_id,))
     itens = cursor.fetchall()
 
+    cursor.close()
+    db.close()
+
     return render_template("pedido_finalizado.html", pedido=pedido, itens=itens)
+
+
+# ============================================================
+# ROTA OPCIONAL: VERIFICAR PAGAMENTO PIX (SIMULAÇÃO)
+# ============================================================
+@app.route("/verificar_pagamento_pix/<int:pedido_id>")
+def verificar_pagamento_pix(pedido_id):
+    """
+    ROTA OPCIONAL: Simula verificação de pagamento PIX
+    Em produção, você integraria com API do banco (Mercado Pago, PagSeguro, etc)
+    """
+    db = conectar()
+    cursor = db.cursor(dictionary=True)
+
+    # Buscar pedido
+    cursor.execute("SELECT * FROM pedidos WHERE id = %s", (pedido_id,))
+    pedido = cursor.fetchone()
+
+    if not pedido:
+        flash("Pedido não encontrado.", "erro")
+        cursor.close()
+        db.close()
+        return redirect(url_for("home"))
+
+    # SIMULAÇÃO: Em produção, aqui você consultaria a API do banco
+    # Por enquanto, apenas atualiza o status para "em_analise"
+    
+    try:
+        cursor.execute("""
+            UPDATE pedidos 
+            SET status = 'em_analise'
+            WHERE id = %s
+        """, (pedido_id,))
+        db.commit()
+        
+        flash("Pagamento recebido! Aguarde aprovação do administrador.", "sucesso")
+    except Exception as e:
+        db.rollback()
+        flash("Erro ao verificar pagamento.", "erro")
+        print("Erro ao atualizar status:", e)
+
+    cursor.close()
+    db.close()
+
+    return redirect(url_for("pedido_finalizado", pedido_id=pedido_id) + "?pago=true")
+
+
+# ============================================================
+# ROTA: MEUS PEDIDOS (Se ainda não existir)
+# ============================================================
+@app.route("/meus_pedidos")
+def meus_pedidos():
+    """
+    Lista todos os pedidos do usuário logado
+    """
+    if "usuario_id" not in session:
+        flash("Faça login para ver seus pedidos.", "erro")
+        return redirect(url_for("login"))
+
+    db = conectar()
+    cursor = db.cursor(dictionary=True)
+
+    user_id = session["usuario_id"]
+
+    # Buscar pedidos do usuário
+    cursor.execute("""
+        SELECT * FROM pedidos 
+        WHERE usuario_id = %s 
+        ORDER BY criado_em DESC
+    """, (user_id,))
+    pedidos = cursor.fetchall()
+
+    cursor.close()
+    db.close()
+
+    return render_template("meus_pedidos.html", pedidos=pedidos)
 
 @app.route("/perfil")
 @login_required

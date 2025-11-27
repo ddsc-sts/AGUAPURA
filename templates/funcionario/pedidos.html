@@ -11,11 +11,11 @@
         align-items: center;
         margin-bottom: 30px;
         padding-bottom: 20px;
-        border-bottom: 2px solid var(--border);
+        border-bottom: 2px solid #2d3748;
     }
 
     .page-header h1 {
-        color: var(--texto);
+        color: #e2e8f0;
         font-size: 2.2em;
     }
 
@@ -28,29 +28,37 @@
 
     .filtro-btn {
         padding: 12px 25px;
-        border: 2px solid var(--border);
-        background: var(--card-bg);
-        color: var(--texto);
+        border: 2px solid #2d3748;
+        background: #1e293b;
+        color: #e2e8f0;
         border-radius: 10px;
         cursor: pointer;
         font-weight: 600;
         transition: all 0.3s ease;
         text-decoration: none;
+        font-size: 0.95em;
     }
 
-    .filtro-btn:hover,
+    .filtro-btn:hover {
+        background: #2d3748;
+        border-color: #0891b2;
+        transform: translateY(-2px);
+    }
+
     .filtro-btn.active {
-        background: var(--azul);
+        background: #0891b2;
         color: white;
-        border-color: var(--azul);
+        border-color: #0891b2;
+        box-shadow: 0 4px 12px rgba(8, 145, 178, 0.3);
     }
 
     .pedidos-table {
         width: 100%;
-        background: var(--card-bg);
+        background: #1e293b;
         border-radius: 15px;
         overflow: hidden;
-        box-shadow: 0 4px 15px var(--shadow);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        border: 1px solid #2d3748;
     }
 
     .pedidos-table table {
@@ -59,7 +67,7 @@
     }
 
     .pedidos-table thead {
-        background: var(--azul);
+        background: #0891b2;
         color: white;
     }
 
@@ -67,12 +75,15 @@
         padding: 18px;
         text-align: left;
         font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85em;
+        letter-spacing: 0.5px;
     }
 
     .pedidos-table td {
         padding: 18px;
-        border-bottom: 1px solid var(--border);
-        color: var(--texto);
+        border-bottom: 1px solid #2d3748;
+        color: #e2e8f0;
     }
 
     .pedidos-table tbody tr {
@@ -80,7 +91,7 @@
     }
 
     .pedidos-table tbody tr:hover {
-        background: var(--cinza);
+        background: #0f172a;
     }
 
     .status-badge {
@@ -89,36 +100,42 @@
         font-size: 0.85em;
         font-weight: 600;
         display: inline-block;
+        border: 1px solid transparent;
     }
 
     .status-aguardando_pagamento {
-        background: #fff3cd;
-        color: #856404;
+        background: rgba(251, 191, 36, 0.2);
+        color: #fbbf24;
+        border-color: rgba(251, 191, 36, 0.3);
     }
 
     .status-em_separacao {
-        background: #cfe2ff;
-        color: #084298;
+        background: rgba(59, 130, 246, 0.2);
+        color: #3b82f6;
+        border-color: rgba(59, 130, 246, 0.3);
     }
 
     .status-enviado {
-        background: #d1e7dd;
-        color: #0f5132;
+        background: rgba(139, 92, 246, 0.2);
+        color: #a78bfa;
+        border-color: rgba(139, 92, 246, 0.3);
     }
 
     .status-entregue {
-        background: #d1e7dd;
-        color: #0f5132;
+        background: rgba(34, 197, 94, 0.2);
+        color: #22c55e;
+        border-color: rgba(34, 197, 94, 0.3);
     }
 
     .status-cancelado {
-        background: #f8d7da;
-        color: #842029;
+        background: rgba(239, 68, 68, 0.2);
+        color: #ef4444;
+        border-color: rgba(239, 68, 68, 0.3);
     }
 
     .btn-ver {
         padding: 8px 16px;
-        background: var(--azul);
+        background: #0891b2;
         color: white;
         border: none;
         border-radius: 8px;
@@ -126,23 +143,76 @@
         text-decoration: none;
         display: inline-block;
         transition: all 0.3s ease;
+        font-weight: 600;
+        font-size: 0.9em;
     }
 
     .btn-ver:hover {
-        background: var(--azul-escuro);
+        background: #0e7490;
         transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(8, 145, 178, 0.3);
+    }
+
+    .valor-destaque {
+        color: #22d3ee;
+        font-size: 1.05em;
     }
 
     .sem-pedidos {
         text-align: center;
         padding: 60px 20px;
-        color: var(--texto);
+        color: #64748b;
+        background: #1e293b;
+        border-radius: 15px;
+        border: 1px solid #2d3748;
+    }
+
+    .sem-pedidos h3 {
+        color: #94a3b8;
+        margin-bottom: 10px;
     }
 
     .sem-pedidos-icon {
         font-size: 4em;
         margin-bottom: 20px;
-        opacity: 0.5;
+        opacity: 0.3;
+    }
+
+    @media (max-width: 968px) {
+        .filtros {
+            gap: 10px;
+        }
+
+        .filtro-btn {
+            padding: 10px 18px;
+            font-size: 0.85em;
+        }
+
+        .pedidos-table {
+            overflow-x: auto;
+        }
+
+        .pedidos-table table {
+            min-width: 800px;
+        }
+
+        .pedidos-table th,
+        .pedidos-table td {
+            padding: 12px;
+            font-size: 0.9em;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .page-header h1 {
+            font-size: 1.6em;
+        }
+
+        .filtro-btn {
+            flex: 1;
+            min-width: calc(50% - 7.5px);
+            text-align: center;
+        }
     }
 </style>
 
@@ -196,7 +266,7 @@
                         {{ pedido.status|replace('_', ' ')|title }}
                     </span>
                 </td>
-                <td><strong>R$ {{ "%.2f"|format(pedido.valor_total) }}</strong></td>
+                <td><strong class="valor-destaque">R$ {{ "%.2f"|format(pedido.valor_total) }}</strong></td>
                 <td>{{ pedido.pagamento_metodo or 'N/A' }}</td>
                 <td>
                     <a href="/funcionario/pedido/{{ pedido.id }}" class="btn-ver">

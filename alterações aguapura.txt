@@ -1,17 +1,25 @@
 alterações aguapura:
 
+DANIEL:
+favoritos
 
-decidir e arrumar o rodapé
-alinhar o cabeçalho
+produto nao aparece nos relatorios
+estatisticas no perfil do usuario
+
+
+RABELO:
 criar novas imagens para o carrossel
-criar novos produtos no banco de dados
-fazer o calculo do frete, e aplicar a condição caso for pra santa catarina
-definir os avatar de cliente e de admin por padrao
+
+LEO:
+
 arrumar o sobre
+nota fiscal
 mostrar a foto no perfil que esta bugado
+OBS LEO: LEMBRAR DE PEGAR O HTML DO PEDIDO FINALIZADO!!! conta dropthisismineman
 
 
 
+willou geder e companhia:
 
 documentação:
 documentação do usuario
