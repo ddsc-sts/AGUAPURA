@@ -2,6 +2,7 @@
 --   CRIAÇÃO DO BANCO DE DADOS
 -- ===============================================
 
+DROP DATABASE IF EXISTS aguapura;
 CREATE DATABASE aguapura CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 USE aguapura;
 
@@ -22,7 +23,7 @@ CREATE TABLE usuarios (
 
 INSERT INTO usuarios VALUES
 (1,'Administrador','admin@aguapura.com',
-'scrypt:32768:8:1$so3Bg6a8P0OXkBQg$d336d5fe08059bf79b0d3ae47e11260030706a2c9b010b1d1dd66ae79cac169e4040b74cd8a888bbac3a6f2eff263749a018e4084310bb8cc69fd3785b3f5bc6',
+'scrypt:32768:8:1$so3Bg6a8P0OXkBQg$d336d5fe08059bf79b0d3ae47e11260030706a2c9b010b1d1dd66aeQA79cac169e4040b74cd8a888bbac3a6f2eff263749a018e4084310bb8cc69fd3785b3f5bc6',
 'uploads/avatars/user_admin.png','admin','2025-11-24 18:42:17'),
 (2,'daniel','teste@teste.com',
 'scrypt:32768:8:1$8wRrR5kCYscW53Rv$df2a6f41c305f1854908af5f3d0eba7bdd7f1910ec387001baff74255c4556f61cf0c7582c9cb7273616aad87d0cc5db075ca4ab4862b837d8fed82442e1c9d7',
@@ -123,32 +124,13 @@ CREATE TABLE carrinho (
     produto_id INT NOT NULL,
     quantidade INT DEFAULT 1,
     cor VARCHAR(30) NOT NULL,
-    personalizacao VARCHAR(100) DEFAULT NULL,
     CONSTRAINT fk_carrinho_produto
-	FOREIGN KEY (produto_id) REFERENCES produtos(id)
+        FOREIGN KEY (produto_id) REFERENCES produtos(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO carrinho VALUES
 (3,'d2ea2769-981b-4f7d-808f-0c39c9772f16',1,1,'Preto'),
 (7,'832a56c4-b3e1-4563-b1df-61a875edf26a',1,1,'Preto');
-
-DROP TABLE IF EXISTS cupons;
--- Criar tabela de cupons
-CREATE TABLE cupons (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    codigo VARCHAR(50) UNIQUE NOT NULL,
-    tipo ENUM('percentual', 'fixo') NOT NULL,
-    valor DECIMAL(10,2) NOT NULL,
-    ativo BOOLEAN DEFAULT TRUE,
-    data_expiracao DATE DEFAULT NULL,
-    uso_maximo INT DEFAULT NULL,
-    uso_atual INT DEFAULT 0,
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Inserir alguns cupons de exemplo
-INSERT INTO cupons (codigo, tipo, valor, ativo) VALUES 
-('NATAL10', 'percentual', 10.00, TRUE);
 
 -- ===============================================
 --   TABELA: imagens_produto
@@ -242,20 +224,18 @@ CREATE TABLE pedidos (
     cliente_nome VARCHAR(150),
     cliente_cpf VARCHAR(30),
     cliente_endereco TEXT,
-    cupom_usado VARCHAR(50) DEFAULT NULL,
-    desconto DECIMAL(10,2) DEFAULT 0.00,
     CONSTRAINT fk_pedido_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO pedidos VALUES
 (2,1,161.80,'entregue','2025-11-24 19:25:45','CARTAO','DANIEL DOS SANTOS COSTA','16000763948',
-'Rua Janaúba, 704 - Jardim Iririu - Joinville/SC - CEP 89224280',NULL),
+'Rua Janaúba, 704 - Jardim Iririu - Joinville/SC - CEP 89224280'),
 
 (3,1,161.80,'aguardando_pagamento','2025-11-24 19:35:40','CARTAO','Administrador','16000763948',
-'Rua areia Branca, 704 - Jardim Iririu - Joinville/SC - CEP 89224280',NULL),
+'Rua areia Branca, 704 - Jardim Iririu - Joinville/SC - CEP 89224280'),
 
 (4,1,131.90,'aguardando_pagamento','2025-11-24 19:42:16','CARTAO','Administrador','16000763948',
-'Rua areia Branca, 704 - Jardim Iririu - Joinville/SC - CEP 89224280',NULL);
+'Rua areia Branca, 704 - Jardim Iririu - Joinville/SC - CEP 89224280');
 
 -- ===============================================
 --   TABELA: pedido_itens
@@ -268,7 +248,6 @@ CREATE TABLE pedido_itens (
     produto_id INT NOT NULL,
     quantidade INT NOT NULL,
     valor DECIMAL(10,2) NOT NULL,
-    personalizacao VARCHAR(100) DEFAULT NULL,
     CONSTRAINT fk_item_pedido FOREIGN KEY (pedido_id) REFERENCES pedidos(id) ON DELETE CASCADE,
     CONSTRAINT fk_item_produto FOREIGN KEY (produto_id) REFERENCES produtos(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -284,59 +263,15 @@ INSERT INTO pedido_itens VALUES
 --   TABELA: compras
 -- ===============================================
 
--- Modificar tabela compras para usar produto_id
 DROP TABLE IF EXISTS compras;
 CREATE TABLE compras (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    pedido_id INT NOT NULL,
     usuario_id INT,
-    produto_id INT NOT NULL,
-    quantidade INT NOT NULL,
-    valor_unitario DECIMAL(10,2) NOT NULL,
-    valor_total DECIMAL(10,2) NOT NULL,
+    produto VARCHAR(150),
+    quantidade INT,
+    valor DECIMAL(10,2),
     criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_compra_pedido FOREIGN KEY (pedido_id) REFERENCES pedidos(id),
-    CONSTRAINT fk_compra_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
-    CONSTRAINT fk_compra_produto FOREIGN KEY (produto_id) REFERENCES produtos(id)
+    CONSTRAINT fk_compra_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Trigger para popular compras
-DELIMITER $$
-
-DROP TRIGGER IF EXISTS after_pedido_entregue$$
-
-CREATE TRIGGER after_pedido_entregue
-AFTER UPDATE ON pedidos
-FOR EACH ROW
-BEGIN
-    IF NEW.status = 'entregue' AND OLD.status != 'entregue' THEN
-        INSERT INTO compras (pedido_id, usuario_id, produto_id, quantidade, valor_unitario, valor_total, criado_em)
-        SELECT 
-            NEW.id,
-            NEW.usuario_id,
-            pi.produto_id,
-            pi.quantidade,
-            pi.valor,
-            pi.valor * pi.quantidade,
-            NOW()
-        FROM pedido_itens pi
-        WHERE pi.pedido_id = NEW.id;
-    END IF;
-END$$
-
-DELIMITER ;
-
--- Popular com pedidos já entregues
-INSERT INTO compras (pedido_id, usuario_id, produto_id, quantidade, valor_unitario, valor_total, criado_em)
-SELECT 
-    p.id,
-    p.usuario_id,
-    pi.produto_id,
-    pi.quantidade,
-    pi.valor,
-    pi.valor * pi.quantidade,
-    p.criado_em
-FROM pedidos p
-INNER JOIN pedido_itens pi ON p.id = pi.pedido_id
-WHERE p.status = 'entregue';
-
+-- (Sem registros)
