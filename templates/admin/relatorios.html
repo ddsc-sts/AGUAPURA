@@ -306,9 +306,17 @@
                 0
             {% endif %}
         </div>
-        <div class="stat-card-label">Total de Pedidos</div>
+        <div class="stat-card-label">Pedidos Entregues</div>
     </div>
     
+    <div class="stat-card" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+        <div class="stat-card-icon">❌</div>
+        <div class="stat-card-valor">
+            {{ total_cancelados if total_cancelados else 0 }}
+        </div>
+        <div class="stat-card-label">Pedidos Cancelados</div>
+    </div>
+
     <div class="stat-card">
         <div class="stat-card-icon">📊</div>
         <div class="stat-card-valor">
@@ -319,12 +327,6 @@
             {% endif %}
         </div>
         <div class="stat-card-label">Ticket Médio</div>
-    </div>
-
-    <div class="stat-card">
-        <div class="stat-card-icon">📅</div>
-        <div class="stat-card-valor">{{ vendas_mensais|length if vendas_mensais else 0 }}</div>
-        <div class="stat-card-label">Meses com Vendas</div>
     </div>
 </div>
 
@@ -337,10 +339,12 @@
 
     {% if vendas_mensais %}
     <div class="grafico-barras">
+        {% set max_valor = vendas_mensais|map(attribute='faturamento')|max|float %}
         {% for venda in vendas_mensais|reverse %}
+            {% set altura_percentual = ((venda.faturamento|float / max_valor * 100) if max_valor > 0 else 0)|int %}
             <div class="barra-item">
-                <div class="barra" style="height: 100px">
-                    <span class="barra-valor">R$ {{ venda.faturamento }}</span>
+                <div class="barra" style="height: {{ (altura_percentual * 2.5)|int }}px">
+                    <span class="barra-valor">R$ {{ "%.2f"|format(venda.faturamento) }}</span>
                 </div>
                 <div class="barra-mes">
                     {% if venda.mes == 1 %}Jan
@@ -409,6 +413,53 @@
         <div class="sem-dados-icon">🏆</div>
         <h3>Nenhuma venda registrada ainda</h3>
         <p>A tabela de produtos mais vendidos aparecerá aqui quando houver vendas concluídas</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- PEDIDOS CANCELADOS -->
+<div class="secao-relatorio">
+    <h3 class="secao-titulo">
+        <span>❌</span>
+        Pedidos Cancelados (Últimos 20 dias)
+    </h3>
+
+    {% if pedidos_cancelados %}
+    <table class="produtos-table">
+        <thead>
+            <tr>
+                <th style="width: 80px;">Pedido #</th>
+                <th>Cliente</th>
+                <th>Data</th>
+                <th style="text-align: center;">Itens</th>
+                <th style="text-align: right;">Valor</th>
+                <th>Método Pagamento</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pedido in pedidos_cancelados %}
+            <tr>
+                <td><strong>#{{ pedido.id }}</strong></td>
+                <td>{{ pedido.cliente_nome }}</td>
+                <td>{{ pedido.criado_em.strftime('%d/%m/%Y %H:%M') }}</td>
+                <td style="text-align: center;">{{ pedido.total_itens }}</td>
+                <td style="text-align: right; color: #ef4444;">R$ {{ "%.2f"|format(pedido.valor_total) }}</td>
+                <td>
+                    {% if pedido.pagamento_metodo == 'PIX' %}
+                        <span style="background: #8b5cf6; padding: 4px 12px; border-radius: 6px; font-size: 0.85em;">PIX</span>
+                    {% else %}
+                        <span style="background: #0891b2; padding: 4px 12px; border-radius: 6px; font-size: 0.85em;">CARTÃO</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="sem-dados">
+        <div class="sem-dados-icon">✅</div>
+        <h3>Nenhum pedido cancelado</h3>
+        <p>Ótimo! Não há pedidos cancelados no sistema</p>
     </div>
     {% endif %}
 </div>

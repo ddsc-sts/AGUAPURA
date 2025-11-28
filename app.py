@@ -17,10 +17,11 @@ from werkzeug.utils import secure_filename
 # ============================
 def conectar():
     return mysql.connector.connect(
-        host="tini.click",
-        user="aguapura",
-        port=3306,
-        password="020132c02298eb272e046aea148cacda",   # altere se tiver senha
+        host="localhost",
+        user="root",
+
+        port=3406,
+        password="",   # altere se tiver senha
         database="aguapura"
     )
 
@@ -330,13 +331,20 @@ def admin_promover_usuario(user_id, tipo):
     return redirect("/admin/usuarios")
 
 
+# ============================================
+# ROTA DE RELATÓRIOS - VERSÃO COMPLETA
+# ============================================
+
 @app.route("/admin/relatorios")
 @admin_required
 def admin_relatorios():
     db = conectar()
     cursor = db.cursor(dictionary=True)
 
-    # Vendas por mês
+    # ============================================
+    # VENDAS MENSAIS
+    # Busca da tabela COMPRAS (vendas confirmadas)
+    # ============================================
     cursor.execute("""
         SELECT 
             MONTH(criado_em) as mes,
@@ -350,7 +358,10 @@ def admin_relatorios():
     """)
     vendas_mensais = cursor.fetchall()
 
-    # Produtos mais vendidos
+    # ============================================
+    # PRODUTOS MAIS VENDIDOS
+    # Busca da tabela COMPRAS (apenas vendas confirmadas)
+    # ============================================
     cursor.execute("""
         SELECT 
             p.nome,
@@ -359,16 +370,90 @@ def admin_relatorios():
             SUM(c.valor_total) as receita
         FROM compras c
         JOIN produtos p ON p.id = c.produto_id
-        GROUP BY c.produto_id
+        GROUP BY c.produto_id, p.nome, p.categoria
         ORDER BY total_vendido DESC
         LIMIT 10
     """)
     produtos_top = cursor.fetchall()
 
+    # ============================================
+    # DEBUG: Verificar se há dados
+    # ============================================
+    cursor.execute("SELECT COUNT(*) as total FROM compras")
+    total_compras = cursor.fetchone()['total']
+    
+    if total_compras == 0:
+        # Se não houver compras, verificar pedidos entregues
+        cursor.execute("""
+            SELECT COUNT(*) as total 
+            FROM pedidos 
+            WHERE status = 'entregue'
+        """)
+        pedidos_entregues = cursor.fetchone()['total']
+        
+        if pedidos_entregues > 0:
+            print(f"⚠️ AVISO: Existem {pedidos_entregues} pedidos entregues, mas nenhuma compra registrada!")
+            print("Execute o SQL de correção para popular a tabela compras.")
+
+    cursor.close()
+    db.close()
+
     return render_template("admin/relatorios.html",
                          vendas_mensais=vendas_mensais,
                          produtos_top=produtos_top)
+
+
+# ============================================
+# ROTA AUXILIAR: FORÇAR ATUALIZAÇÃO DE COMPRAS
+# (útil para corrigir dados inconsistentes)
+# ============================================
+
+@app.route("/admin/sincronizar-compras")
+@admin_required
+def sincronizar_compras():
+    """
+    Popula a tabela compras com todos os pedidos entregues
+    que ainda não foram registrados
+    """
+    db = conectar()
+    cursor = db.cursor()
     
+    try:
+        # Inserir todas as compras de pedidos entregues que não estão em compras
+        cursor.execute("""
+            INSERT INTO compras (pedido_id, usuario_id, produto_id, quantidade, valor_unitario, valor_total, criado_em)
+            SELECT 
+                p.id as pedido_id,
+                p.usuario_id,
+                pi.produto_id,
+                pi.quantidade,
+                pi.valor as valor_unitario,
+                pi.valor * pi.quantidade as valor_total,
+                p.criado_em
+            FROM pedidos p
+            JOIN pedido_itens pi ON pi.pedido_id = p.id
+            WHERE p.status = 'entregue'
+            AND NOT EXISTS (
+                SELECT 1 FROM compras c 
+                WHERE c.pedido_id = p.id 
+                AND c.produto_id = pi.produto_id
+            )
+        """)
+        
+        linhas_inseridas = cursor.rowcount
+        db.commit()
+        
+        flash(f"✅ {linhas_inseridas} compras sincronizadas com sucesso!", "sucesso")
+        
+    except Exception as e:
+        db.rollback()
+        flash(f"❌ Erro ao sincronizar: {str(e)}", "erro")
+        print(f"Erro na sincronização: {e}")
+    
+    cursor.close()
+    db.close()
+    
+    return redirect("/admin/relatorios")
 @app.route("/admin/produtos/editar/<int:produto_id>", methods=["GET", "POST"])
 @admin_required
 def admin_editar_produto(produto_id):
@@ -1614,6 +1699,21 @@ def perfil():
     cursor.execute("SELECT id, nome, avatar, criado_em FROM usuarios WHERE id = %s", (user_id,))
     usuario = cursor.fetchone()
 
+    # 🔥 Ajuste DEFINITIVO do avatar
+    if usuario and usuario["avatar"]:
+        avatar = usuario["avatar"].strip()  # remove espaços, \n etc
+
+        # Se não começar com /static, vamos normalizar
+        if not avatar.startswith("/static"):
+            # remove "/uploads" duplicado se existir
+            avatar = avatar.replace("static/", "").replace("/static", "").replace("uploads", "").strip("/")
+            # monta caminho correto
+            avatar = "/static/uploads/avatars/" + usuario["avatar"].split("/")[-1]
+
+        usuario["avatar"] = avatar
+
+
+
     # pedidos
     cursor.execute("SELECT * FROM pedidos WHERE usuario_id = %s ORDER BY criado_em DESC", (user_id,))
     pedidos = cursor.fetchall()
@@ -1654,7 +1754,8 @@ def perfil():
                            pedidos=pedidos,
                            favoritos=favoritos,
                            enderecos=enderecos,
-                           pagamentos=pagamentos)
+                           pagamentos=pagamentos,
+                           avatar = avatar)
 
 # --------------------------
 # API PARA GRÁFICO EM JS
@@ -1773,7 +1874,140 @@ def excluir_pedido(pedido_id):
     db.commit()
     
     return jsonify({"sucesso": True})
+# ============================
+# ROTAS DE FAVORITOS
+# ============================
 
+@app.route("/favorito/adicionar/<int:produto_id>", methods=["POST"])
+@login_required
+def adicionar_favorito(produto_id):
+    """Adiciona produto aos favoritos"""
+    user_id = session["usuario_id"]
+    
+    db = conectar()
+    cursor = db.cursor(dictionary=True)
+    
+    # Verificar se produto existe
+    cursor.execute("SELECT id FROM produtos WHERE id = %s", (produto_id,))
+    produto = cursor.fetchone()
+    
+    if not produto:
+        flash("Produto não encontrado!", "erro")
+        return redirect(url_for("home"))
+    
+    # Verificar se já está nos favoritos
+    cursor.execute("""
+        SELECT id FROM favoritos 
+        WHERE usuario_id = %s AND produto_id = %s
+    """, (user_id, produto_id))
+    
+    ja_existe = cursor.fetchone()
+    
+    if ja_existe:
+        flash("Este produto já está nos seus favoritos!", "info")
+    else:
+        # Adicionar aos favoritos
+        cursor.execute("""
+            INSERT INTO favoritos (usuario_id, produto_id)
+            VALUES (%s, %s)
+        """, (user_id, produto_id))
+        db.commit()
+        flash("Produto adicionado aos favoritos! ❤️", "sucesso")
+    
+    cursor.close()
+    db.close()
+    
+    return redirect(url_for("produto", id=produto_id))
+
+
+@app.route("/favorito/remover/<int:produto_id>", methods=["POST"])
+@login_required
+def remover_favorito(produto_id):
+    """Remove produto dos favoritos"""
+    user_id = session["usuario_id"]
+    
+    db = conectar()
+    cursor = db.cursor()
+    
+    cursor.execute("""
+        DELETE FROM favoritos 
+        WHERE usuario_id = %s AND produto_id = %s
+    """, (user_id, produto_id))
+    
+    db.commit()
+    cursor.close()
+    db.close()
+    
+    flash("Produto removido dos favoritos.", "info")
+    return redirect(url_for("produto", id=produto_id))
+
+
+# ============================
+# API DE FAVORITOS (para o perfil.html)
+# ============================
+
+@app.route("/api/favoritos")
+@login_required
+def api_favoritos():
+    """API JSON que retorna os favoritos do usuário"""
+    user_id = session["usuario_id"]
+    
+    db = conectar()
+    cursor = db.cursor(dictionary=True)
+    
+    cursor.execute("""
+        SELECT p.id, p.nome, p.preco, p.imagem_principal, f.criado_em
+        FROM favoritos f
+        JOIN produtos p ON p.id = f.produto_id
+        WHERE f.usuario_id = %s
+        ORDER BY f.criado_em DESC
+    """, (user_id,))
+    
+    favoritos = cursor.fetchall()
+    
+    # Converter Decimal para float para JSON
+    for fav in favoritos:
+        fav['preco'] = float(fav['preco'])
+        fav['criado_em'] = fav['criado_em'].strftime('%Y-%m-%d %H:%M:%S')
+        # Garantir que a imagem tenha o caminho correto
+        if fav['imagem_principal'] and not fav['imagem_principal'].startswith('http'):
+            fav['imagem_principal'] = url_for('static', filename=fav['imagem_principal'].lstrip('/static/'))
+    
+    cursor.close()
+    db.close()
+    
+    return jsonify(favoritos)
+
+
+# ============================
+# CONTEXT PROCESSOR - Verificar se produto está nos favoritos
+# ============================
+
+@app.context_processor
+def verificar_favorito():
+    """Adiciona função para verificar se produto está nos favoritos"""
+    def is_favorito(produto_id):
+        if "usuario_id" not in session:
+            return False
+        
+        user_id = session["usuario_id"]
+        
+        db = conectar()
+        cursor = db.cursor(dictionary=True)
+        
+        cursor.execute("""
+            SELECT id FROM favoritos 
+            WHERE usuario_id = %s AND produto_id = %s
+        """, (user_id, produto_id))
+        
+        resultado = cursor.fetchone()
+        
+        cursor.close()
+        db.close()
+        
+        return resultado is not None
+    
+    return {"is_favorito": is_favorito}
 
 @app.route('/salvar_endereco', methods=['POST'])
 @login_required
