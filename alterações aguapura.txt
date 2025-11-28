@@ -4,16 +4,17 @@ DANIEL:
 favoritos
 
 
-estatisticas no perfil do usuario
 
 
 
-RABELO:
-criar novas imagens para o carrossel
+
+
+
 
 LEO:
 
 arrumar o sobre
+deixar os banner clicaveis
 
 
 
