@@ -343,7 +343,6 @@ def admin_relatorios():
 
     # ============================================
     # VENDAS MENSAIS
-    # Busca da tabela COMPRAS (vendas confirmadas)
     # ============================================
     cursor.execute("""
         SELECT 
@@ -360,7 +359,6 @@ def admin_relatorios():
 
     # ============================================
     # PRODUTOS MAIS VENDIDOS
-    # Busca da tabela COMPRAS (apenas vendas confirmadas)
     # ============================================
     cursor.execute("""
         SELECT 
@@ -377,13 +375,52 @@ def admin_relatorios():
     produtos_top = cursor.fetchall()
 
     # ============================================
-    # DEBUG: Verificar se há dados
+    # PEDIDOS CANCELADOS (Últimos 20)
+    # Usando LOWER() para pegar qualquer variação do status
+    # ============================================
+    cursor.execute("""
+        SELECT 
+            p.id,
+            p.criado_em,
+            p.valor_total,
+            p.pagamento_metodo,
+            p.cliente_nome,
+            u.nome as usuario_nome,
+            (SELECT COUNT(*) FROM pedido_itens WHERE pedido_id = p.id) as total_itens
+        FROM pedidos p
+        LEFT JOIN usuarios u ON u.id = p.usuario_id
+        WHERE LOWER(p.status) = 'cancelado'
+        ORDER BY p.criado_em DESC
+        LIMIT 20
+    """)
+    pedidos_cancelados = cursor.fetchall()
+
+    # ============================================
+    # TOTAL DE PEDIDOS CANCELADOS
+    # ============================================
+    cursor.execute("""
+        SELECT COUNT(*) as total
+        FROM pedidos
+        WHERE LOWER(status) = 'cancelado'
+    """)
+    total_cancelados_result = cursor.fetchone()
+    total_cancelados = total_cancelados_result['total'] if total_cancelados_result else 0
+
+    # ============================================
+    # DEBUG: Verificar status únicos no banco
+    # ============================================
+    cursor.execute("SELECT DISTINCT status FROM pedidos")
+    status_disponiveis = cursor.fetchall()
+    print(f"📊 Status disponíveis no banco: {[s['status'] for s in status_disponiveis]}")
+    print(f"❌ Total de pedidos cancelados: {total_cancelados}")
+
+    # ============================================
+    # DEBUG: Verificar compras
     # ============================================
     cursor.execute("SELECT COUNT(*) as total FROM compras")
     total_compras = cursor.fetchone()['total']
     
     if total_compras == 0:
-        # Se não houver compras, verificar pedidos entregues
         cursor.execute("""
             SELECT COUNT(*) as total 
             FROM pedidos 
@@ -400,8 +437,9 @@ def admin_relatorios():
 
     return render_template("admin/relatorios.html",
                          vendas_mensais=vendas_mensais,
-                         produtos_top=produtos_top)
-
+                         produtos_top=produtos_top,
+                         pedidos_cancelados=pedidos_cancelados,
+                         total_cancelados=total_cancelados)
 
 # ============================================
 # ROTA AUXILIAR: FORÇAR ATUALIZAÇÃO DE COMPRAS

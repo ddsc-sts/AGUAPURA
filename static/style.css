@@ -101,11 +101,12 @@ body {
 }
 
 .logo-img {
-    height: 160px;
+    height: 200px;
     width: auto;
     object-fit: contain;
     transition: transform 0.3s ease;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    margin-top: 11%;
 }
 
 .logo-img:hover {
@@ -1212,6 +1213,8 @@ body {
     font-weight: 700;
     position: relative;
     padding-bottom: 12px;
+    color: inherit;            /* mantém a cor original do footer */
+    text-decoration: none;
 }
 
 .footer-col h4::after {
@@ -1228,6 +1231,13 @@ body {
 .footer-col ul {
     list-style: none;
     padding: 0;
+    color: inherit;            /* mantém a cor original do footer */
+    text-decoration: none;
+}
+
+.footer-col a {
+    color: inherit;            /* mantém a cor original do footer */
+    text-decoration: none;     /* remove sublinhado */
 }
 
 .footer-col ul li {
@@ -1237,6 +1247,8 @@ body {
     transition: var(--transition);
     color: var(--text-secondary);
     padding: 6px 0;
+    color: inherit;            /* mantém a cor original do footer */
+    text-decoration: none;
 }
 
 .footer-col ul li:hover {
@@ -3580,5 +3592,75 @@ body {
         overscroll-behavior-y: none;
     }
 }
+/* =========================================
+   BOTÃO DE FAVORITO NO PRODUTO
+========================================= */
 
+.product-detail {
+    position: relative;
+}
+
+.btn-favorito-produto {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    width: 55px;
+    height: 55px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 26px;
+    z-index: 10;
+    backdrop-filter: blur(10px);
+    box-shadow: var(--shadow-md);
+}
+
+[data-theme="dark"] .btn-favorito-produto {
+    background: rgba(30, 41, 59, 0.95);
+    border-color: #475569;
+}
+
+.btn-favorito-produto:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
+}
+
+.btn-favorito-produto.favoritado {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    border-color: #ef4444;
+    animation: pulseHeart 0.3s ease;
+}
+
+@keyframes pulseHeart {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}
+
+.btn-favorito-produto.favoritado {
+    color: white;
+}
+
+.btn-favorito-produto:not(.favoritado) {
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .btn-favorito-produto:not(.favoritado) {
+    color: #cbd5e1;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .btn-favorito-produto {
+        width: 48px;
+        height: 48px;
+        font-size: 22px;
+        top: 15px;
+        right: 15px;
+    }
+}
 /* ===== FIM DAS OTIMIZAÇÕES ===== */

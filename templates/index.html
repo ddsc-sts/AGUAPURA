@@ -10,10 +10,10 @@
                 <img src="{{ url_for('static', filename='img/banner1.png') }}" alt="Promoção 1">
             </div>
             <div class="slide">
-                <img src="{{ url_for('static', filename='img/banner2.png') }}" alt="Promoção 2">
+                <img src="{{ url_for('static', filename='img/promo3.png') }}" alt="Promoção 2">
             </div>
             <div class="slide">
-                <img src="{{ url_for('static', filename='img/promo3.png') }}" alt="Promoção 3">
+                <img src="{{ url_for('static', filename='img/banner2.png') }}" alt="Promoção 3">
             </div>
         </div>
 
@@ -28,23 +28,7 @@
     </div>
 </section>
 
-<!-- ===== Categorias ===== -->
-<section class="categorias">
-    <a href="/garrafas" class="categoria">
-        <img src="{{ url_for('static', filename='img/garrafas.png') }}" alt="Garrafas">
-        <h3>Garrafas</h3>
-    </a>
 
-    <a href="/copos" class="categoria">
-        <img src="{{ url_for('static', filename='img/copos.png') }}" alt="Copos">
-        <h3>Copos</h3>
-    </a>
-
-    <a href="/acessorios" class="categoria">
-        <img src="{{ url_for('static', filename='img/acessorios.png') }}" alt="Acessórios">
-        <h3>Acessórios</h3>
-    </a>
-</section>
 
 <!-- ===== Produtos Recentes ===== -->
 <section class="produtos">
@@ -67,6 +51,23 @@
         </div>
         {% endfor %}
     </div>
+</section>
+<!-- ===== Categorias ===== -->
+<section class="categorias">
+    <a href="/garrafas" class="categoria">
+        <img src="{{ url_for('static', filename='img/garrafas.png') }}" alt="Garrafas">
+        <h3>Garrafas</h3>
+    </a>
+
+    <a href="/copos" class="categoria">
+        <img src="{{ url_for('static', filename='img/copos.png') }}" alt="Copos">
+        <h3>Copos</h3>
+    </a>
+
+    <a href="/acessorios" class="categoria">
+        <img src="{{ url_for('static', filename='img/acessorios.png') }}" alt="Acessórios">
+        <h3>Acessórios</h3>
+    </a>
 </section>
 
 {% endblock %}

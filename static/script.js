@@ -1,14 +1,27 @@
 document.addEventListener('DOMContentLoaded', () => {
   // ===== CARROSSEL =====
   const slidesContainer = document.querySelector('.slides');
-  const slides = document.querySelectorAll('.slide');
+  const allSlides = document.querySelectorAll('.slide');
   const prev = document.querySelector('.prev');
   const next = document.querySelector('.next');
   const dotsContainer = document.querySelector('.dots');
 
   let currentSlide = 0;
 
-  if (slidesContainer && slides.length > 0) {
+  if (slidesContainer && allSlides.length > 0) {
+    // ✅ FILTRAR APENAS SLIDES VÁLIDOS (com imagem e visíveis)
+    const slides = Array.from(allSlides).filter(slide => {
+      const img = slide.querySelector('img');
+      const isVisible = slide.offsetParent !== null;
+      return img && img.src && isVisible;
+    });
+
+    // ✅ LIMPAR BOLINHAS EXISTENTES (se houver)
+    if (dotsContainer) {
+      dotsContainer.innerHTML = '';
+    }
+
+    // ✅ CRIAR BOLINHAS APENAS PARA SLIDES VÁLIDOS
     slides.forEach((_, i) => {
       const dot = document.createElement('span');
       dot.classList.add('dot');
@@ -22,7 +35,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateCarousel() {
       slidesContainer.style.transform = `translateX(-${currentSlide * 100}%)`;
       dots.forEach(dot => dot.classList.remove('active'));
-      dots[currentSlide].classList.add('active');
+      if (dots[currentSlide]) {
+        dots[currentSlide].classList.add('active');
+      }
     }
 
     function nextSlide() {
@@ -45,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
       prev.addEventListener('click', prevSlide);
     }
 
+    // Auto-play do carrossel
     setInterval(nextSlide, 5000);
   }
 

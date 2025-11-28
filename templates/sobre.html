@@ -1,27 +1,192 @@
 {% extends "base.html" %}
-{% block title %}Sobre a AquaPura{% endblock %}
+{% block title %}Sobre a Agua Pura{% endblock %}
 
 {% block content %}
-<section class="sobre">
-  <h1>Sobre a AquaPura 💧</h1>
-  <p>A AquaPura nasceu com o propósito de unir sustentabilidade e estilo, trazendo produtos de alta qualidade para quem valoriza o meio ambiente e a praticidade no dia a dia.</p>
+
+<style>
+/* ============================
+     ESTILOS GERAIS DA SEÇÃO
+   ============================ */
+.sobre-section {
+  max-width: 1200px;
+  margin: 60px auto;
+  padding: 0 20px;
+  color: var(--texto);
+}
+
+.sobre-section h1 {
+  font-size: 2.8rem;
+  text-align: center;
+  margin-bottom: 25px;
+  color: var(--azul);
+  font-weight: 800;
+}
+
+.sobre-section h2 {
+  margin-top: 40px;
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: var(--azul);
+}
+
+.sobre-section p {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  opacity: 0.9;
+}
+
+/* ============================
+          GRID CRIADORES
+   ============================ */
+
+.criadores-grid {
+  margin-top: 40px;
+  display: grid;
+  gap: 25px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+/* CARD DE CADA CRIADOR */
+.criador-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all .3s ease;
+  text-align: center;
+  padding-bottom: 20px;
+  box-shadow: 0px 5px 12px var(--shadow);
+}
+
+.criador-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0px 10px 18px var(--shadow);
+}
+
+/* IMAGEM */
+.criador-card img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+}
+
+/* NOME */
+.criador-card h3 {
+  margin-top: 15px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--texto);
+}
+
+/* CARGO */
+.criador-card p {
+  margin-top: 8px;
+  font-size: 0.95rem;
+  opacity: 0.8;
+}
+
+/* EFEITO DE PULSAÇÃO NO HOVER */
+.criador-card:hover h3 {
+  color: var(--azul);
+}
+
+</style>
+
+<section class="sobre-section">
+  
+  <h1>Sobre a Agua Pura 💧</h1>
+  <p>A Agua Pura nasceu com o propósito de unir sustentabilidade e estilo, trazendo produtos de alta qualidade para quem valoriza o meio ambiente e a praticidade no dia a dia.</p>
 
   <h2>Nossa História</h2>
-  <p>Fundada por jovens empreendedores apaixonados por inovação, a AquaPura surgiu da ideia de reduzir o consumo de plástico e incentivar o uso de garrafas reutilizáveis e copos sustentáveis.</p>
+  <p>Fundada por jovens empreendedores apaixonados por inovação, a Agua Pura surgiu da ideia de reduzir o consumo de plástico e incentivar o uso de garrafas reutilizáveis e copos sustentáveis.</p>
 
   <h2>Missão</h2>
   <p>Promover o consumo consciente e oferecer produtos duráveis que acompanhem você em todos os momentos.</p>
 
   <h2>Os Criadores</h2>
-  <div class="criadores">
-    <div class="criador">
-      <img src="{{ url_for('static', filename='img/team1.jpg') }}" alt="Fundador 1">
-      <p><strong>Lucas Andrade</strong><br>Fundador e Designer de Produto</p>
+
+  <div class="criadores-grid">
+
+    <!-- ===============================
+          MODELO DE CARD (10 PESSOAS)
+         COMENTADO PARA VOCÊ EDITAR
+         =============================== -->
+
+    <!-- CARD 1 -->
+    <div class="criador-card" onclick="window.location.href='https://www.instagram.com/neymarjr/'">
+      <!-- Coloque a imagem do criador 1 -->
+      <img src="{{ url_for('static', filename='uploads/avatars/user.png') }}" alt="Criador 1">
+      <!-- Nome do criador -->
+      <h3>Daniel</h3>
+      <!-- Função / Cargo -->
+      <p>Prostituto</p>
     </div>
-    <div class="criador">
-      <img src="{{ url_for('static', filename='img/team2.jpg') }}" alt="Fundador 2">
-      <p><strong>Mariana Silva</strong><br>Co-Fundadora e Marketing</p>
+
+    <!-- CARD 2 -->
+    <div class="criador-card" onclick="window.location.href='LINK_AQUI_2'">
+      <img src="{{ url_for('static', filename='img/team/team2.jpg') }}">
+      <h3>Nome Criador 2</h3>
+      <p>Cargo / Função</p>
     </div>
+
+    <!-- CARD 3 -->
+    <div class="criador-card" onclick="window.location.href='LINK_AQUI_3'">
+      <img src="{{ url_for('static', filename='img/team/team3.jpg') }}">
+      <h3>Nome Criador 3</h3>
+      <p>Cargo / Função</p>
+    </div>
+
+    <!-- CARD 4 -->
+    <div class="criador-card" onclick="window.location.href='LINK_AQUI_4'">
+      <img src="{{ url_for('static', filename='img/team/team4.jpg') }}">
+      <h3>Nome Criador 4</h3>
+      <p>Cargo / Função</p>
+    </div>
+
+    <!-- CARD 5 -->
+    <div class="criador-card" onclick="window.location.href='LINK_AQUI_5'">
+      <img src="{{ url_for('static', filename='img/team/team5.jpg') }}">
+      <h3>Nome Criador 5</h3>
+      <p>Cargo / Função</p>
+    </div>
+
+    <!-- CARD 6 -->
+    <div class="criador-card" onclick="window.location.href='LINK_AQUI_6'">
+      <img src="{{ url_for('static', filename='img/team/team6.jpg') }}">
+      <h3>Nome Criador 6</h3>
+      <p>Cargo / Função</p>
+    </div>
+
+    <!-- CARD 7 -->
+    <div class="criador-card" onclick="window.location.href='LINK_AQUI_7'">
+      <img src="{{ url_for('static', filename='img/team/team7.jpg') }}">
+      <h3>Nome Criador 7</h3>
+      <p>Cargo / Função</p>
+    </div>
+
+    <!-- CARD 8 -->
+    <div class="criador-card" onclick="window.location.href='LINK_AQUI_8'">
+      <img src="{{ url_for('static', filename='img/team/team8.jpg') }}">
+      <h3>Nome Criador 8</h3>
+      <p>Cargo / Função</p>
+    </div>
+
+    <!-- CARD 9 -->
+    <div class="criador-card" onclick="window.location.href='LINK_AQUI_9'">
+      <img src="{{ url_for('static', filename='img/team/team9.jpg') }}">
+      <h3>Nome Criador 9</h3>
+      <p>Cargo / Função</p>
+    </div>
+
+    <!-- CARD 10 -->
+    <div class="criador-card" onclick="window.location.href='LINK_AQUI_10'">
+      <img src="{{ url_for('static', filename='img/team/team10.jpg') }}">
+      <h3>Nome Criador 10</h3>
+      <p>Cargo / Função</p>
+    </div>
+
   </div>
 </section>
+
 {% endblock %}

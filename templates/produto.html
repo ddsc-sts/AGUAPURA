@@ -3,7 +3,74 @@
 
 {% block content %}
 
-<section class="produto-pagina" style="padding:40px 5%;">
+<style>
+  /* Botão de Favorito - Posicionado próximo ao produto */
+  .btn-favorito-produto {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 28px;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+  }
+
+  [data-theme="dark"] .btn-favorito-produto {
+    background: rgba(30, 41, 59, 0.95);
+    border-color: #475569;
+  }
+
+  .btn-favorito-produto:hover {
+    transform: scale(1.15);
+    box-shadow: 0 6px 25px rgba(239, 68, 68, 0.4);
+  }
+
+  .btn-favorito-produto.favoritado {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    border-color: #ef4444;
+    color: white;
+  }
+
+  .btn-favorito-produto:not(.favoritado) {
+    color: #94a3b8;
+  }
+
+  @media (max-width: 768px) {
+    .btn-favorito-produto {
+      width: 50px;
+      height: 50px;
+      font-size: 24px;
+      top: 15px;
+      right: 15px;
+    }
+  }
+</style>
+
+<section class="produto-pagina" style="padding:40px 5%; position: relative;">
+  
+  <!-- ✅ BOTÃO DE FAVORITO (dentro da section, posição absoluta) -->
+  {% if session.get("logado") %}
+  <form action="{% if is_favorito(produto.id) %}{{ url_for('remover_favorito', produto_id=produto.id) }}{% else %}{{ url_for('adicionar_favorito', produto_id=produto.id) }}{% endif %}" 
+        method="post"
+        style="position: absolute; top: 20px; right: 5%; z-index: 100;">
+    <button type="submit" 
+            class="btn-favorito-produto {% if is_favorito(produto.id) %}favoritado{% endif %}"
+            title="{% if is_favorito(produto.id) %}Remover dos favoritos{% else %}Adicionar aos favoritos{% endif %}">
+      {% if is_favorito(produto.id) %}❤️{% else %}🤍{% endif %}
+    </button>
+  </form>
+  {% endif %}
+
   <div class="produto-container">
 
     <!-- IMAGEM PRINCIPAL -->
@@ -38,7 +105,7 @@
       </div>
       {% endif %}
 
-      <!-- FORM PRINCIPAL: envia produto + cor + personalização + quantidade + (kit hidden fields gerados) -->
+      <!-- FORM PRINCIPAL -->
       <form id="addCartForm" method="post" action="{{ url_for('add_carrinho', produto_id=produto.id) }}">
 
         {% if produto.categoria != "Acessório" %}
@@ -51,7 +118,7 @@
                  style="padding:8px; border-radius:10px; border:1px solid var(--border); margin-top:6px; width:100%;">
         </div>
 
-        <!-- CORES (aparece apenas para Copo/Garrafa) -->
+        <!-- CORES -->
         {% if produto.categoria in ["Copo", "Garrafa"] %}
         <div style="margin-top:18px;">
           <label style="font-weight:600; color:var(--texto);">Escolha a cor:</label>
@@ -67,7 +134,7 @@
         {% endif %}
         {% endif %}
 
-        <!-- QUANTIDADE DO PRODUTO PRINCIPAL -->
+        <!-- QUANTIDADE -->
         <div style="display:flex; align-items:center; gap:10px; margin-top:14px;">
           <label style="font-weight:600;">Quantidade</label>
 
@@ -91,7 +158,7 @@
           </div>
         </div>
 
-        <!-- BOTÃO ADICIONAR (apenas este botão submete o produto + kit hidden fields) -->
+        <!-- BOTÃO ADICIONAR -->
         <div style="margin-top:18px;">
           <button type="submit" class="btn-add-carrinho"
                   style="padding:12px 22px;">Adicionar ao carrinho</button>
@@ -107,7 +174,7 @@
   </div>
 </section>
 
-<!-- SUGESTÕES (fora do form, como pedido) -->
+<!-- SUGESTÕES -->
 {% if sugestoes %}
 <section style="padding:40px 5%; margin-top:20px; text-align:center;">
 
@@ -127,44 +194,16 @@
       <p style="font-weight:600; margin-top:10px;">{{ s.nome }}</p>
       <p style="color:var(--texto); opacity:0.8;">R$ {{ "%.2f"|format(s.preco) }}</p>
 
-      <!-- checkbox (marca incluir no kit) -->
       <label class="kit-opcao" style="margin-top:10px; display:flex; align-items:center; gap:8px; cursor:pointer;">
         <input type="checkbox" class="kit-check" value="{{ s.id }}">
         <span>Incluir no kit</span>
       </label>
 
-      <!-- QUANTIDADE DO KIT (só aparece quando checkbox marcado) -->
       <div class="kit-qtd-box" id="qbox-{{ s.id }}"
-           style="
-              margin-top:10px;
-              display:none;
-              align-items:center;
-              gap:8px;
-              justify-content:center;
-              background:var(--card-bg);
-              padding:8px;
-              border-radius:10px;
-              border:1px solid var(--border);
-           ">
-
-        <label style="font-size:0.9rem; font-weight:600; color:var(--texto);">Qtd:</label>
-
-        <input type="number"
-               class="kit-qtd"
-               data-id="{{ s.id }}"
-               value="1"
-               min="1"
-               max="{{ s.estoque }}"
-               style="
-                  width:60px;
-                  padding:6px;
-                  text-align:center;
-                  border-radius:8px;
-                  border:1px solid var(--azul);
-                  background:var(--card-bg);
-                  color:var(--texto);
-                  font-weight:600;
-               ">
+           style="margin-top:10px; display:none; align-items:center; gap:8px; justify-content:center;">
+        <label style="font-size:0.9rem; font-weight:600;">Qtd:</label>
+        <input type="number" class="kit-qtd" data-id="{{ s.id }}" value="1" min="1" max="{{ s.estoque }}"
+               style="width:60px; padding:6px; text-align:center; border-radius:8px; border:1px solid var(--azul);">
       </div>
 
       <p style="font-size:0.8rem; color:var(--texto); opacity:0.7; margin-top:8px;">
@@ -180,12 +219,9 @@
 <!-- JS -->
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-
-  /* ---------- QUANTIDADE DO PRODUTO PRINCIPAL ---------- */
   const estoqueMax = parseInt("{{ produto.estoque }}") || 0;
   const qtyInput = document.getElementById("qtyInput");
 
-  // segurança se qtyInput não existir
   if (qtyInput) {
     const plusBtn = document.getElementById("qtyPlus");
     const minusBtn = document.getElementById("qtyMinus");
@@ -210,7 +246,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  /* ---------- PERSONALIZAR ---------- */
   const btnPersonalizar = document.getElementById("btnPersonalizar");
   const personalizarBox = document.getElementById("personalizarBox");
 
@@ -221,7 +256,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  /* ---------- TROCAR IMAGEM ---------- */
   document.querySelectorAll(".thumb").forEach(thumb => {
     thumb.addEventListener("click", e => {
       const t = e.target;
@@ -229,7 +263,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  /* ---------- KIT: mostrar quantidade só quando marcar ---------- */
   document.querySelectorAll(".kit-check").forEach(chk => {
     chk.addEventListener("change", () => {
       const box = document.getElementById("qbox-" + chk.value);
@@ -238,15 +271,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  /* ---------- ADICIONAR ITENS DO KIT AO FORMULÁRIO ---------- */
   const form = document.getElementById("addCartForm");
   if (form) {
     form.addEventListener("submit", (e) => {
-      // remove entradas antigas do kit (se existirem)
       document.querySelectorAll('input[name="kit_produtos"]').forEach(x => x.remove());
       document.querySelectorAll('input[name="kit_qtds"]').forEach(x => x.remove());
 
-      // percorre checks e adiciona campos hidden para envio
       document.querySelectorAll(".kit-check").forEach(chk => {
         if (chk.checked) {
           const id = chk.value;
@@ -260,14 +290,12 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!isNaN(max) && qtd > max) qtd = max;
           }
 
-          // cria hidden para id
           const hidId = document.createElement("input");
           hidId.type = "hidden";
           hidId.name = "kit_produtos";
           hidId.value = id;
           form.appendChild(hidId);
 
-          // cria hidden para qtd
           const hidQtd = document.createElement("input");
           hidQtd.type = "hidden";
           hidQtd.name = "kit_qtds";
@@ -275,11 +303,8 @@ document.addEventListener("DOMContentLoaded", () => {
           form.appendChild(hidQtd);
         }
       });
-
-      // ok: o form segue para envio com campos kit_produtos[] e kit_qtds[]
     });
   }
-
 });
 </script>
 
