@@ -5,6 +5,8 @@ favoritos
 
 produto nao aparece nos relatorios
 estatisticas no perfil do usuario
+ajustar a hora dos pedidos no painel do adm
+na pagina relatorios do adm nao esta puxando os dados dos pedidos (PROVAVEL CONFLITO NA ROTA E BANCO DE DADOS)
 
 
 RABELO:
@@ -13,9 +15,7 @@ criar novas imagens para o carrossel
 LEO:
 
 arrumar o sobre
-nota fiscal
 mostrar a foto no perfil que esta bugado
-OBS LEO: LEMBRAR DE PEGAR O HTML DO PEDIDO FINALIZADO!!! conta dropthisismineman
 
 
 
