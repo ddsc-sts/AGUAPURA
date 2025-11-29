@@ -20,7 +20,7 @@ def conectar():
         host="localhost",
         user="root",
 
-        port=3406,
+        port=3306,
         password="",   # altere se tiver senha
         database="aguapura"
     )
@@ -2007,15 +2007,13 @@ def api_favoritos():
     for fav in favoritos:
         fav['preco'] = float(fav['preco'])
         fav['criado_em'] = fav['criado_em'].strftime('%Y-%m-%d %H:%M:%S')
-        # Garantir que a imagem tenha o caminho correto
-        if fav['imagem_principal'] and not fav['imagem_principal'].startswith('http'):
-            fav['imagem_principal'] = url_for('static', filename=fav['imagem_principal'].lstrip('/static/'))
+        # ✅ CORREÇÃO: Usar o caminho direto do banco
+        # O banco já tem o caminho completo: /static/img/...
     
     cursor.close()
     db.close()
     
     return jsonify(favoritos)
-
 
 # ============================
 # CONTEXT PROCESSOR - Verificar se produto está nos favoritos
@@ -2165,7 +2163,10 @@ def excluir_pagamento(pid):
     flash("Método de pagamento removido.", "info")
     return redirect(url_for("perfil"))
 
-
+# ===== ROTA 404 - PÁGINA NÃO ENCONTRADA =====
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
