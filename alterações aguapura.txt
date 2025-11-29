@@ -1,9 +1,5 @@
 alterações aguapura:
 
-DANIEL:
-favoritos
-
-
 
 
 
@@ -13,8 +9,7 @@ favoritos
 
 LEO:
 
-arrumar o sobre
-deixar os banner clicaveis
+o carrinho ta dando erro tenta arrumar 
 
 
 
