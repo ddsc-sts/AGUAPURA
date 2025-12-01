@@ -45,6 +45,62 @@
     color: #94a3b8;
   }
 
+  /* Estilo para estampas selecionáveis */
+  .estampa-option {
+    position: relative;
+    cursor: pointer;
+  }
+
+  .estampa-option input[type="radio"] {
+    display: none;
+  }
+
+  .estampa-option img {
+    width: 90px;
+    height: 90px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 3px solid var(--border);
+    transition: all 0.3s ease;
+  }
+
+  .estampa-option input[type="radio"]:checked + img {
+    border-color: var(--azul);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+    transform: scale(1.05);
+  }
+
+  .estampa-option:hover img {
+    border-color: var(--azul);
+    opacity: 0.8;
+  }
+
+  /* Indicador de seleção */
+  .estampa-option input[type="radio"]:checked ~ .check-icon {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .check-icon {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: var(--azul);
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+    opacity: 0;
+    transform: scale(0);
+    transition: all 0.3s ease;
+    pointer-events: none;
+  }
+
   @media (max-width: 768px) {
     .btn-favorito-produto {
       width: 50px;
@@ -111,11 +167,34 @@
         {% if produto.categoria != "Acessório" %}
         <!-- BOX DE PERSONALIZAÇÃO -->
         <div id="personalizarBox" class="personalizar-box"
-             style="display:none; margin-top:12px; max-width:420px;">
-          <label style="font-weight:600; color:var(--texto);">Nome </label>
-          <input id="nomePersonalizado" name="personalizacao" type="text"
-                 placeholder="Ex: Maria"
-                 style="padding:8px; border-radius:10px; border:1px solid var(--border); margin-top:6px; width:100%;">
+             style="display:none; margin-top:20px; padding:20px; background:var(--card-bg); border:1px solid var(--border); border-radius:12px;">
+          
+          <!-- NOME PERSONALIZADO -->
+          <div style="margin-bottom:20px;">
+            <label style="font-weight:600; color:var(--texto); display:block; margin-bottom:8px;">Nome Personalizado</label>
+            <input id="nomePersonalizado" name="personalizacao" type="text"
+                   placeholder="Ex: Maria"
+                   style="padding:10px; border-radius:10px; border:1px solid var(--border); width:100%; font-size:1rem;">
+            <p style="font-size:0.85rem; color:var(--texto); opacity:0.7; margin-top:5px;">💡 Adicione um nome para personalizar seu produto</p>
+          </div>
+
+          <!-- ESTAMPAS -->
+          <div>
+            <label style="font-weight:600; color:var(--texto); display:block; margin-bottom:10px;">
+              Escolha uma estampa <span style="color:var(--azul);">(+ R$ 20,00)</span>
+            </label>
+
+            <div style="display:flex; gap:12px; flex-wrap:wrap;">
+              {% for estampa in ['estampa1.png','estampa2.png','estampa3.png','estampa4.png'] %}
+              <label class="estampa-option">
+                <input type="radio" name="estampa" value="{{ estampa }}">
+                <img src="/static/estampas/{{ estampa }}" alt="Estampa {{ loop.index }}">
+                <span class="check-icon">✓</span>
+              </label>
+              {% endfor %}
+            </div>
+            <p style="font-size:0.85rem; color:var(--texto); opacity:0.7; margin-top:8px;">✨ Clique em uma estampa para selecionar</p>
+          </div>
         </div>
 
         <!-- CORES -->
@@ -124,25 +203,21 @@
           <label style="font-weight:600; color:var(--texto);">Escolha a cor:</label>
           <select name="cor" required
                   style="padding:10px; width:180px; margin-top:6px; border-radius:10px; border:1px solid var(--border);">
-        
-              <option value="Preto">Preto</option>
-              <option value="Branco">Branco</option>
-              <option value="Cinza">Cinza</option>
-              <option value="Vermelho">Vermelho</option>
-              <option value="Azul">Azul</option>
-              <option value="Verde">Verde</option>
-              <option value="Amarelo">Amarelo</option>
-              <option value="Roxo">Roxo</option>
-              <option value="Rosa">Rosa</option>
-              <option value="Laranja">Laranja</option>
-              <option value="Marrom">Marrom</option>
-              <option value="Dourado">Dourado</option>
-              <option value="Prata">Prata</option>
-              
-        
+            <option value="Preto">Preto</option>
+            <option value="Branco">Branco</option>
+            <option value="Cinza">Cinza</option>
+            <option value="Vermelho">Vermelho</option>
+            <option value="Azul">Azul</option>
+            <option value="Verde">Verde</option>
+            <option value="Amarelo">Amarelo</option>
+            <option value="Roxo">Roxo</option>
+            <option value="Rosa">Rosa</option>
+            <option value="Laranja">Laranja</option>
+            <option value="Marrom">Marrom</option>
+            <option value="Dourado">Dourado</option>
+            <option value="Prata">Prata</option>
           </select>
         </div>
-        
         {% endif %}
         {% endif %}
 
@@ -263,8 +338,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (btnPersonalizar && personalizarBox) {
     btnPersonalizar.addEventListener("click", () => {
-      personalizarBox.style.display =
-        personalizarBox.style.display === "flex" ? "none" : "flex";
+      if (personalizarBox.style.display === "none" || personalizarBox.style.display === "") {
+        personalizarBox.style.display = "block";
+        btnPersonalizar.textContent = "Fechar Personalização ✖️";
+      } else {
+        personalizarBox.style.display = "none";
+        btnPersonalizar.textContent = "Personalizar ✏️";
+      }
     });
   }
 

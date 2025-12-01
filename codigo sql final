@@ -80,17 +80,25 @@ INSERT INTO produtos VALUES
 DROP TABLE IF EXISTS carrinho;
 CREATE TABLE carrinho (
     id INT AUTO_INCREMENT PRIMARY KEY,
+
     session_id VARCHAR(255) NOT NULL,
     produto_id INT NOT NULL,
-    quantidade INT DEFAULT 1,
-    cor VARCHAR(30) NOT NULL,
-    personalizacao VARCHAR(100) DEFAULT NULL,
-    CONSTRAINT fk_carrinho_produto FOREIGN KEY (produto_id) REFERENCES produtos(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT INTO carrinho VALUES
-(3,'d2ea2769-981b-4f7d-808f-0c39c9772f16',1,1,'Preto',NULL),
-(7,'832a56c4-b3e1-4563-b1df-61a875edf26a',1,1,'Preto',NULL);
+    quantidade INT DEFAULT 1,
+
+    cor VARCHAR(30) DEFAULT NULL,
+
+    personalizacao VARCHAR(100) DEFAULT NULL,   -- Nome personalizado
+
+    estampa VARCHAR(255) DEFAULT NULL,          -- Caminho/arquivo da estampa escolhida
+
+    extra_preco DECIMAL(10,2) DEFAULT 0.00,     -- Taxa extra (nome + estampa)
+
+
+    CONSTRAINT fk_carrinho_produto 
+        FOREIGN KEY (produto_id) REFERENCES produtos(id)
+        ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ============================================================
 -- TABELA: cupons
@@ -212,6 +220,7 @@ CREATE TABLE pedido_itens (
     quantidade INT NOT NULL,
     valor DECIMAL(10,2) NOT NULL,
     personalizacao VARCHAR(100) DEFAULT NULL,
+    estampa VARCHAR(255) DEFAULT NULL,
     CONSTRAINT fk_item_pedido FOREIGN KEY (pedido_id) REFERENCES pedidos(id) ON DELETE CASCADE,
     CONSTRAINT fk_item_produto FOREIGN KEY (produto_id) REFERENCES produtos(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

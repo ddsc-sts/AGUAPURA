@@ -800,20 +800,34 @@ def carrinho():
 
     # Buscar itens com personalização
     cursor.execute("""
-        SELECT c.id AS carrinho_id, c.quantidade, c.cor, c.personalizacao,
-               p.id AS produto_id, p.nome, p.preco, p.imagem_principal, p.estoque
-        FROM carrinho c
-        JOIN produtos p ON p.id = c.produto_id
-        WHERE c.session_id = %s
-    """, (session_id,))
+    SELECT 
+        c.id AS carrinho_id,
+        c.quantidade,
+        c.cor,
+        c.personalizacao,
+        c.extra_preco,
+        c.estampa,
+
+        p.id AS produto_id,
+        p.nome,
+        p.preco,
+        p.imagem_principal,
+        p.estoque
+    FROM carrinho c
+    JOIN produtos p ON p.id = c.produto_id
+    WHERE c.session_id = %s
+""", (session_id,))
+
     itens = cursor.fetchall()
 
-    # Calcular subtotal
     subtotal = Decimal("0.00")
     for item in itens:
-        preco = Decimal(item["preco"])
-        quantidade = Decimal(item["quantidade"])
-        subtotal += preco * quantidade
+        preco_base = Decimal(item["preco"])
+        extra = Decimal(item["extra_preco"] or 0)
+        qtd = int(item["quantidade"])
+
+        subtotal += (preco_base + extra) * qtd
+
 
     frete = Decimal("12.00") if subtotal > 0 else Decimal("0.00")
     
@@ -931,9 +945,6 @@ def atualizar_personalizacao(id):
     return redirect(url_for("carrinho"))
 
 
-# ---------------------------
-# Atualizar add_carrinho para incluir personalização
-# ---------------------------
 @app.route("/add_carrinho/<int:produto_id>", methods=["POST"])
 def add_carrinho(produto_id):
     db = conectar()
@@ -943,12 +954,22 @@ def add_carrinho(produto_id):
 
     qtd_form = int(request.form.get("quantidade", 1))
     cor = request.form.get("cor", "") or ""
-    personalizacao = request.form.get("personalizacao", "").strip() or None
+    nome_personalizado = request.form.get("personalizacao", "").strip() or None
+    estampa = request.form.get("estampa", "").strip() or None
+
+    # Calcular preços extra
+    extra_preco = 0
+    if nome_personalizado:
+        extra_preco += 15
+    if estampa:
+        extra_preco += 20
 
     kit_produtos = request.form.getlist("kit_produtos")
     kit_qtds = request.form.getlist("kit_qtds")
 
-    def upsert_carrinho(prod_id, qtd, cor_value="", person_value=None):
+    # Função para inserir ou atualizar item no carrinho
+    def upsert_carrinho(prod_id, qtd, cor_value="", nome_value=None, estampa_value=None, extra_value=0):
+        
         cursor.execute("SELECT estoque FROM produtos WHERE id = %s", (prod_id,))
         r = cursor.fetchone()
         if not r:
@@ -956,54 +977,58 @@ def add_carrinho(produto_id):
 
         estoque = int(r["estoque"])
 
-        # Procurar item com mesma session, produto, cor E personalização
         cursor.execute("""
             SELECT id, quantidade FROM carrinho
-            WHERE session_id = %s AND produto_id = %s 
-            AND IFNULL(cor, '') = %s
-            AND IFNULL(personalizacao, '') = %s
-        """, (session_id, prod_id, cor_value, person_value or ''))
-        existing = cursor.fetchone()
+            WHERE session_id = %s AND produto_id = %s
+              AND IFNULL(cor, '') = %s
+              AND IFNULL(personalizacao, '') = %s
+              AND IFNULL(estampa, '') = %s
+        """, (session_id, prod_id, cor_value, nome_value or '', estampa_value or ''))
 
+        existing = cursor.fetchone()
         nova_qtd = qtd + (existing["quantidade"] if existing else 0)
 
         if nova_qtd > estoque:
-            return False, f"Quantidade solicitada maior que estoque (disponível {estoque})."
+            return False, f"Quantidade maior que estoque (máx {estoque})."
 
         if existing:
             cursor.execute("""
-                UPDATE carrinho SET quantidade = %s WHERE id = %s
+                UPDATE carrinho 
+                SET quantidade = %s
+                WHERE id = %s
             """, (nova_qtd, existing["id"]))
         else:
             cursor.execute("""
-                INSERT INTO carrinho (session_id, produto_id, quantidade, cor, personalizacao)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (session_id, prod_id, nova_qtd, cor_value, person_value))
+                INSERT INTO carrinho (session_id, produto_id, quantidade, cor, personalizacao, estampa, extra_preco)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (session_id, prod_id, nova_qtd, cor_value, nome_value, estampa_value, extra_value))
 
         return True, None
 
-    ok, err = upsert_carrinho(produto_id, qtd_form, cor, personalizacao)
+    ok, err = upsert_carrinho(produto_id, qtd_form, cor, nome_personalizado, estampa, extra_preco)
+
     if not ok:
         flash(err, "erro")
         return redirect(url_for("produto", id=produto_id))
 
+    # KIT (sem personalização)
     if kit_produtos and kit_qtds:
         for idx, pid_str in enumerate(kit_produtos):
             try:
                 pid = int(pid_str)
-                qtd_kit = int(kit_qtds[idx]) if idx < len(kit_qtds) else 1
+                qtd_kit = int(kit_qtds[idx])
             except:
                 continue
-            ok, err = upsert_carrinho(pid, qtd_kit, "", None)
-            if not ok:
-                flash(f"Erro ao adicionar item do kit: {err}", "erro")
+
+            upsert_carrinho(pid, qtd_kit)
 
     db.commit()
     cursor.close()
     db.close()
-    
+
     flash("Produto(s) adicionados ao carrinho!", "sucesso")
     return redirect(url_for("carrinho"))
+
 
 # ---------------------------
 # AUMENTAR QUANTIDADE (CHECK DE ESTOQUE)
@@ -1265,9 +1290,9 @@ def checkout():
 
     session_id = get_session_id()
 
-    # Obter itens do carrinho COM PERSONALIZAÇÃO
+    # Obter itens do carrinho COM PERSONALIZAÇÃO E ESTAMPA
     cursor.execute("""
-        SELECT c.id AS carrinho_id, c.quantidade, c.cor, c.personalizacao,
+        SELECT c.id AS carrinho_id, c.quantidade, c.cor, c.personalizacao, c.estampa,
                p.id AS produto_id, p.nome, p.preco, p.imagem_principal, p.estoque
         FROM carrinho c
         JOIN produtos p ON p.id = c.produto_id
@@ -1283,15 +1308,27 @@ def checkout():
             db.close()
             return redirect(url_for("home"))
 
-        # Calcula subtotal
+        # ========== CALCULA SUBTOTAL CONSIDERANDO PERSONALIZAÇÃO E ESTAMPA ==========
         subtotal = Decimal("0.00")
         for item in itens:
-            preco = Decimal(item["preco"])
+            preco_base = Decimal(item["preco"])
             qtd = int(item["quantidade"])
-            subtotal += preco * qtd
+            
+            # Adicionar R$10 se tiver personalização com nome
+            extra_nome = Decimal("10.00") if item.get("personalizacao") else Decimal("0.00")
+            
+            # Adicionar R$20 se tiver estampa
+            extra_estampa = Decimal("20.00") if item.get("estampa") else Decimal("0.00")
+            
+            preco_total_item = (preco_base + extra_nome + extra_estampa) * qtd
+            subtotal += preco_total_item
 
-        # Frete padrão
-        frete = Decimal("12.00") if subtotal > 0 else Decimal("0.00")
+        # ========== FRETE GRÁTIS SE SC E SUBTOTAL > R$129,90 ==========
+        frete = Decimal("12.00")
+        
+        # Para calcular frete grátis, precisamos do estado
+        # Como ainda não temos o estado no GET, usamos frete padrão
+        # O frete correto será calculado no POST com o estado informado
         
         # ========== VERIFICAR CUPOM APLICADO ==========
         desconto = Decimal("0.00")
@@ -1483,11 +1520,20 @@ def checkout():
         db.close()
         return redirect(url_for("checkout"))
 
-    # Recalcular total e validar estoque
+    # ========== RECALCULAR TOTAL COM PERSONALIZAÇÃO, ESTAMPA E VALIDAR ESTOQUE ==========
     subtotal = Decimal("0.00")
     for item in itens:
         preco = Decimal(item["preco"])
         qtd = int(item["quantidade"])
+        
+        # Adicionar R$10 se tiver personalização com nome
+        extra_nome = Decimal("10.00") if item.get("personalizacao") else Decimal("0.00")
+        
+        # Adicionar valor da estampa se existir
+        extra_estampa = Decimal("20.00") if item.get("estampa") else Decimal("0.00")
+        
+        preco_total_item = (preco + extra_nome + extra_estampa) * qtd
+        
         cursor.execute("SELECT estoque FROM produtos WHERE id = %s", (item["produto_id"],))
         estoque_row = cursor.fetchone()
         if not estoque_row:
@@ -1501,12 +1547,14 @@ def checkout():
             cursor.close()
             db.close()
             return redirect(url_for("carrinho"))
-        subtotal += preco * Decimal(qtd)
+        
+        subtotal += preco_total_item
 
-    # ========== CALCULAR FRETE (GRÁTIS SE SC E > R$129,90) ==========
+    # ========== CALCULAR FRETE (GRÁTIS SE SC E SUBTOTAL > R$129,90) ==========
     frete = Decimal("12.00")
     estado_limpo = estado.strip().upper()
     
+    # Frete grátis para SC se subtotal (incluindo personalização) for maior que R$129,90
     if estado_limpo == "SC" and subtotal > Decimal("129.90"):
         frete = Decimal("0.00")
     
@@ -1580,18 +1628,24 @@ def checkout():
 
     pedido_id = cursor.lastrowid
 
-    # ========== INSERIR ITENS COM PERSONALIZAÇÃO E REDUZIR ESTOQUE ==========
+    # ========== INSERIR ITENS COM PERSONALIZAÇÃO, ESTAMPA E REDUZIR ESTOQUE ==========
     try:
         for item in itens:
             produto_id = item["produto_id"]
             qtd = int(item["quantidade"])
             preco = Decimal(item["preco"])
             personalizacao = item.get("personalizacao")
+            estampa = item.get("estampa")
+            
+            # Calcular valor total do item (incluindo personalização e estampa)
+            extra_nome = Decimal("10.00") if personalizacao else Decimal("0.00")
+            extra_estampa = Decimal("20.00") if estampa else Decimal("0.00")
+            valor_total_item = preco + extra_nome + extra_estampa
 
             cursor.execute("""
-                INSERT INTO pedido_itens (pedido_id, produto_id, quantidade, valor, personalizacao)
-                VALUES (%s, %s, %s, %s, %s)
-            """, (pedido_id, produto_id, qtd, str(preco), personalizacao))
+                INSERT INTO pedido_itens (pedido_id, produto_id, quantidade, valor, personalizacao, estampa)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (pedido_id, produto_id, qtd, str(valor_total_item), personalizacao, estampa))
 
             cursor.execute("UPDATE produtos SET estoque = estoque - %s WHERE id = %s", (qtd, produto_id))
 

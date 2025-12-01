@@ -3664,3 +3664,10 @@ body {
     }
 }
 /* ===== FIM DAS OTIMIZAÇÕES ===== */
+
+[data-theme="dark"] select,
+body.dark select {
+    background: #1f2937;
+    color: #fff;
+    border-color: #4b5563;
+}

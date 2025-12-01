@@ -44,12 +44,31 @@
 
                     <!-- Mostrar personalização (somente se existir) -->
                     {% if item.personalizacao %}
-                    <div style="margin-bottom:12px;">
+                    <div style="margin-bottom:12px; display:flex; align-items:center; gap:10px;">
                         <span style="display:inline-block; padding:6px 14px; background:rgba(0,200,100,0.1); border:1px solid rgba(0,200,100,0.3); border-radius:8px; font-size:0.9rem;">
-                            💝 Personalizado: <strong>{{ item.personalizacao }}</strong>
+                            ✏️ Personalizado: <strong>{{ item.personalizacao }}</strong>
+                        </span>
+                        <span style="font-size:0.85rem; color:var(--azul); font-weight:600;">
+                            + R$ 10,00
                         </span>
                     </div>
                     {% endif %}
+
+                    <!-- Mostrar estampa com IMAGEM -->
+                    {% if item.estampa %}
+                    <div style="margin-bottom:12px; display:flex; align-items:center; gap:10px;">
+                        <span style="font-size:0.85rem; color:var(--texto); opacity:0.8;">
+                            <strong>Estampa:</strong>
+                        </span>
+                        <img src="/static/estampas/{{ item.estampa }}" 
+                             alt="Estampa escolhida"
+                             style="width:50px; height:50px; object-fit:cover; border-radius:8px; border:2px solid var(--azul);">
+                        <span style="font-size:0.85rem; color:var(--azul); font-weight:600;">
+                            + R$ 20,00
+                        </span>
+                    </div>
+                    {% endif %}
+
                     
                     <!-- Quantidade -->
                     <div style="display:flex; align-items:center; gap:12px; margin-top:16px;">
@@ -64,7 +83,7 @@
                             </a>
                         </div>
                         <span style="margin-left:auto; font-weight:700; font-size:1.1rem;">
-                            R$ {{ "%.2f"|format(item.preco * item.quantidade) }}
+                            R$ {{ "%.2f"|format((item.preco + (item.extra_preco or 0)) * item.quantidade) }}
                         </span>
                     </div>
                 </div>
