@@ -4,189 +4,546 @@
 {% block content %}
 
 <style>
+:root {
+  --gradient-primary: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  --gradient-hero: linear-gradient(135deg, rgba(0,123,255,0.9) 0%, rgba(0,86,179,0.9) 100%);
+}
+
 /* ============================
-     ESTILOS GERAIS DA SEÇÃO
+     HERO SECTION
+   ============================ */
+.hero-sobre {
+  background: var(--gradient-hero);
+  color: white;
+  padding: 80px 20px;
+  text-align: center;
+  margin-bottom: 60px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-sobre::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" fill="rgba(255,255,255,0.05)"/></svg>');
+  opacity: 0.3;
+}
+
+.hero-sobre h1 {
+  font-size: 3.5rem;
+  font-weight: 800;
+  margin-bottom: 20px;
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+.hero-sobre .subtitulo {
+  font-size: 1.3rem;
+  opacity: 0.95;
+  max-width: 800px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+  line-height: 1.6;
+}
+
+/* ============================
+     CONTEÚDO PRINCIPAL
    ============================ */
 .sobre-section {
   max-width: 1200px;
-  margin: 60px auto;
+  margin: 0 auto 60px;
   padding: 0 20px;
   color: var(--texto);
 }
 
-.sobre-section h1 {
-  font-size: 2.8rem;
-  text-align: center;
-  margin-bottom: 25px;
-  color: var(--azul);
-  font-weight: 800;
+/* Cards de Destaque */
+.destaques-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  margin: 50px 0;
 }
 
-.sobre-section h2 {
-  margin-top: 40px;
-  font-size: 1.9rem;
+.destaque-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 35px;
+  text-align: center;
+  box-shadow: 0 8px 20px var(--shadow);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.destaque-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: var(--gradient-primary);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.destaque-card:hover::before {
+  transform: scaleX(1);
+}
+
+.destaque-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 12px 30px var(--shadow);
+}
+
+.destaque-icon {
+  font-size: 3.5rem;
+  margin-bottom: 20px;
+  display: block;
+}
+
+.destaque-card h3 {
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+  color: var(--azul);
+  font-weight: 700;
+}
+
+.destaque-card p {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  opacity: 0.85;
+}
+
+/* Seções de Conteúdo */
+.content-section {
+  background: var(--card-bg);
+  border-radius: 20px;
+  padding: 40px;
+  margin: 40px 0;
+  border: 1px solid var(--border);
+  box-shadow: 0 5px 15px var(--shadow);
+}
+
+.content-section h2 {
+  font-size: 2.2rem;
   font-weight: 700;
   color: var(--azul);
+  margin-bottom: 20px;
+  position: relative;
+  padding-bottom: 15px;
 }
 
-.sobre-section p {
+.content-section h2::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 80px;
+  height: 4px;
+  background: var(--gradient-primary);
+  border-radius: 2px;
+}
+
+.content-section p {
   font-size: 1.1rem;
-  line-height: 1.7;
+  line-height: 1.8;
   opacity: 0.9;
+  margin-bottom: 15px;
+}
+
+/* Projeto Interdisciplinar Box */
+.projeto-box {
+  background: linear-gradient(135deg, rgba(0,123,255,0.05) 0%, rgba(0,86,179,0.05) 100%);
+  border-left: 5px solid var(--azul);
+  padding: 30px;
+  border-radius: 15px;
+  margin: 30px 0;
+}
+
+.projeto-box h3 {
+  color: var(--azul);
+  font-size: 1.6rem;
+  margin-bottom: 15px;
+  font-weight: 700;
+}
+
+.cursos-envolvidos {
+  display: flex;
+  gap: 20px;
+  margin-top: 25px;
+  flex-wrap: wrap;
+}
+
+.curso-badge {
+  background: var(--gradient-primary);
+  color: white;
+  padding: 12px 25px;
+  border-radius: 25px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 10px rgba(0,123,255,0.3);
 }
 
 /* ============================
           GRID CRIADORES
    ============================ */
+.criadores-section {
+  margin-top: 60px;
+}
+
+.criadores-section h2 {
+  font-size: 2.5rem;
+  text-align: center;
+  color: var(--azul);
+  margin-bottom: 50px;
+  font-weight: 800;
+}
 
 .criadores-grid {
-  margin-top: 40px;
   display: grid;
-  gap: 25px;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 30px;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  margin-top: 40px;
 }
 
 /* CARD DE CADA CRIADOR */
 .criador-card {
   background: var(--card-bg);
   border: 1px solid var(--border);
-  border-radius: 15px;
+  border-radius: 20px;
   overflow: hidden;
   cursor: pointer;
-  transition: all .3s ease;
+  transition: all 0.3s ease;
   text-align: center;
-  padding-bottom: 20px;
-  box-shadow: 0px 5px 12px var(--shadow);
+  box-shadow: 0 5px 15px var(--shadow);
+  position: relative;
+}
+
+.criador-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  background: var(--gradient-primary);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 0;
+}
+
+.criador-card:hover::before {
+  opacity: 0.1;
 }
 
 .criador-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0px 10px 18px var(--shadow);
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 15px 35px var(--shadow);
+  border-color: var(--azul);
 }
 
-/* IMAGEM */
+/* IMAGEM - TAMANHO FIXO E CENTRALIZADA */
+.criador-card .img-wrapper {
+  width: 100%;
+  height: 280px;
+  overflow: hidden;
+  position: relative;
+  background: var(--cinza);
+}
+
 .criador-card img {
   width: 100%;
-  height: 220px;
+  height: 100%;
   object-fit: cover;
+  object-position: center;
+  transition: transform 0.3s ease;
 }
 
-/* NOME */
+.criador-card:hover img {
+  transform: scale(1.1);
+}
+
+/* CONTEÚDO DO CARD */
+.criador-info {
+  padding: 25px 20px;
+  position: relative;
+  z-index: 1;
+}
+
 .criador-card h3 {
-  margin-top: 15px;
-  font-size: 1.3rem;
+  font-size: 1.4rem;
   font-weight: 700;
   color: var(--texto);
+  margin-bottom: 8px;
+  transition: color 0.3s ease;
 }
 
-/* CARGO */
-.criador-card p {
-  margin-top: 8px;
-  font-size: 0.95rem;
-  opacity: 0.8;
-}
-
-/* EFEITO DE PULSAÇÃO NO HOVER */
 .criador-card:hover h3 {
   color: var(--azul);
 }
 
+.criador-card p {
+  font-size: 0.95rem;
+  opacity: 0.75;
+  margin: 0;
+  color: var(--texto);
+}
+
+.criador-card .social-hint {
+  margin-top: 12px;
+  font-size: 0.85rem;
+  color: var(--azul);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.criador-card:hover .social-hint {
+  opacity: 1;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .hero-sobre h1 {
+    font-size: 2.5rem;
+  }
+  
+  .hero-sobre .subtitulo {
+    font-size: 1.1rem;
+  }
+  
+  .criadores-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+  }
+  
+  .criador-card .img-wrapper {
+    height: 220px;
+  }
+  
+  .destaques-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .content-section {
+    padding: 25px;
+  }
+}
 </style>
+
+<!-- HERO -->
+<div class="hero-sobre">
+  <h1>💧 Sobre a Agua Pura</h1>
+  <p class="subtitulo">Um projeto interdisciplinar que une tecnologia, design e sustentabilidade para criar soluções inovadoras no combate ao desperdício de plástico</p>
+</div>
 
 <section class="sobre-section">
   
-  <h1>Sobre a Agua Pura 💧</h1>
-  <p>A Agua Pura nasceu com o propósito de unir sustentabilidade e estilo, trazendo produtos de alta qualidade para quem valoriza o meio ambiente e a praticidade no dia a dia.</p>
-
-  <h2>Nossa História</h2>
-  <p>Fundada por jovens empreendedores apaixonados por inovação, a Agua Pura surgiu da ideia de reduzir o consumo de plástico e incentivar o uso de garrafas reutilizáveis e copos sustentáveis.</p>
-
-  <h2>Missão</h2>
-  <p>Promover o consumo consciente e oferecer produtos duráveis que acompanhem você em todos os momentos.</p>
-
-  <h2>Os Criadores</h2>
-
-  <div class="criadores-grid">
-
-    <!-- ===============================
-          MODELO DE CARD (10 PESSOAS)
-         COMENTADO PARA VOCÊ EDITAR
-         =============================== -->
-
-    <!-- CARD 1 -->
-    <div class="criador-card" onclick="window.location.href='https://www.instagram.com/neymarjr/'">
-      <!-- Coloque a imagem do criador 1 -->
-      <img src="{{ url_for('static', filename='uploads/avatars/user.png') }}" alt="Criador 1">
-      <!-- Nome do criador -->
-      <h3>Daniel</h3>
-      <!-- Função / Cargo -->
-      <p>Prostituto</p>
+  <!-- DESTAQUES -->
+  <div class="destaques-grid">
+    <div class="destaque-card">
+      <span class="destaque-icon">🌍</span>
+      <h3>Sustentabilidade</h3>
+      <p>Reduzindo o uso de plástico descartável e promovendo o consumo consciente</p>
     </div>
-
-    <!-- CARD 2 -->
-    <div class="criador-card" onclick="window.location.href='LINK_AQUI_2'">
-      <img src="{{ url_for('static', filename='img/team/team2.jpg') }}">
-      <h3>Nome Criador 2</h3>
-      <p>Cargo / Função</p>
+    
+    <div class="destaque-card">
+      <span class="destaque-icon">💡</span>
+      <h3>Inovação</h3>
+      <p>Produtos modernos desenvolvidos com tecnologia e design de ponta</p>
     </div>
-
-    <!-- CARD 3 -->
-    <div class="criador-card" onclick="window.location.href='LINK_AQUI_3'">
-      <img src="{{ url_for('static', filename='img/team/team3.jpg') }}">
-      <h3>Nome Criador 3</h3>
-      <p>Cargo / Função</p>
+    
+    <div class="destaque-card">
+      <span class="destaque-icon">🎓</span>
+      <h3>Educação</h3>
+      <p>Projeto interdisciplinar unindo Desenvolvimento de Sistemas e PCP</p>
     </div>
-
-    <!-- CARD 4 -->
-    <div class="criador-card" onclick="window.location.href='LINK_AQUI_4'">
-      <img src="{{ url_for('static', filename='img/team/team4.jpg') }}">
-      <h3>Nome Criador 4</h3>
-      <p>Cargo / Função</p>
-    </div>
-
-    <!-- CARD 5 -->
-    <div class="criador-card" onclick="window.location.href='LINK_AQUI_5'">
-      <img src="{{ url_for('static', filename='img/team/team5.jpg') }}">
-      <h3>Nome Criador 5</h3>
-      <p>Cargo / Função</p>
-    </div>
-
-    <!-- CARD 6 -->
-    <div class="criador-card" onclick="window.location.href='LINK_AQUI_6'">
-      <img src="{{ url_for('static', filename='img/team/team6.jpg') }}">
-      <h3>Nome Criador 6</h3>
-      <p>Cargo / Função</p>
-    </div>
-
-    <!-- CARD 7 -->
-    <div class="criador-card" onclick="window.location.href='LINK_AQUI_7'">
-      <img src="{{ url_for('static', filename='img/team/team7.jpg') }}">
-      <h3>Nome Criador 7</h3>
-      <p>Cargo / Função</p>
-    </div>
-
-    <!-- CARD 8 -->
-    <div class="criador-card" onclick="window.location.href='LINK_AQUI_8'">
-      <img src="{{ url_for('static', filename='img/team/team8.jpg') }}">
-      <h3>Nome Criador 8</h3>
-      <p>Cargo / Função</p>
-    </div>
-
-    <!-- CARD 9 -->
-    <div class="criador-card" onclick="window.location.href='LINK_AQUI_9'">
-      <img src="{{ url_for('static', filename='img/team/team9.jpg') }}">
-      <h3>Nome Criador 9</h3>
-      <p>Cargo / Função</p>
-    </div>
-
-    <!-- CARD 10 -->
-    <div class="criador-card" onclick="window.location.href='LINK_AQUI_10'">
-      <img src="{{ url_for('static', filename='img/team/team10.jpg') }}">
-      <h3>Nome Criador 10</h3>
-      <p>Cargo / Função</p>
-    </div>
-
   </div>
+
+  <!-- NOSSA HISTÓRIA -->
+  <div class="content-section">
+    <h2>Nossa História</h2>
+    <p>A <strong>Agua Pura</strong> nasceu da união entre os cursos de <strong>Desenvolvimento de Sistemas</strong> e <strong>PCP (Planejamento e Controle de Produção)</strong>, em um projeto interdisciplinar que visa aliar tecnologia, design e consciência ambiental.</p>
+    <p>Tudo começou quando estudantes do PCP identificaram uma oportunidade de mercado: criar produtos sustentáveis que substituam garrafas e copos descartáveis. Com essa ideia em mãos, firmamos parceria com o curso de Desenvolvimento de Sistemas para criar uma plataforma completa de e-commerce que viabilizasse a venda desses produtos.</p>
+    <p>O resultado é este site que você está navegando: uma loja virtual moderna, funcional e intuitiva, onde sustentabilidade e tecnologia caminham juntas.</p>
+  </div>
+
+  <!-- PROJETO INTERDISCIPLINAR -->
+  <div class="projeto-box">
+    <h3>🤝 Projeto Interdisciplinar</h3>
+    <p>Este trabalho representa a integração perfeita entre dois cursos técnicos:</p>
+    <div class="cursos-envolvidos">
+      <div class="curso-badge">
+        💻 Desenvolvimento de Sistemas
+      </div>
+      <div class="curso-badge">
+        📊 PCP - Planejamento e Controle de Produção
+      </div>
+    </div>
+    <p style="margin-top: 20px;">Enquanto o PCP trouxe a visão de produto, análise de mercado e planejamento estratégico, o Desenvolvimento de Sistemas construiu toda a infraestrutura tecnológica: desde o banco de dados até a interface do usuário.</p>
+  </div>
+
+  <!-- MISSÃO -->
+  <div class="content-section">
+    <h2>Nossa Missão</h2>
+    <p>Promover o consumo consciente através de produtos reutilizáveis de alta qualidade, oferecendo uma experiência de compra digital excepcional e contribuindo ativamente para a redução do impacto ambiental causado pelo uso excessivo de plástico.</p>
+    <p>Acreditamos que pequenas mudanças nos hábitos diários podem gerar grandes transformações para o planeta. Por isso, cada produto Agua Pura é pensado para ser durável, prático e estiloso - acompanhando você em todos os momentos do seu dia.</p>
+  </div>
+
+  <!-- VALORES -->
+  <div class="content-section">
+    <h2>Nossos Valores</h2>
+    <p><strong>🌱 Sustentabilidade:</strong> Reduzir o impacto ambiental através de produtos reutilizáveis e duráveis.</p>
+    <p><strong>🔧 Qualidade:</strong> Oferecer produtos de alta performance e longa durabilidade.</p>
+    <p><strong>💻 Tecnologia:</strong> Utilizar as melhores práticas de desenvolvimento web para uma experiência impecável.</p>
+    <p><strong>🎨 Design:</strong> Unir funcionalidade e estética em cada detalhe.</p>
+    <p><strong>📚 Educação:</strong> Promover conscientização sobre consumo responsável e sustentabilidade.</p>
+  </div>
+
+  <!-- CRIADORES -->
+  <div class="criadores-section">
+    <h2>👥 Conheça a Equipe</h2>
+
+    <div class="criadores-grid">
+
+      <!-- CARD 1 -->
+      <div class="criador-card" onclick="window.location.href='https://www.instagram.com/leobeckerog/'">
+        <div class="img-wrapper">
+          <img src="{{ url_for('static', filename='uploads/img_sobre/leo.png') }}" alt="Leonardo Becker">
+        </div>
+        <div class="criador-info">
+          <h3>Leonardo Becker</h3>
+          <p>Desenvolvedor Full-Stack</p>
+          <div class="social-hint">📱 Ver Instagram</div>
+        </div>
+      </div>
+
+      <!-- CARD 2 -->
+      <div class="criador-card" onclick="window.location.href='https://www.instagram.com/danielsts.costa/'">
+        <div class="img-wrapper">
+          <img src="{{ url_for('static', filename='uploads/img_sobre/daniel.jpg') }}" alt="Daniel Costa">
+        </div>
+        <div class="criador-info">
+          <h3>Daniel Costa</h3>
+          <p>Desenvolvedor Backend</p>
+          <div class="social-hint">📱 Ver Instagram</div>
+        </div>
+      </div>
+
+      <!-- CARD 3 -->
+      <div class="criador-card" onclick="window.location.href='#'">
+        <div class="img-wrapper">
+          <img src="{{ url_for('static', filename='uploads/img_sobre/geder.png') }}" alt="Gedér Amorim">
+        </div>
+        <div class="criador-info">
+          <h3>Gedér Amorim</h3>
+          <p>Stakeholder e Modelador</p>
+          <div class="social-hint">📱 Ver Instagram</div>
+        </div>
+      </div>
+
+      <!-- CARD 4 -->
+      <div class="criador-card" onclick="window.location.href='#'">
+        <div class="img-wrapper">
+          <img src="{{ url_for('static', filename='uploads/img_sobre/willlyans.png') }}" alt="Willyans Machado">
+        </div>
+        <div class="criador-info">
+          <h3>Willyans Machado</h3>
+          <p>Documentador</p>
+          <div class="social-hint">📱 Ver Instagram</div>
+        </div>
+      </div>
+
+      <!-- CARD 5 -->
+      <div class="criador-card" onclick="window.location.href='#'">
+        <div class="img-wrapper">
+          <img src="{{ url_for('static', filename='uploads/img_sobre/rabelo.png') }}" alt="Davi Rabelo">
+        </div>
+        <div class="criador-info">
+          <h3>Davi Rabelo</h3>
+          <p>Designer e Modelador</p>
+          <div class="social-hint">📱 Ver Instagram</div>
+        </div>
+      </div>
+
+      <!-- CARD 6 -->
+      <div class="criador-card" onclick="window.location.href='#'">
+        <div class="img-wrapper">
+          <img src="{{ url_for('static', filename='uploads/img_sobre/guilherme.png') }}" alt="Guilherme Silveira">
+        </div>
+        <div class="criador-info">
+          <h3>Guilherme Silveira</h3>
+          <p>Estudante do PCP</p>
+          <div class="social-hint">📱 Ver Instagram</div>
+        </div>
+      </div>
+
+      <!-- CARDS 7-10 (Mantenha a estrutura para adicionar mais membros) -->
+      <!-- Remova esses cards ou adicione fotos/nomes reais -->
+
+
+        <!-- CARD 7 -->
+      <div class="criador-card" onclick="window.location.href='#'">
+        <div class="img-wrapper">
+          <img src="{{ url_for('static', filename='uploads/img_sobre/sabrina.png') }}" alt="Guilherme Silveira">
+        </div>
+        <div class="criador-info">
+          <h3>Sabrina Ribeiro</h3>
+          <p>Estudante do PCP</p>
+          <div class="social-hint">📱 Ver Instagram</div>
+        </div>
+      </div>
+
+       <!-- CARD 8-->
+       <div class="criador-card" onclick="window.location.href='#'">
+        <div class="img-wrapper">
+          <img src="{{ url_for('static', filename='uploads/img_sobre/ana.png') }}" alt="Guilherme Silveira">
+        </div>
+        <div class="criador-info">
+          <h3>Ana Maria Rabello</h3>
+          <p>Estudante do PCP</p>
+          <div class="social-hint">📱 Ver Instagram</div>
+        </div>
+      </div>
+
+        <!-- CARD 9-->
+        <div class="criador-card" onclick="window.location.href='#'">
+          <div class="img-wrapper">
+            <img src="{{ url_for('static', filename='uploads/img_sobre/gabrieli.png') }}" alt="Guilherme Silveira">
+          </div>
+          <div class="criador-info">
+            <h3>Gabrieli Selhorst</h3>
+            <p>Estudante do PCP</p>
+            <div class="social-hint">📱 Ver Instagram</div>
+          </div>
+        </div>
+  
+         <!-- CARD 10-->
+         <div class="criador-card" onclick="window.location.href='#'">
+          <div class="img-wrapper">
+            <img src="{{ url_for('static', filename='uploads/img_sobre/anajulia.png') }}" alt="Guilherme Silveira">
+          </div>
+          <div class="criador-info">
+            <h3>Ana Julia</h3>
+            <p>Estudante do PCP</p>
+            <div class="social-hint">📱 Ver Instagram</div>
+          </div>
+        </div>
+
+
+    </div>
+  </div>
+
 </section>
 
 {% endblock %}

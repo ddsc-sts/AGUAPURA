@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Esqueci minha senha — AquaPura{% endblock %}
+{% block content %}
+<style>
+.reset-card{max-width:480px;margin:60px auto;padding:28px;border-radius:12px;background:var(--card-bg);box-shadow:0 6px 18px var(--shadow);border:1px solid var(--border)}
+.reset-card h2{margin:0 0 12px 0;color:var(--azul)}
+.reset-card p{opacity:0.9}
+.form-group{margin-top:16px}
+.input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--fundo);color:var(--texto)}
+.btn{margin-top:18px;background:linear-gradient(135deg,#007bff,#0056b3);color:#fff;padding:12px 16px;border-radius:10px;border:none;cursor:pointer}
+.helper{margin-top:12px;color:var(--texto);opacity:0.75}
+</style>
+
+<div class="reset-card">
+  <h2>Esqueci minha senha</h2>
+  <p>Digite o e-mail associado à sua conta. Enviaremos um código de verificação.</p>
+  <form method="POST" action="{{ url_for('esqueci_senha') }}">
+    <div class="form-group">
+      <input type="email" name="email" class="input" placeholder="seu@exemplo.com" required>
+    </div>
+    <button class="btn" type="submit">Enviar código</button>
+  </form>
+  <div class="helper">Verifique a caixa de SPAM caso não receba em alguns minutos.</div>
+</div>
+{% endblock %}

@@ -63,10 +63,13 @@
     border-color: #0891b2;
 }
 
+/* ✅ IMAGEM CORRIGIDA */
 .produto-imagem {
     width: 100%;
-    height: 200px;
-    object-fit: cover;
+    height: 250px;
+    object-fit: contain;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    padding: 20px;
 }
 
 /* INFO DO PRODUTO */
@@ -245,9 +248,18 @@
 <div class="produtos-grid">
     {% for produto in produtos %}
     <div class="produto-card">
-        <img src="{{ produto.imagem_principal }}" alt="{{ produto.nome }}"
-             alt="{{ produto.nome }}" 
-             class="produto-imagem">
+        <!-- ✅ CORREÇÃO: Adiciona /static/ se necessário -->
+        {% if produto.imagem_principal.startswith('/static') %}
+            <img src="{{ produto.imagem_principal }}" 
+                 alt="{{ produto.nome }}" 
+                 class="produto-imagem"
+                 onerror="this.src='/static/img/default.png'">
+        {% else %}
+            <img src="{{ url_for('static', filename=produto.imagem_principal.lstrip('/')) }}" 
+                 alt="{{ produto.nome }}" 
+                 class="produto-imagem"
+                 onerror="this.src='/static/img/default.png'">
+        {% endif %}
         
         <div class="produto-info">
             <span class="produto-categoria">{{ produto.categoria }}</span>

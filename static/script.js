@@ -117,16 +117,52 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   const respostas = {
-    "oi": "Olá! Como posso ajudar?",
-    "ola": "Olá! Como posso ajudar?",
+    // BÁSICO
+    "oi": "Olá! Como posso ajudar hoje? 😊",
+    "ola": "Olá! Como posso ajudar hoje? 😊",
+    "bom dia": "Bom dia! Como posso ajudar? ☀️",
+    "boa tarde": "Boa tarde! 😊 Em que posso ajudar?",
+    "boa noite": "Boa noite! 🌙 Como posso ajudar?",
+
+    // PRODUTOS
     "preço": "Todos os preços estão listados diretamente na página dos produtos.",
+    "tamanho": "As opções de tamanho aparecem dentro da página do produto, logo abaixo do nome.",
+    "estoque": "O estoque é atualizado automaticamente na página do produto.",
+    "material": "Os materiais de cada produto estão descritos na página dele.",
+    "garantia": "Nossos produtos possuem garantia legal de 90 dias.",
+
+    // PAGAMENTO
+    "pagamento": "Aceitamos PIX, cartão de crédito e boleto.",
+    "parcelar": "Sim! Você pode parcelar no cartão em até 12x.",
+    "pix": "Pagando via PIX a confirmação ocorre na hora! 🔥",
+
+    // ENTREGA / FRETE
     "entrega": "Realizamos entregas em todo o Brasil. Qual sua cidade?",
     "frete": "O frete é grátis em compras acima de R$129,90 para Santa Catarina.",
+    "prazo": "O prazo de entrega aparece ao digitar seu CEP no carrinho.",
+    "rastreamento": "Você receberá o código de rastreio por e-mail assim que o pedido for enviado.",
+    "rastreio": "Para rastrear seu pedido, acesse a aba *Meus Pedidos* após fazer login.",
+
+    // PEDIDOS
+    "pedido": "Para consultar seu pedido, acesse a aba Meus Pedidos no menu superior.",
+    "status": "O status pode ser consultado em Meus Pedidos após o login.",
+    "acompanhar": "Você pode acompanhar seu pedido em tempo real através de Meus Pedidos.",
+    
+    // TROCAS E SUPORTE
     "troca": "Para trocas, consulte nossa Política de Troca no rodapé do site.",
-    "horário": "Nosso suporte funciona 24h via site.",
-    "pagamento": "Aceitamos Pix, cartão de crédito e boleto.",
-    "default": "Desculpe, não entendi. Pode tentar reformular?"
-  };
+    "devolução": "Você tem até 7 dias após o recebimento para solicitar devolução. Para isto entre em contato com o numero de WhatsApp",
+    "fale com atendente": "Certo! Um atendente humano pode assumir. Envie seu e-mail ou WhatsApp.",
+    "humano": "Certo! Envie seu nome e WhatsApp e eu transfiro para um atendente humano. 😊",
+
+    // LOJA
+    "horário": "Nosso suporte funciona 24 horas via site.",
+    "telefone": "No momento o suporte é totalmente online, mas podemos te retornar por WhatsApp.",
+    "whatsapp": "Envie seu número que um atendente humano entrará em contato!",
+
+    // PADRÃO
+    "default": "Desculpe, não entendi. Pode tentar reformular? 😊"
+};
+
 
   function addMessage(text, type) {
     const div = document.createElement("div");
@@ -137,14 +173,26 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function responder(msg) {
-    msg = msg.toLowerCase();
+    msg = msg.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // remove acentos
+  
+    // Deixa uma cópia simples sem caracteres especiais
+    const cleanMsg = msg.replace(/[^\w\s]/gi, "");
+  
+    // Procura primeiro por combinações exatas
     for (const chave in respostas) {
-      if (msg.includes(chave)) {
+      const cleanKey = chave.toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^\w\s]/gi, "");
+  
+      if (cleanMsg.includes(cleanKey)) {
         return respostas[chave];
       }
     }
+  
+    // Se nada casar, devolve a resposta padrão
     return respostas.default;
   }
+  
 
   if (chatSend && chatInput) {
     chatSend.addEventListener("click", () => {

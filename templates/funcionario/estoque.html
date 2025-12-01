@@ -167,6 +167,11 @@
     background: #0f172a;
 }
 
+.estoque-table tbody tr.produto-esgotado {
+    background: rgba(239, 68, 68, 0.05);
+    border-left: 4px solid #ef4444;
+}
+
 .estoque-table td {
     padding: 16px;
     color: #e2e8f0;
@@ -403,6 +408,17 @@
     opacity: 0.3;
 }
 
+/* DEBUG BOX */
+.debug-box {
+    background: #1e293b;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    border: 2px solid #fbbf24;
+    color: #fbbf24;
+    font-family: monospace;
+}
+
 @media (max-width: 768px) {
     .filtros-container {
         flex-direction: column;
@@ -427,26 +443,34 @@
     <h1>📦 Gerenciar Estoque</h1>
 </div>
 
+<!-- DEBUG (remova depois de testar) -->
+<div class="debug-box">
+    🐛 DEBUG: {{ produtos|length }} produtos carregados | 
+    Esgotados: {{ stats.esgotados }} | 
+    Baixo: {{ stats.baixo }} | 
+    OK: {{ stats.ok }}
+</div>
+
 <!-- ESTATÍSTICAS -->
 <div class="stats-resumo">
     <div class="stat-box">
         <div class="icon">📊</div>
-        <div class="valor">{{ produtos|length }}</div>
+        <div class="valor">{{ stats.total }}</div>
         <div class="label">Total de Produtos</div>
     </div>
     <div class="stat-box">
         <div class="icon">✅</div>
-        <div class="valor">{{ produtos|selectattr('estoque', 'greaterthan', 10)|list|length }}</div>
+        <div class="valor">{{ stats.ok }}</div>
         <div class="label">Estoque Adequado</div>
     </div>
     <div class="stat-box alerta">
         <div class="icon">⚠️</div>
-        <div class="valor">{{ produtos|selectattr('estoque', 'lessthan', 11)|selectattr('estoque', 'greaterthan', 0)|list|length }}</div>
+        <div class="valor">{{ stats.baixo }}</div>
         <div class="label">Estoque Baixo</div>
     </div>
     <div class="stat-box critico">
         <div class="icon">❌</div>
-        <div class="valor">{{ produtos|selectattr('estoque', 'equalto', 0)|list|length }}</div>
+        <div class="valor">{{ stats.esgotados }}</div>
         <div class="label">Esgotados</div>
     </div>
 </div>
@@ -493,7 +517,7 @@
         </thead>
         <tbody>
             {% for produto in produtos %}
-            <tr>
+            <tr {% if produto.estoque == 0 %}class="produto-esgotado"{% endif %}>
                 <td>
                     <div class="produto-info-cell">
                         <img src="{{ produto.imagem_principal }}" alt="{{ produto.nome }}" class="produto-miniatura">
@@ -586,86 +610,123 @@
 </div>
 
 <script>
-// Abrir modal
-function abrirModal(button) {
-    const id = button.getAttribute('data-id');
-    const nome = button.getAttribute('data-nome');
-    const estoque = button.getAttribute('data-estoque');
+    // DEBUG: Log ao carregar página
+    console.log('📊 Página de estoque carregada');
+    console.log('Total de produtos na tabela:', document.querySelectorAll('.estoque-table tbody tr').length);
     
-    document.getElementById('modalProdutoNome').textContent = nome;
-    document.getElementById('estoqueAtual').value = estoque;
-    document.getElementById('produtoId').value = id;
-    document.getElementById('quantidadeAjuste').value = '';
-    document.getElementById('tipoAjuste').value = 'adicionar';
-    atualizarLabel();
-    document.getElementById('modalAjuste').classList.add('show');
-}
-
-// Fechar modal
-function fecharModal() {
-    document.getElementById('modalAjuste').classList.remove('show');
-}
-
-// Atualizar label
-function atualizarLabel() {
-    const tipo = document.getElementById('tipoAjuste').value;
-    const label = document.getElementById('labelQuantidade');
-    const input = document.getElementById('quantidadeAjuste');
-    
-    if (tipo === 'adicionar') {
-        label.textContent = 'Quantidade a Adicionar';
-        input.placeholder = 'Ex: 50';
-    } else if (tipo === 'remover') {
-        label.textContent = 'Quantidade a Remover';
-        input.placeholder = 'Ex: 10';
-    } else {
-        label.textContent = 'Nova Quantidade Total';
-        input.placeholder = 'Ex: 100';
+    // Abrir modal
+    function abrirModal(button) {
+        const id = button.getAttribute('data-id');
+        const nome = button.getAttribute('data-nome');
+        const estoque = button.getAttribute('data-estoque');
+        
+        console.log(`🔧 Abrindo modal - ID: ${id}, Nome: ${nome}, Estoque: ${estoque}`);
+        
+        document.getElementById('modalProdutoNome').textContent = nome;
+        document.getElementById('estoqueAtual').value = estoque;
+        document.getElementById('produtoId').value = id;
+        document.getElementById('quantidadeAjuste').value = '';
+        document.getElementById('tipoAjuste').value = 'adicionar';
+        atualizarLabel();
+        document.getElementById('modalAjuste').classList.add('show');
     }
-}
-
-// Submeter formulário
-document.getElementById('formAjuste').addEventListener('submit', function(e) {
-    e.preventDefault();
-    document.getElementById('tipoAjusteInput').value = document.getElementById('tipoAjuste').value;
-    this.action = '/admin/estoque/ajustar';
-    this.submit();
-});
-
-// Fechar modal ao clicar fora
-document.getElementById('modalAjuste').addEventListener('click', function(e) {
-    if (e.target === this) {
-        fecharModal();
-    }
-});
-
-// Filtros (exemplo básico)
-document.getElementById('buscarProduto').addEventListener('input', filtrarTabela);
-document.getElementById('filtroCategoria').addEventListener('change', filtrarTabela);
-document.getElementById('filtroStatus').addEventListener('change', filtrarTabela);
-
-function filtrarTabela() {
-    const busca = document.getElementById('buscarProduto').value.toLowerCase();
-    const categoria = document.getElementById('filtroCategoria').value;
-    const status = document.getElementById('filtroStatus').value;
-    const linhas = document.querySelectorAll('.estoque-table tbody tr');
     
-    linhas.forEach(linha => {
-        const nome = linha.querySelector('.produto-nome').textContent.toLowerCase();
-        const cat = linha.querySelectorAll('td')[1].textContent;
-        const statusBadge = linha.querySelector('.status-badge').textContent.toLowerCase();
+    // Fechar modal
+    function fecharModal() {
+        document.getElementById('modalAjuste').classList.remove('show');
+    }
+    
+    // Atualizar label
+    function atualizarLabel() {
+        const tipo = document.getElementById('tipoAjuste').value;
+        const label = document.getElementById('labelQuantidade');
+        const input = document.getElementById('quantidadeAjuste');
         
-        let mostrar = true;
+        if (tipo === 'adicionar') {
+            label.textContent = 'Quantidade a Adicionar';
+            input.placeholder = 'Ex: 50';
+        } else if (tipo === 'remover') {
+            label.textContent = 'Quantidade a Remover';
+            input.placeholder = 'Ex: 10';
+        } else {
+            label.textContent = 'Nova Quantidade Total';
+            input.placeholder = 'Ex: 100';
+        }
+    }
+    
+    // Submeter formulário
+    document.getElementById('formAjuste').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const tipo = document.getElementById('tipoAjuste').value;
+        const quantidade = document.getElementById('quantidadeAjuste').value;
         
-        if (busca && !nome.includes(busca)) mostrar = false;
-        if (categoria && cat !== categoria) mostrar = false;
-        if (status === 'ok' && !statusBadge.includes('ok')) mostrar = false;
-        if (status === 'baixo' && !statusBadge.includes('baixo') && !statusBadge.includes('crítico')) mostrar = false;
-        if (status === 'esgotado' && !statusBadge.includes('esgotado')) mostrar = false;
+        console.log(`📤 Enviando ajuste - Tipo: ${tipo}, Quantidade: ${quantidade}`);
         
-        linha.style.display = mostrar ? '' : 'none';
+        document.getElementById('tipoAjusteInput').value = tipo;
+        this.action = '/admin/estoque/ajustar';
+        this.submit();
     });
-}
-</script>
-
+    
+    // Fechar modal ao clicar fora
+    document.getElementById('modalAjuste').addEventListener('click', function(e) {
+        if (e.target === this) {
+            fecharModal();
+        }
+    });
+    
+    // Filtros
+    document.getElementById('buscarProduto').addEventListener('input', filtrarTabela);
+    document.getElementById('filtroCategoria').addEventListener('change', filtrarTabela);
+    document.getElementById('filtroStatus').addEventListener('change', filtrarTabela);
+    
+    function filtrarTabela() {
+        const busca = document.getElementById('buscarProduto').value.toLowerCase();
+        const categoria = document.getElementById('filtroCategoria').value;
+        const status = document.getElementById('filtroStatus').value;
+        const linhas = document.querySelectorAll('.estoque-table tbody tr');
+    
+        let visiveisCount = 0;
+    
+        linhas.forEach(linha => {
+            const nome = linha.querySelector('.produto-nome').textContent.toLowerCase();
+            const cat = linha.querySelectorAll('td')[1].textContent;
+            const statusClass = linha.querySelector('.status-badge').classList;
+    
+            let mostrar = true;
+    
+            // Buscar texto
+            if (busca && !nome.includes(busca)) mostrar = false;
+    
+            // Categoria
+            if (categoria && cat !== categoria) mostrar = false;
+    
+            // Status (usando classes)
+            if (status === 'ok' && !statusClass.contains('status-ok')) mostrar = false;
+            if (status === 'baixo' && !statusClass.contains('status-baixo')) mostrar = false;
+            if (status === 'esgotado' && !statusClass.contains('status-esgotado')) mostrar = false;
+    
+            linha.style.display = mostrar ? '' : 'none';
+            if (mostrar) visiveisCount++;
+        });
+    
+        console.log(`🔍 Filtros aplicados - ${visiveisCount} produtos visíveis de ${linhas.length}`);
+    }
+    
+    // Destacar produtos esgotados ao carregar
+    document.addEventListener('DOMContentLoaded', function() {
+        const linhas = document.querySelectorAll('.estoque-table tbody tr');
+        let esgotadosCount = 0;
+    
+        linhas.forEach(linha => {
+            const quantidadeCell = linha.querySelector('.quantidade-display');
+            if (quantidadeCell && quantidadeCell.textContent.trim() === '0') {
+                esgotadosCount++;
+                console.log('🔴 Produto esgotado:', linha.querySelector('.produto-nome').textContent);
+            }
+        });
+    
+        console.log(`📊 Total de produtos esgotados na tabela: ${esgotadosCount}`);
+    });
+    </script>
+    
 {% endblock %}

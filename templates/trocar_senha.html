@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Nova senha — AquaPura{% endblock %}
+{% block content %}
+<style>
+.change-card{max-width:520px;margin:60px auto;padding:28px;border-radius:12px;background:var(--card-bg);box-shadow:0 6px 18px var(--shadow);border:1px solid var(--border)}
+.change-card h2{color:var(--azul)}
+.input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--fundo);color:var(--texto);margin-top:10px}
+.btn{margin-top:18px;background:linear-gradient(135deg,#007bff,#0056b3);color:#fff;padding:12px 16px;border-radius:10px;border:none;cursor:pointer}
+.helper{margin-top:12px;color:var(--texto);opacity:0.85}
+</style>
+
+<div class="change-card">
+  <h2>Escolha uma nova senha</h2>
+  <p>Digite uma nova senha segura.</p>
+  <form method="POST" action="{{ url_for('trocar_senha') }}">
+    <input type="password" name="senha" class="input" placeholder="Nova senha" required minlength="6">
+    <input type="password" name="confirmar" class="input" placeholder="Confirme a nova senha" required minlength="6">
+    <button class="btn" type="submit">Alterar senha</button>
+  </form>
+  <div class="helper">Após a alteração você será redirecionado para o login.</div>
+</div>
+{% endblock %}

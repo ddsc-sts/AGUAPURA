@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Verificar código — AquaPura{% endblock %}
+{% block content %}
+<style>
+.verify-card{max-width:480px;margin:60px auto;padding:28px;border-radius:12px;background:var(--card-bg);box-shadow:0 6px 18px var(--shadow);border:1px solid var(--border);text-align:center}
+.verify-card h2{color:var(--azul)}
+.input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--fundo);color:var(--texto)}
+.btn{margin-top:18px;background:linear-gradient(135deg,#007bff,#0056b3);color:#fff;padding:12px 16px;border-radius:10px;border:none;cursor:pointer}
+.small{margin-top:12px;display:block;color:var(--texto);opacity:0.8}
+</style>
+
+<div class="verify-card">
+  <h2>Digite o código</h2>
+  <p>Coloque o código que você recebeu por e-mail (seis dígitos).</p>
+  <form method="POST" action="{{ url_for('verificar_codigo') }}">
+    <input type="text" name="codigo" maxlength="6" class="input" placeholder="123456" required pattern="\d{6}">
+    <button class="btn" type="submit">Verificar</button>
+  </form>
+  <a class="small" href="{{ url_for('esqueci_senha') }}">Reenviar código / Voltar</a>
+</div>
+{% endblock %}

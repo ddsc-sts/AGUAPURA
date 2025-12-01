@@ -9,8 +9,35 @@ app.secret_key = "chave-muito-segura"
 import os
 from werkzeug.utils import secure_filename
 
-import os
-from werkzeug.utils import secure_filename
+app = Flask(__name__)
+app.secret_key = "minha_chave"
+
+# Config SMTP diretamente no app (sem env vars)
+app.config['SMTP_HOST'] = "smtp.gmail.com"
+app.config['SMTP_PORT'] = 465   # SSL
+app.config['SMTP_USER'] = "aquapura.suporte@gmail.com"
+app.config['SMTP_PASS'] = "yhdj jaud tjug tofx"
+app.config['CODIGO_EXPIRACAO_MIN'] = 15
+
+# Variáveis locais (importantes!)
+SMTP_HOST = app.config['SMTP_HOST']
+SMTP_PORT = app.config['SMTP_PORT']
+SMTP_USER = app.config['SMTP_USER']
+SMTP_PASS = app.config['SMTP_PASS']
+CODIGO_EXPIRACAO_MIN = app.config['CODIGO_EXPIRACAO_MIN']
+
+
+
+print("DEBUG:", SMTP_USER, SMTP_PASS)
+
+
+# --------------- ADIÇÕES PARA O SISTEMA DE RECUPERAÇÃO DE SENHA ---------------
+import smtplib
+import ssl
+import random
+from datetime import datetime, timedelta
+from email.message import EmailMessage
+# ------------------------------------------------------------------------------
 
 # ============================
 # Conexão com MySQL
@@ -20,10 +47,11 @@ def conectar():
         host="localhost",
         user="root",
 
-        port=3306,
-        password="",   # altere se tiver senha
+        port=3407,
+        password="root",   # altere se tiver senha
         database="aguapura"
     )
+
 
 # ============================
 # DECORADORES DE PROTEÇÃO
@@ -237,18 +265,62 @@ def funcionario_clientes():
     return render_template("funcionario/clientes.html", clientes=clientes)
 
 
+# ============================
+# GERENCIAR ESTOQUE
+# ============================
+
 @app.route("/funcionario/estoque")
 @funcionario_required
 def funcionario_estoque():
     db = conectar()
     cursor = db.cursor(dictionary=True)
 
-    cursor.execute("SELECT * FROM produtos ORDER BY estoque ASC")
+    # Buscar TODOS os produtos
+    cursor.execute("SELECT * FROM produtos ORDER BY estoque ASC, nome ASC")
     produtos = cursor.fetchall()
+    
+    # Converter estoque para int
+    for produto in produtos:
+        produto['estoque'] = int(produto['estoque'])
+    
+    # Calcular estatísticas
+    total_produtos = len(produtos)
+    estoque_ok = sum(1 for p in produtos if p['estoque'] > 10)
+    estoque_baixo = sum(1 for p in produtos if 1 <= p['estoque'] <= 10)
+    esgotados = sum(1 for p in produtos if p['estoque'] == 0)
+    
+    # DEBUG no console
+    print(f"\n📊 ESTOQUE - DEBUG:")
+    print(f"   Total: {total_produtos}")
+    print(f"   OK (>10): {estoque_ok}")
+    print(f"   Baixo (1-10): {estoque_baixo}")
+    print(f"   Esgotados (0): {esgotados}")
+    
+    produtos_zerados = [p for p in produtos if p['estoque'] == 0]
+    if produtos_zerados:
+        print(f"   🔴 Produtos esgotados:")
+        for p in produtos_zerados:
+            print(f"      - {p['nome']} (ID: {p['id']})")
+    print()
 
-    return render_template("funcionario/estoque.html", produtos=produtos)
+    cursor.close()
+    db.close()
+
+    return render_template("funcionario/estoque.html", 
+                         produtos=produtos,
+                         stats={
+                             'total': total_produtos,
+                             'ok': estoque_ok,
+                             'baixo': estoque_baixo,
+                             'esgotados': esgotados
+                         })
 
 
+# ROTA DE AJUSTE DE ESTOQUE
+
+# ROTA DE AJUSTE DE ESTOQUE
+
+  
 # ============================
 # PAINEL DO ADMIN
 # ============================
@@ -342,15 +414,16 @@ def admin_relatorios():
     cursor = db.cursor(dictionary=True)
 
     # ============================================
-    # VENDAS MENSAIS
+    # VENDAS MENSAIS - CORRIGIDO
     # ============================================
     cursor.execute("""
         SELECT 
             MONTH(criado_em) as mes,
             YEAR(criado_em) as ano,
-            COUNT(DISTINCT pedido_id) as total_pedidos,
+            COUNT(id) as total_pedidos,
             SUM(valor_total) as faturamento
-        FROM compras
+        FROM pedidos
+        WHERE status IN ('pago', 'enviado', 'entregue', 'concluido')
         GROUP BY ano, mes
         ORDER BY ano DESC, mes DESC
         LIMIT 12
@@ -358,17 +431,19 @@ def admin_relatorios():
     vendas_mensais = cursor.fetchall()
 
     # ============================================
-    # PRODUTOS MAIS VENDIDOS
+    # PRODUTOS MAIS VENDIDOS - CORRIGIDO
     # ============================================
     cursor.execute("""
         SELECT 
             p.nome,
             p.categoria,
-            SUM(c.quantidade) as total_vendido,
-            SUM(c.valor_total) as receita
-        FROM compras c
-        JOIN produtos p ON p.id = c.produto_id
-        GROUP BY c.produto_id, p.nome, p.categoria
+            SUM(pi.quantidade) as total_vendido,
+            SUM(pi.quantidade * pi.valor) as receita
+        FROM pedido_itens pi
+        JOIN produtos p ON p.id = pi.produto_id
+        JOIN pedidos ped ON ped.id = pi.pedido_id
+        WHERE ped.status IN ('pago', 'enviado', 'entregue', 'concluido')
+        GROUP BY p.id, p.nome, p.categoria
         ORDER BY total_vendido DESC
         LIMIT 10
     """)
@@ -376,7 +451,6 @@ def admin_relatorios():
 
     # ============================================
     # PEDIDOS CANCELADOS (Últimos 20)
-    # Usando LOWER() para pegar qualquer variação do status
     # ============================================
     cursor.execute("""
         SELECT 
@@ -389,7 +463,7 @@ def admin_relatorios():
             (SELECT COUNT(*) FROM pedido_itens WHERE pedido_id = p.id) as total_itens
         FROM pedidos p
         LEFT JOIN usuarios u ON u.id = p.usuario_id
-        WHERE LOWER(p.status) = 'cancelado'
+        WHERE p.status = 'cancelado'
         ORDER BY p.criado_em DESC
         LIMIT 20
     """)
@@ -401,36 +475,23 @@ def admin_relatorios():
     cursor.execute("""
         SELECT COUNT(*) as total
         FROM pedidos
-        WHERE LOWER(status) = 'cancelado'
+        WHERE status = 'cancelado'
     """)
     total_cancelados_result = cursor.fetchone()
     total_cancelados = total_cancelados_result['total'] if total_cancelados_result else 0
 
     # ============================================
-    # DEBUG: Verificar status únicos no banco
+    # ESTATÍSTICAS GERAIS
     # ============================================
-    cursor.execute("SELECT DISTINCT status FROM pedidos")
-    status_disponiveis = cursor.fetchall()
-    print(f"📊 Status disponíveis no banco: {[s['status'] for s in status_disponiveis]}")
-    print(f"❌ Total de pedidos cancelados: {total_cancelados}")
-
-    # ============================================
-    # DEBUG: Verificar compras
-    # ============================================
-    cursor.execute("SELECT COUNT(*) as total FROM compras")
-    total_compras = cursor.fetchone()['total']
+    cursor.execute("SELECT COUNT(*) as total FROM pedidos")
+    total_pedidos_geral = cursor.fetchone()['total']
     
-    if total_compras == 0:
-        cursor.execute("""
-            SELECT COUNT(*) as total 
-            FROM pedidos 
-            WHERE status = 'entregue'
-        """)
-        pedidos_entregues = cursor.fetchone()['total']
-        
-        if pedidos_entregues > 0:
-            print(f"⚠️ AVISO: Existem {pedidos_entregues} pedidos entregues, mas nenhuma compra registrada!")
-            print("Execute o SQL de correção para popular a tabela compras.")
+    cursor.execute("""
+        SELECT SUM(valor_total) as total 
+        FROM pedidos 
+        WHERE status IN ('pago', 'enviado', 'entregue', 'concluido')
+    """)
+    faturamento_total = cursor.fetchone()['total'] or 0
 
     cursor.close()
     db.close()
@@ -439,8 +500,9 @@ def admin_relatorios():
                          vendas_mensais=vendas_mensais,
                          produtos_top=produtos_top,
                          pedidos_cancelados=pedidos_cancelados,
-                         total_cancelados=total_cancelados)
-
+                         total_cancelados=total_cancelados,
+                         total_pedidos_geral=total_pedidos_geral,
+                         faturamento_total=faturamento_total)
 # ============================================
 # ROTA AUXILIAR: FORÇAR ATUALIZAÇÃO DE COMPRAS
 # (útil para corrigir dados inconsistentes)
@@ -1824,25 +1886,73 @@ def api_estatisticas():
 
 
 # Alterar senha
-@app.route("/config/alterar-senha", methods=["POST"])
+# Alterar senha
+# Alterar senha
+@app.route('/config/alterar-senha', methods=['POST'])
 def alterar_senha():
-    if "usuario_id" not in session:
-        return redirect("/login")
+    if 'usuario_id' not in session:
+        return redirect('/login')
     
-    senha_atual = request.form["senha_atual"]
-    nova_senha = request.form["nova_senha"]
-    confirmar = request.form["confirmar_senha"]
+    senha_atual = request.form.get('senha_atual')
+    nova_senha = request.form.get('nova_senha')
+    confirmar_senha = request.form.get('confirmar_senha')
     
-    if nova_senha != confirmar:
-        flash("As senhas não coincidem!", "erro")
-        return redirect("/config")
+    print(f"🔍 DEBUG 1 - Senha atual digitada: [{senha_atual}]")
+    print(f"🔍 DEBUG 2 - Nova senha: [{nova_senha}]")
     
-    # Verificar senha atual e atualizar
-    # ... seu código aqui
+    # Validar se as novas senhas coincidem
+    if nova_senha != confirmar_senha:
+        flash('As senhas não coincidem!', 'erro')
+        return redirect('/config')
     
-    flash("Senha alterada com sucesso!", "sucesso")
-    return redirect("/config")
-
+    # Validar comprimento mínimo
+    if len(nova_senha) < 6:
+        flash('A senha deve ter no mínimo 6 caracteres!', 'erro')
+        return redirect('/config')
+    
+    # Conectar ao banco
+    db = conectar()
+    cursor = db.cursor(dictionary=True)
+    
+    # Buscar a senha atual do usuário
+    cursor.execute('SELECT senha FROM usuarios WHERE id = %s', (session['usuario_id'],))
+    usuario = cursor.fetchone()
+    
+    print(f"🔍 DEBUG 3 - Usuário encontrado: {usuario is not None}")
+    if usuario:
+        print(f"🔍 DEBUG 4 - Hash no banco (primeiros 50 caracteres): {usuario['senha'][:50] if usuario['senha'] else 'VAZIO'}...")
+        print(f"🔍 DEBUG 5 - Tamanho do hash: {len(usuario['senha']) if usuario['senha'] else 0}")
+    
+    if not usuario:
+        flash('Usuário não encontrado!', 'erro')
+        cursor.close()
+        db.close()
+        return redirect('/config')
+    
+    # VERIFICAR SE A SENHA ATUAL ESTÁ CORRETA
+    resultado_check = check_password_hash(usuario['senha'], senha_atual)
+    print(f"🔍 DEBUG 6 - Resultado do check_password_hash: {resultado_check}")
+    
+    if not resultado_check:
+        print("🔍 DEBUG 7 - SENHA INCORRETA! Deveria parar aqui...")
+        flash('Senha atual incorreta!', 'erro')
+        cursor.close()
+        db.close()
+        return redirect('/config')
+    
+    print("🔍 DEBUG 8 - Senha correta! Prosseguindo com alteração...")
+    
+    # Se chegou aqui, tudo está OK - pode alterar a senha
+    nova_senha_hash = generate_password_hash(nova_senha)
+    cursor.execute('UPDATE usuarios SET senha = %s WHERE id = %s', 
+                   (nova_senha_hash, session['usuario_id']))
+    db.commit()
+    cursor.close()
+    db.close()
+    
+    print("🔍 DEBUG 9 - Senha alterada com sucesso!")
+    flash('Senha alterada com sucesso!', 'sucesso')
+    return redirect('/config')
 # Atualizar endereço
 @app.route("/config/atualizar-endereco", methods=["POST"])
 def atualizar_endereco():
@@ -2168,6 +2278,291 @@ def excluir_pagamento(pid):
 def page_not_found(e):
     return render_template('404.html'), 404
 
+# Helper: enviar email (Gmail via SSL)
+def enviar_email_codigo(destino_email, nome_destinatario, codigo):
+    if not SMTP_USER or not SMTP_PASS:
+        print("ERRO: SMTP_USER ou SMTP_PASS não definidos!")
+        return False
+
+    assunto = "AguaPura — Código de recuperação de senha"
+    corpo_html = f"""
+    <html>
+      <body style="font-family:Arial,Helvetica,sans-serif;color:#222">
+        <div style="max-width:600px;margin:0 auto;padding:20px;border-radius:8px;background:#f8f9fb">
+          <h2 style="color:#0d6efd">Recuperação de senha — AguaPura</h2>
+          <p>Olá {nome_destinatario},</p>
+          <p>Use o código abaixo para alterar sua senha. Este código expira em {CODIGO_EXPIRACAO_MIN} minutos.</p>
+          <div style="font-size:1.6rem;font-weight:700;background:#fff;padding:12px 18px;border-radius:6px;display:inline-block;border:1px solid #e6eefc">
+            {codigo}
+          </div>
+          <p style="margin-top:18px">Se não foi você, ignore este e-mail.</p>
+          <p>Equipe AguaPura</p>
+        </div>
+      </body>
+    </html>
+    """
+
+    msg = EmailMessage()
+    msg["Subject"] = assunto
+    msg["From"] = SMTP_USER
+    msg["To"] = destino_email
+    msg.set_content(f"Código de recuperação: {codigo}")
+    msg.add_alternative(corpo_html, subtype='html')
+
+    context = ssl.create_default_context()
+    with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=context) as smtp:
+        smtp.login(SMTP_USER, SMTP_PASS)
+        smtp.send_message(msg)
+
+
+
+# ROTA: Formulário "Esqueci minha senha" (GET) e envio do código (POST)
+@app.route("/esqueci-senha", methods=["GET", "POST"])
+def esqueci_senha():
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        if not email:
+            flash("Informe seu e-mail", "warning")
+            return redirect(url_for("esqueci_senha"))
+
+        db = conectar()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("SELECT id, nome, email FROM usuarios WHERE email = %s", (email,))
+        usuario = cursor.fetchone()
+
+        if not usuario:
+            # Não expor se o e-mail existe — retornar mensagem genérica
+            flash("Se o e-mail existir no sistema, um código foi enviado.", "info")
+            cursor.close()
+            db.close()
+            return redirect(url_for("login"))  # ou ficar na mesma página
+
+        # gera código de 6 dígitos
+        codigo = f"{random.randint(100000, 999999)}"
+        from datetime import datetime, timedelta, timezone
+        expiracao = datetime.now(timezone.utc) + timedelta(minutes=CODIGO_EXPIRACAO_MIN)
+
+
+
+        # salva no banco
+        cursor.execute("""
+            INSERT INTO recuperacao_senha (usuario_id, codigo, expiracao, ip_solicitante)
+            VALUES (%s, %s, %s, %s)
+        """, (usuario["id"], codigo, expiracao, request.remote_addr))
+        db.commit()
+
+        # envia email (pode levantar exception se smtp falhar)
+        try:
+            enviar_email_codigo(usuario["email"], usuario["nome"], codigo)
+        except Exception as e:
+            # opcional: apagar o registro de recuperacao se o envio falhar
+            cursor.execute("DELETE FROM recuperacao_senha WHERE usuario_id = %s AND codigo = %s", (usuario["id"], codigo))
+            db.commit()
+            cursor.close()
+            db.close()
+            flash("Erro ao enviar email. Verifique as configurações de SMTP.", "danger")
+            # log do erro no servidor
+            print("Erro SMTP:", e)
+            return redirect(url_for("esqueci_senha"))
+
+        cursor.close()
+        db.close()
+        flash("Se o e-mail existir no sistema, um código foi enviado. Verifique sua caixa de entrada.", "success")
+        # redireciona para página de verificação de código (opcional: passar user_id via session)
+        session["recuperacao_usuario_id"] = usuario["id"]
+        return redirect(url_for("verificar_codigo"))
+
+    return render_template("esqueci_senha.html")
+
+
+# ROTA: Verificar código (GET mostra o form, POST valida)
+@app.route("/verificar-codigo", methods=["GET", "POST"])
+def verificar_codigo():
+    usuario_id = session.get("recuperacao_usuario_id")
+    if not usuario_id:
+        flash("Inicie o processo informando seu e-mail.", "warning")
+        return redirect(url_for("esqueci_senha"))
+
+    if request.method == "POST":
+        codigo = request.form.get("codigo", "").strip()
+        if not codigo:
+            flash("Informe o código enviado por e-mail.", "warning")
+            return redirect(url_for("verificar_codigo"))
+
+        db = conectar()
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT id, codigo, expiracao, usado FROM recuperacao_senha
+            WHERE usuario_id = %s AND codigo = %s
+            ORDER BY criado_em DESC LIMIT 1
+        """, (usuario_id, codigo))
+        rec = cursor.fetchone()
+
+        if not rec:
+            flash("Código inválido.", "danger")
+            cursor.close()
+            db.close()
+            return redirect(url_for("verificar_codigo"))
+
+        # verifica expiracao e se ja foi usado
+        agora = datetime.utcnow()
+        expiracao_dt = rec["expiracao"]
+        if isinstance(expiracao_dt, str):
+            expiracao_dt = datetime.fromisoformat(expiracao_dt)
+
+        if rec["usado"]:
+            flash("Este código já foi utilizado.", "danger")
+            cursor.close()
+            db.close()
+            return redirect(url_for("esqueci_senha"))
+
+        if agora > expiracao_dt:
+            flash("Código expirado. Solicite um novo código.", "warning")
+            cursor.close()
+            db.close()
+            return redirect(url_for("esqueci_senha"))
+
+        # Código válido → setar flag na session e redirecionar para trocar senha
+        session["recuperacao_validada"] = True
+        session["recuperacao_codigo_id"] = rec["id"]
+        cursor.close()
+        db.close()
+        return redirect(url_for("trocar_senha"))
+
+    return render_template("verificar_codigo.html")
+
+
+# ROTA: Trocar senha (GET mostra form, POST aplica a troca)
+@app.route("/trocar-senha", methods=["GET", "POST"])
+def trocar_senha():
+    # validações
+    usuario_id = session.get("recuperacao_usuario_id")
+    validado = session.get("recuperacao_validada")
+    codigo_id = session.get("recuperacao_codigo_id")
+
+    if not usuario_id or not validado or not codigo_id:
+        flash("Sessão inválida. Inicie o processo novamente.", "warning")
+        return redirect(url_for("esqueci_senha"))
+
+    if request.method == "POST":
+        nova = request.form.get("senha", "")
+        confirmar = request.form.get("confirmar", "")
+        if not nova or not confirmar:
+            flash("Preencha ambos campos.", "warning")
+            return redirect(url_for("trocar_senha"))
+        if nova != confirmar:
+            flash("As senhas não conferem.", "danger")
+            return redirect(url_for("trocar_senha"))
+        if len(nova) < 6:
+            flash("Senha muito curta (mínimo 6 caracteres).", "warning")
+            return redirect(url_for("trocar_senha"))
+
+        # opcional: checar força da senha aqui
+
+        # Hash da nova senha (usar mesma abordagem do seu sistema).
+        # Aqui usamos werkzeug.generate_password_hash (PBKDF2) — você pode trocar para scrypt se quiser.
+        nova_hash = generate_password_hash(nova)  # padrão: pbkdf2:sha256
+
+        db = conectar()
+        cursor = db.cursor()
+        # Atualiza a senha do usuário
+        cursor.execute("UPDATE usuarios SET senha = %s WHERE id = %s", (nova_hash, usuario_id))
+        # Marca o código como usado
+        cursor.execute("UPDATE recuperacao_senha SET usado = 1 WHERE id = %s", (codigo_id,))
+        db.commit()
+        cursor.close()
+        db.close()
+
+        # limpa dados de sessão do fluxo de recuperação
+        session.pop("recuperacao_usuario_id", None)
+        session.pop("recuperacao_validada", None)
+        session.pop("recuperacao_codigo_id", None)
+
+        flash("Senha alterada com sucesso. Faça login com a nova senha.", "success")
+        return redirect(url_for("login"))
+
+    return render_template("trocar_senha.html")
+
+# ============================
+# AJUSTAR ESTOQUE - ROTA PARA O MODAL
+# ============================
+
+
+
+# ROTA DE AJUSTE DE ESTOQUE
+@app.route("/admin/estoque/ajustar", methods=["POST"])
+@admin_required
+def admin_ajustar_estoque():
+    """Ajusta o estoque de um produto (adicionar, remover ou definir)"""
+    try:
+        produto_id = int(request.form.get("produto_id"))
+        quantidade = int(request.form.get("quantidade"))
+        tipo = request.form.get("tipo")
+        
+        if quantidade < 0:
+            flash("Quantidade inválida!", "erro")
+            return redirect("/funcionario/estoque")
+        
+        db = conectar()
+        cursor = db.cursor(dictionary=True)
+        
+        cursor.execute("SELECT estoque, nome FROM produtos WHERE id = %s", (produto_id,))
+        produto = cursor.fetchone()
+        
+        if not produto:
+            flash("Produto não encontrado!", "erro")
+            cursor.close()
+            db.close()
+            return redirect("/funcionario/estoque")
+        
+        estoque_atual = int(produto["estoque"])
+        nome_produto = produto["nome"]
+        
+        # Calcular novo estoque
+        if tipo == "adicionar":
+            novo_estoque = estoque_atual + quantidade
+            msg = f"✅ {quantidade} unidades adicionadas ao estoque de '{nome_produto}'"
+            
+        elif tipo == "remover":
+            novo_estoque = estoque_atual - quantidade
+            if novo_estoque < 0:
+                flash(f"❌ Estoque insuficiente! Disponível: {estoque_atual}", "erro")
+                cursor.close()
+                db.close()
+                return redirect("/funcionario/estoque")
+            msg = f"✅ {quantidade} unidades removidas do estoque de '{nome_produto}'"
+            
+        elif tipo == "definir":
+            novo_estoque = quantidade
+            msg = f"✅ Estoque de '{nome_produto}' definido para {quantidade} unidades"
+            
+        else:
+            flash("Tipo de ajuste inválido!", "erro")
+            cursor.close()
+            db.close()
+            return redirect("/funcionario/estoque")
+        
+        # Atualizar no banco
+        cursor.execute("UPDATE produtos SET estoque = %s WHERE id = %s", (novo_estoque, produto_id))
+        db.commit()
+        
+        print(f"✅ Estoque atualizado: {nome_produto} → {estoque_atual} para {novo_estoque}")
+        
+        cursor.close()
+        db.close()
+        
+        flash(msg, "sucesso")
+        return redirect("/funcionario/estoque")
+        
+    except ValueError:
+        flash("Erro nos valores informados!", "erro")
+        return redirect("/funcionario/estoque")
+    except Exception as e:
+        flash(f"Erro ao ajustar estoque: {str(e)}", "erro")
+        print(f"❌ ERRO: {e}")
+        return redirect("/funcionario/estoque")
+
+    
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
