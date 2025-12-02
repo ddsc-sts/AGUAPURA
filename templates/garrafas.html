@@ -1,3 +1,4 @@
+{# ===== GARRAFAS.HTML ===== #}
 {% extends "base.html" %}
 {% block title %}Garrafas Térmicas - AquaPura{% endblock %}
 {% block content %}
@@ -7,18 +8,31 @@
 
     <div class="grid-produtos">
         {% for produto in produtos %}
-        <div class="produto">
-            <img src="{{ produto.imagem_principal }}" alt="{{ produto.nome }}">
-            <h3>{{ produto.nome }}</h3>
-            <p>R${{ produto.preco }}</p>
+        <div class="produto {% if produto.estoque == 0 %}esgotado{% endif %}">
+            {% if produto.estoque > 0 %}
             <a href="/produto/{{ produto.id }}">
-                <button class="btn-detalhes">Ver detalhes</button>
+                <img src="{{ produto.imagem_principal }}" alt="{{ produto.nome }}">
             </a>
-            
+            {% else %}
+            <div style="position: relative;">
+                <img src="{{ produto.imagem_principal }}" alt="{{ produto.nome }}">
+                <div class="badge-esgotado-index">Esgotado</div>
+            </div>
+            {% endif %}
+
+            <h3>{{ produto.nome }}</h3>
+            <p>R$ {{ "%.2f"|format(produto.preco) }}</p>
+
+            {% if produto.estoque > 0 %}
+            <a href="/produto/{{ produto.id }}" style="display: block; width: 100%;">
+                <button class="btn-detalhes" style="width: 100%; margin: 0; padding: 10px 20px;">Ver detalhes</button>
+            </a>
+            {% else %}
+            <button class="btn-esgotado-index" disabled style="background: #ef4444 !important; border: 2px solid #dc2626 !important; margin: 0; padding: 10px 20px; width: 100%;">Esgotado</button>
+            {% endif %}
         </div>
         {% endfor %}
     </div>
-
 </section>
 
 {% endblock %}

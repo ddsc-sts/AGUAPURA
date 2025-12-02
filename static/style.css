@@ -2,6 +2,7 @@
    PARTE 1/6 - VARIÁVEIS E RESET
 ========================================= */
 
+
 :root {
     /* Tema Claro - Azul Moderno */
     --primary: #2563eb;           /* Azul vibrante */
@@ -52,7 +53,6 @@
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
-
 /* ===== RESET ===== */
 * {
     margin: 0;
@@ -378,7 +378,7 @@ body {
     margin-right: auto;
 }
 
-/* Grid de produtos moderno */
+/* Grid */
 .grid-produtos {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -386,19 +386,22 @@ body {
     justify-content: center;
 }
 
-/* Card de produto redesenhado */
+/* Card */
 .produto {
     background: var(--surface);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
     padding: 20px;
-    text-align: center;
     border: 2px solid var(--border);
     transition: var(--transition);
-    position: relative;
     overflow: hidden;
+
+    display: flex;
+    flex-direction: column;
+    position: relative;
 }
 
+/* Barra superior animada */
 .produto::before {
     content: '';
     position: absolute;
@@ -421,52 +424,56 @@ body {
     transform: scaleX(1);
 }
 
+/* IMAGEM PADRONIZADA */
 .produto img {
     width: 100%;
     height: 220px;
-    object-fit: cover;
+    object-fit: contain;
+    object-position: center;
     border-radius: var(--radius-md);
     margin-bottom: 16px;
-    transition: var(--transition);
 }
 
-.produto:hover img {
-    transform: scale(1.05);
+/* 🔥 AJUSTE AQUI: força o conteúdo a empurrar o botão para o final */
+.produto h3,
+.produto p {
+    margin-bottom: 8px;
 }
 
+/* 🔥 ENSAIMAR O ESPAÇO AUTOMÁTICO PARA ALINHAR OS BOTÕES */
+.produto p:last-of-type {
+    margin-bottom: auto; /* empurra o botão para baixo */
+}
+
+/* Título */
 .produto h3 {
     color: var(--text-primary);
-    margin: 12px 0 8px;
     font-weight: 600;
     font-size: 18px;
     line-height: 1.4;
 }
 
+/* Preço */
 .produto p {
-    color: var(--text-secondary);
-    font-size: 15px;
-    margin: 8px 0;
-}
-
-.produto .preco {
     color: var(--primary);
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 700;
     margin: 12px 0;
 }
 
+/* Botão */
 .produto button {
     background: linear-gradient(135deg, var(--primary), var(--primary-light));
     border: none;
     color: white;
     padding: 12px 28px;
-    border-radius: var(--radius-full);
+    border-radius: 999px;
     cursor: pointer;
-    margin-top: 12px;
     transition: var(--transition);
     font-weight: 600;
     font-size: 15px;
     width: 100%;
+    margin-top: 18px;
 }
 
 .produto button:hover {
@@ -474,32 +481,7 @@ body {
     box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
 }
 
-/* Card de produto (para links) */
-.produto-card {
-    padding: 20px;
-    border-radius: var(--radius-lg);
-    background: var(--surface);
-    text-decoration: none;
-    color: var(--text-primary);
-    box-shadow: var(--shadow-sm);
-    border: 2px solid var(--border);
-    transition: var(--transition);
-    display: block;
-}
 
-.produto-card:hover {
-    transform: translateY(-6px);
-    box-shadow: var(--shadow-lg);
-    border-color: var(--primary);
-}
-
-.produto-img {
-    width: 100%;
-    height: 220px;
-    object-fit: cover;
-    border-radius: var(--radius-md);
-    margin-bottom: 12px;
-}
 
 /* =========================================
    CARROSSEL DE PROMOÇÕES MODERNO

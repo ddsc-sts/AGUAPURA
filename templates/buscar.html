@@ -3,26 +3,28 @@
 
 {% block content %}
 
-<section style="padding:40px 5%;">
-    <h1 style="margin-bottom:20px;">
+<section class="produtos">
+    <h2 style="margin-bottom:30px;">
         Resultados para: <strong>{{ termo }}</strong>
-    </h1>
+    </h2>
 
     {% if resultados %}
         <div class="grid-produtos">
             {% for p in resultados %}
-            <a href="{{ url_for('produto', id=p.id) }}" class="produto-card">
-                
-                <img src="{{ p.imagem_principal }}" alt="{{ p.nome }}" class="produto-img">
-
+            <div class="produto">
+                <img src="{{ p.imagem_principal }}" alt="{{ p.nome }}">
                 <h3>{{ p.nome }}</h3>
                 <p>R$ {{ "%.2f"|format(p.preco) }}</p>
-
-            </a>
+                <button onclick="window.location.href='{{ url_for('produto', id=p.id) }}'">
+                    Ver detalhes
+                </button>
+            </div>
             {% endfor %}
         </div>
     {% else %}
-        <p style="font-size:18px; opacity:0.7;">Nenhum produto encontrado.</p>
+        <p style="font-size:18px; opacity:0.7; margin-top:40px;">
+            Nenhum produto encontrado para "{{ termo }}".
+        </p>
     {% endif %}
 </section>
 

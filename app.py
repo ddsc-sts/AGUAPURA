@@ -47,8 +47,8 @@ def conectar():
         host="localhost",
         user="root",
 
-        port=3306,
-        password="",   # altere se tiver senha
+        port=3407,
+        password="root",   # altere se tiver senha
         database="aguapura"
     )
 
