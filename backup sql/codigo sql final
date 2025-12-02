@@ -264,3 +264,20 @@ DESCRIBE pedido_itens;
 ALTER TABLE pedido_itens ADD COLUMN cor VARCHAR(50) DEFAULT NULL;
 
 UPDATE produtos SET estoque = 0 WHERE id = 1;
+
+USE aguapura;
+
+-- Ver a estrutura atual
+SHOW COLUMNS FROM usuarios WHERE Field = 'tipo';
+
+-- Corrigir para aceitar funcionario
+ALTER TABLE usuarios 
+MODIFY COLUMN tipo ENUM('admin','cliente','funcionario') 
+NOT NULL DEFAULT 'cliente';
+
+-- Verificar se funcionou
+SHOW COLUMNS FROM usuarios WHERE Field = 'tipo';
+
+ALTER TABLE usuarios 
+MODIFY COLUMN tipo ENUM('cliente','funcionario','admin') 
+DEFAULT 'cliente';

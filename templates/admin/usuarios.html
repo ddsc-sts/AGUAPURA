@@ -56,15 +56,6 @@
         color: #64748b;
     }
 
-    .filters select {
-        cursor: pointer;
-    }
-
-    .filters select option {
-        background: #0f172a;
-        color: #e2e8f0;
-    }
-
     .stats-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -301,11 +292,6 @@
         box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.15);
     }
 
-    .form-group select option {
-        background: #0f172a;
-        color: #e2e8f0;
-    }
-
     .modal-actions {
         display: flex;
         gap: 10px;
@@ -452,7 +438,8 @@
                         <div class="user-info">
                             <img src="{{ url_for('static', filename=user.avatar or 'img/user.png') }}" 
                                  alt="{{ user.nome }}" 
-                                 class="user-avatar">
+                                 class="user-avatar"
+                                 onerror="this.src='{{ url_for('static', filename='img/user.png') }}'">
                             <div class="user-details">
                                 <h4>{{ user.nome }}</h4>
                                 <p>{{ user.email }}</p>
@@ -467,8 +454,20 @@
                             {% endif %}
                         </span>
                     </td>
-                    <td>{{ user.data_cadastro.strftime('%d/%m/%Y') if user.data_cadastro else '-' }}</td>
-                    <td>{{ user.ultimo_acesso.strftime('%d/%m/%Y %H:%M') if user.ultimo_acesso else 'Nunca' }}</td>
+                    <td>
+                        {% if user.criado_em %}
+                            {{ user.criado_em.strftime('%d/%m/%Y') }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if user.ultimo_acesso %}
+                            {{ user.ultimo_acesso.strftime('%d/%m/%Y %H:%M') }}
+                        {% else %}
+                            Nunca
+                        {% endif %}
+                    </td>
                     <td>
                         <div class="actions">
                             <button class="btn-icon edit" 
@@ -507,9 +506,9 @@
     <div class="modal-content">
         <div class="modal-header">
             <h2>✏️ Editar Usuário</h2>
-            <p id="editUserName"></p>
+            <p id="editUserName" style="color: #22d3ee; font-weight: 600;"></p>
         </div>
-        <form method="POST" action="/admin/usuarios/editar">
+        <form method="POST" action="{{ url_for('editar_usuario') }}">
             <input type="hidden" name="user_id" id="editUserId">
             
             <div class="form-group">
@@ -523,7 +522,7 @@
 
             <div class="modal-actions">
                 <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-                <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                <button type="submit" class="btn btn-primary">💾 Salvar Alterações</button>
             </div>
         </form>
     </div>
@@ -541,12 +540,12 @@
                 ⚠️ Esta ação não pode ser desfeita!
             </p>
         </div>
-        <form method="POST" action="/admin/usuarios/excluir">
+        <form method="POST" action="{{ url_for('excluir_usuario') }}">
             <input type="hidden" name="user_id" id="deleteUserId">
             
             <div class="modal-actions">
                 <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancelar</button>
-                <button type="submit" class="btn btn-danger">Excluir Usuário</button>
+                <button type="submit" class="btn btn-danger">🗑️ Excluir Usuário</button>
             </div>
         </form>
     </div>
@@ -611,4 +610,4 @@
     }
 </script>
 
-{% endblock %}  
+{% endblock %}

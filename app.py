@@ -46,7 +46,6 @@ def conectar():
     return mysql.connector.connect(
         host="localhost",
         user="root",
-
         port=3407,
         password="root",   # altere se tiver senha
         database="aguapura"
@@ -374,16 +373,6 @@ def admin_painel():
                          produtos_top=produtos_top)
 
 
-@app.route("/admin/usuarios")
-@admin_required
-def admin_usuarios():
-    db = conectar()
-    cursor = db.cursor(dictionary=True)
-
-    cursor.execute("SELECT * FROM usuarios ORDER BY criado_em DESC")
-    usuarios = cursor.fetchall()
-
-    return render_template("admin/usuarios.html", usuarios=usuarios)
 
 
 @app.route("/admin/usuario/<int:user_id>/promover/<tipo>")
@@ -564,14 +553,15 @@ def admin_editar_produto(produto_id):
         nome = request.form["nome"]
         descricao = request.form["descricao"]
         preco = request.form["preco"]
-        estoque = request.form["estoque"]
+        # REMOVIDO: estoque = request.form["estoque"]
         categoria = request.form["categoria"]
 
+        # Atualizar SEM o estoque
         cursor.execute("""
             UPDATE produtos 
-            SET nome = %s, descricao = %s, preco = %s, estoque = %s, categoria = %s
+            SET nome = %s, descricao = %s, preco = %s, categoria = %s
             WHERE id = %s
-        """, (nome, descricao, preco, estoque, categoria, produto_id))
+        """, (nome, descricao, preco, categoria, produto_id))
         db.commit()
 
         flash("Produto atualizado com sucesso!", "sucesso")
@@ -1139,7 +1129,6 @@ def admin_novo_produto():
     db = conectar()
     cursor = db.cursor(dictionary=True)
 
-    # categorias ainda existem, então isso pode continuar
     cursor.execute("SELECT * FROM categorias")
     categorias = cursor.fetchall()
 
@@ -1148,16 +1137,46 @@ def admin_novo_produto():
         descricao = request.form["descricao"]
         preco = request.form["preco"]
         estoque = request.form["estoque"]
-        categoria = request.form["categoria"]  # agora salva diretamente como texto
+        categoria = request.form["categoria"]
+
+        # Processar upload da imagem
+        imagem_principal = "/static/img/default.png"
+        
+        if "imagem_principal" in request.files:
+            arquivo = request.files["imagem_principal"]
+            
+            if arquivo and arquivo.filename != "":
+                import os
+                import uuid
+                
+                extensao = os.path.splitext(arquivo.filename)[1].lower()
+                extensoes_permitidas = {'.jpg', '.jpeg', '.png', '.webp', '.gif'}
+                
+                if extensao in extensoes_permitidas:
+                    nome_arquivo = f"{uuid.uuid4().hex}{extensao}"
+                    
+                    # Salvar direto em static/img/
+                    caminho_pasta = os.path.join("static", "img")
+                    os.makedirs(caminho_pasta, exist_ok=True)
+                    
+                    caminho_completo = os.path.join(caminho_pasta, nome_arquivo)
+                    arquivo.save(caminho_completo)
+                    
+                    imagem_principal = f"/static/img/{nome_arquivo}"
 
         cursor.execute("""
             INSERT INTO produtos (nome, descricao, preco, estoque, categoria, imagem_principal)
             VALUES (%s, %s, %s, %s, %s, %s)
-        """, (nome, descricao, preco, estoque, categoria, "/static/img/default.png"))
+        """, (nome, descricao, preco, estoque, categoria, imagem_principal))
 
         db.commit()
+        cursor.close()
+        db.close()
+        
         return redirect("/admin/produtos")
 
+    cursor.close()
+    db.close()
     return render_template("admin/novo_produto.html", categorias=categorias)
 
 @app.context_processor
@@ -2623,6 +2642,221 @@ def admin_ajustar_estoque():
         print(f"❌ ERRO: {e}")
         return redirect("/funcionario/estoque")
 
+# ============================
+# GERENCIAMENTO DE USUÁRIOS - ROTAS COMPLETAS
+# SUBSTITUA TODO O BLOCO DE admin_usuarios EXISTENTE POR ESTE CÓDIGO
+# ============================
+
+# ============================
+# GERENCIAMENTO DE USUÁRIOS - ROTAS COMPLETAS
+# SUBSTITUA TODO O BLOCO DE admin_usuarios EXISTENTE POR ESTE CÓDIGO
+# ============================
+
+@app.route("/admin/usuarios")
+@admin_required
+def admin_usuarios():
+    """Lista todos os usuários com estatísticas"""
+    try:
+        db = conectar()
+        cursor = db.cursor(dictionary=True)
+        
+        # Buscar todos os usuários ordenados por data de cadastro
+        cursor.execute("""
+            SELECT id, nome, email, tipo, avatar, criado_em
+            FROM usuarios 
+            ORDER BY criado_em DESC
+        """)
+        usuarios = cursor.fetchall()
+        
+        # Processar cada usuário para garantir que data_cadastro seja objeto datetime
+        for usuario in usuarios:
+            # criado_em já vem como datetime do MySQL
+            usuario['data_cadastro'] = usuario['criado_em']
+            usuario['ultimo_acesso'] = None  # ou você pode buscar de outra tabela
+        
+        # Calcular estatísticas
+        total_usuarios = len(usuarios)
+        total_clientes = sum(1 for u in usuarios if u['tipo'] == 'cliente')
+        total_funcionarios = sum(1 for u in usuarios if u['tipo'] == 'funcionario')
+        total_admins = sum(1 for u in usuarios if u['tipo'] == 'admin')
+        
+        print(f"📊 Estatísticas: Total={total_usuarios}, Clientes={total_clientes}, Funcionários={total_funcionarios}, Admins={total_admins}")
+        
+        cursor.close()
+        db.close()
+        
+        return render_template('admin/usuarios.html',
+                             usuarios=usuarios,
+                             total_usuarios=total_usuarios,
+                             total_clientes=total_clientes,
+                             total_funcionarios=total_funcionarios,
+                             total_admins=total_admins)
+                             
+    except Exception as e:
+        print(f"❌ ERRO ao carregar usuários: {e}")
+        import traceback
+        traceback.print_exc()
+        if 'db' in locals():
+            db.close()
+        flash(f'Erro ao carregar usuários: {str(e)}', 'erro')
+        return redirect(url_for('admin_painel'))
+
+
+@app.route('/admin/usuarios/editar', methods=['POST'])
+@admin_required
+def editar_usuario():
+    """Edita o tipo/função de um usuário"""
+    try:
+        # Pegar dados do formulário
+        user_id = request.form.get('user_id')
+        novo_tipo = request.form.get('tipo')
+        
+        # DEBUG COMPLETO
+        print(f"\n{'='*60}")
+        print(f"🔍 DEBUG EDITAR USUÁRIO:")
+        print(f"   user_id = {user_id}")
+        print(f"   novo_tipo = '{novo_tipo}'")
+        print(f"   tipo do novo_tipo = {type(novo_tipo)}")
+        print(f"   tamanho = {len(novo_tipo) if novo_tipo else 0}")
+        print(f"   repr = {repr(novo_tipo)}")
+        print(f"   bytes = {novo_tipo.encode('utf-8') if novo_tipo else 'None'}")
+        print(f"   Todos os dados = {dict(request.form)}")
+        print(f"{'='*60}\n")
+        
+        # Validar dados
+        if not user_id or not novo_tipo:
+            flash('Dados inválidos!', 'erro')
+            return redirect(url_for('admin_usuarios'))
+        
+        # Limpar o valor (remover espaços e caracteres extras)
+        novo_tipo = novo_tipo.strip().lower()
+        
+        # Validar tipo de usuário
+        tipos_validos = ['cliente', 'funcionario', 'admin']
+        if novo_tipo not in tipos_validos:
+            print(f"❌ Tipo inválido recebido: '{novo_tipo}'")
+            flash(f'Tipo de usuário inválido: {novo_tipo}', 'erro')
+            return redirect(url_for('admin_usuarios'))
+        
+        # Conectar ao banco
+        db = conectar()
+        cursor = db.cursor(dictionary=True)
+        
+        # Buscar usuário
+        cursor.execute('SELECT id, nome, tipo FROM usuarios WHERE id = %s', (user_id,))
+        usuario = cursor.fetchone()
+        
+        if not usuario:
+            flash('Usuário não encontrado!', 'erro')
+            cursor.close()
+            db.close()
+            return redirect(url_for('admin_usuarios'))
+        
+        # Não permitir que o admin altere seu próprio tipo
+        if int(user_id) == session.get('usuario_id'):
+            flash('Você não pode alterar seu próprio tipo de usuário!', 'erro')
+            cursor.close()
+            db.close()
+            return redirect(url_for('admin_usuarios'))
+        
+        # Atualizar tipo do usuário
+        print(f"\n🔍 ANTES DO UPDATE:")
+        print(f"   Tipo atual no banco: {usuario['tipo']}")
+        print(f"   Novo tipo a salvar: '{novo_tipo}'")
+        print(f"   Query: UPDATE usuarios SET tipo = '{novo_tipo}' WHERE id = {user_id}")
+        
+        cursor.execute('UPDATE usuarios SET tipo = %s WHERE id = %s', (novo_tipo, user_id))
+        
+        # Verificar se afetou alguma linha
+        linhas_afetadas = cursor.rowcount
+        print(f"   Linhas afetadas: {linhas_afetadas}")
+        
+        if linhas_afetadas == 0:
+            print(f"⚠️ AVISO: Nenhuma linha foi atualizada!")
+            flash('Nenhuma alteração foi feita!', 'warning')
+            cursor.close()
+            db.close()
+            return redirect(url_for('admin_usuarios'))
+        
+        db.commit()
+        
+        # Verificar se realmente salvou
+        cursor.execute('SELECT tipo FROM usuarios WHERE id = %s', (user_id,))
+        tipo_salvo = cursor.fetchone()['tipo']
+        print(f"   Tipo salvo no banco: '{tipo_salvo}'")
+        print(f"✅ Usuário {usuario['nome']} alterado com sucesso!\n")
+        
+        cursor.close()
+        db.close()
+        
+        flash(f'Usuário {usuario["nome"]} atualizado com sucesso para {novo_tipo}!', 'sucesso')
+        return redirect(url_for('admin_usuarios'))
+        
+    except Exception as e:
+        print(f"❌ ERRO ao editar usuário: {e}")
+        import traceback
+        traceback.print_exc()
+        if 'db' in locals():
+            db.rollback()
+            db.close()
+        flash(f'Erro ao editar usuário: {str(e)}', 'erro')
+        return redirect(url_for('admin_usuarios'))
+
+
+@app.route('/admin/usuarios/excluir', methods=['POST'])
+@admin_required
+def excluir_usuario():
+    """Exclui um usuário do sistema"""
+    try:
+        user_id = request.form.get('user_id')
+        
+        if not user_id:
+            flash('ID do usuário não fornecido!', 'erro')
+            return redirect(url_for('admin_usuarios'))
+        
+        # Conectar ao banco
+        db = conectar()
+        cursor = db.cursor(dictionary=True)
+        
+        # Buscar usuário
+        cursor.execute('SELECT id, nome FROM usuarios WHERE id = %s', (user_id,))
+        usuario = cursor.fetchone()
+        
+        if not usuario:
+            flash('Usuário não encontrado!', 'erro')
+            cursor.close()
+            db.close()
+            return redirect(url_for('admin_usuarios'))
+        
+        # Não permitir que o admin exclua a si mesmo
+        if int(user_id) == session.get('usuario_id'):
+            flash('Você não pode excluir sua própria conta!', 'erro')
+            cursor.close()
+            db.close()
+            return redirect(url_for('admin_usuarios'))
+        
+        # Excluir usuário
+        nome_usuario = usuario['nome']
+        cursor.execute('DELETE FROM usuarios WHERE id = %s', (user_id,))
+        db.commit()
+        
+        print(f"✅ Usuário {nome_usuario} excluído com sucesso")
+        
+        cursor.close()
+        db.close()
+        
+        flash(f'Usuário {nome_usuario} excluído com sucesso!', 'sucesso')
+        return redirect(url_for('admin_usuarios'))
+        
+    except Exception as e:
+        print(f"❌ ERRO ao excluir usuário: {e}")
+        import traceback
+        traceback.print_exc()
+        if 'db' in locals():
+            db.rollback()
+            db.close()
+        flash(f'Erro ao excluir usuário: {str(e)}', 'erro')
+        return redirect(url_for('admin_usuarios'))
     
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
