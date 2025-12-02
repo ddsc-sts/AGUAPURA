@@ -58,14 +58,66 @@ hr{border:none;border-top:1px solid var(--border);margin:24px 0;}
 .stat-card-icon{font-size:2.5rem;margin-bottom:12px;}
 .stat-card-valor{font-size:2rem;font-weight:700;color:var(--azul);margin-bottom:8px;}
 .stat-card-label{font-size:0.9rem;color:var(--texto);opacity:0.8;}
-.favoritos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:20px;margin-top:20px;}
-.produto-card{background:var(--cinza);border-radius:12px;overflow:hidden;border:1px solid var(--border);transition:transform 0.2s;}
-.produto-card:hover{transform:translateY(-4px);box-shadow:0 6px 16px var(--shadow);}
-.produto-card img{width:100%;height:180px;object-fit:cover;}
-.produto-info{padding:16px;}
-.produto-card h3{font-size:1rem;margin:0 0 8px 0;color:var(--texto);}
-.produto-card .preco{font-size:1.2rem;font-weight:700;color:var(--azul);margin:0;}
 .loading{text-align:center;padding:40px;color:var(--texto);opacity:0.7;}
+
+/* ===== FAVORITOS ===== */
+.favoritos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 24px;
+    margin-top: 20px;
+}
+
+.produto-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid var(--border);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+}
+
+.produto-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 8px 20px var(--shadow);
+    border-color: var(--azul);
+}
+
+.produto-card img {
+    width: 100%;
+    height: 200px;
+    object-fit: contain;
+    object-position: center;
+    padding: 16px;
+    background: var(--cinza);
+}
+
+.produto-info {
+    padding: 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.produto-card h3 {
+    font-size: 1rem;
+    margin: 0;
+    color: var(--texto);
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.produto-card .preco {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--azul);
+    margin: 0;
+    margin-top: auto;
+}
 
 @media (max-width:968px){.perfil-container{flex-direction:column;}.perfil-sidebar{width:100%;position:static;}.form-row{grid-template-columns:1fr;}}
 </style>
@@ -96,7 +148,10 @@ hr{border:none;border-top:1px solid var(--border);margin:24px 0;}
       </div>
     </div>
 
-    <div id="favoritos" class="tab-content"><h2>❤️ Meus Favoritos</h2><div id="favoritosContent" class="loading">Carregando favoritos...</div></div>
+    <div id="favoritos" class="tab-content">
+      <h2>❤️ Meus Favoritos</h2>
+      <div id="favoritosContent" class="loading">Carregando favoritos...</div>
+    </div>
 
     <div id="historico" class="tab-content"><h2>📋 Histórico de Compras</h2><table class="historico-table"><thead><tr><th>ID</th><th>Data</th><th>Status</th><th>Valor Total</th><th>Método</th></tr></thead><tbody>{% for p in pedidos %}<tr><td>#{{ p.id }}</td><td>{{ p.criado_em.strftime('%d/%m/%Y') }}</td><td><span class="status-badge status-{{ p.status|lower|replace(' ','-') }}">{{ p.status }}</span></td><td>R$ {{ '%.2f'|format(p.valor_total) }}</td><td>{{ p.pagamento_metodo or 'N/A' }}</td></tr>{% else %}<tr><td colspan="5" style="text-align:center;padding:40px"><div class="sem-dados"><div class="sem-dados-icon">📦</div><p>Nenhum pedido encontrado</p></div></td></tr>{% endfor %}</tbody></table></div>
 
@@ -109,21 +164,257 @@ hr{border:none;border-top:1px solid var(--border);margin:24px 0;}
 </div>
 
 <script>
-const tabs=document.querySelectorAll(".perfil-tab");const conteudos=document.querySelectorAll(".tab-content");tabs.forEach(tab=>{tab.addEventListener("click",()=>{tabs.forEach(t=>t.classList.remove("active"));tab.classList.add("active");conteudos.forEach(c=>c.classList.remove("active"));document.getElementById(tab.dataset.tab).classList.add("active");window.scrollTo({top:0,behavior:'smooth'});});});
+// ===== NAVEGAÇÃO ENTRE ABAS =====
+const tabs = document.querySelectorAll(".perfil-tab");
+const conteudos = document.querySelectorAll(".tab-content");
 
-const favoritosContent=document.getElementById('favoritosContent');fetch('/api/favoritos').then(res=>res.json()).then(favoritos=>{if(!favoritos||favoritos.length===0){favoritosContent.innerHTML='<div class="sem-dados"><div class="sem-dados-icon">❤️</div><h3>Nenhum favorito ainda</h3><p>Adicione produtos aos seus favoritos para vê-los aqui</p></div>';return;}favoritosContent.className='favoritos-grid';favoritosContent.innerHTML=favoritos.map(fav=>`<div class="produto-card"><img src="${fav.imagem_principal}" alt="${fav.nome}"><div class="produto-info"><h3>${fav.nome}</h3><p class="preco">R$ ${parseFloat(fav.preco).toFixed(2)}</p></div></div>`).join('');}).catch(()=>{favoritosContent.innerHTML='<div class="sem-dados">Erro ao carregar favoritos</div>';});
+tabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+        tabs.forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+        
+        conteudos.forEach(c => c.classList.remove("active"));
+        document.getElementById(tab.dataset.tab).classList.add("active");
+        
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    });
+});
 
-async function carregarEstados(){const ufSelect=document.getElementById('estadoSelect');const cidadeSelect=document.getElementById('cidadeSelect');if(!ufSelect)return;ufSelect.innerHTML='<option value="">Carregando...</option>';try{const res=await fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome');const estados=await res.json();ufSelect.innerHTML='<option value="">Selecione o estado</option>';estados.forEach(e=>{const opt=document.createElement('option');opt.value=e.sigla;opt.textContent=e.nome+' ('+e.sigla+')';ufSelect.appendChild(opt);});}catch(err){ufSelect.innerHTML='<option value="">Erro ao carregar</option>';}ufSelect.addEventListener('change',async()=>{const uf=ufSelect.value;cidadeSelect.innerHTML='<option>Carregando...</option>';if(!uf){cidadeSelect.innerHTML='<option value="">Selecione o estado primeiro</option>';return;}try{const r2=await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios?orderBy=nome`);const cidades=await r2.json();cidadeSelect.innerHTML='<option value="">Selecione a cidade</option>';cidades.forEach(c=>{const o=document.createElement('option');o.value=c.nome;o.textContent=c.nome;cidadeSelect.appendChild(o);});}catch(err){cidadeSelect.innerHTML='<option value="">Erro ao carregar cidades</option>';}});}carregarEstados();
+// ===== CARREGAR FAVORITOS =====
+const favoritosContent = document.getElementById('favoritosContent');
 
-const cepInput=document.getElementById('cepEndereco');if(cepInput){cepInput.addEventListener('blur',function(){const v=this.value.replace(/\D/g,'');if(v.length!==8)return;fetch(`https://viacep.com.br/ws/${v}/json/`).then(res=>res.json()).then(data=>{if(!data.erro){document.getElementById('ruaEndereco').value=data.logradouro||'';document.getElementById('bairroEndereco').value=data.bairro||'';if(data.uf){const est=document.getElementById('estadoSelect');if(est){est.value=data.uf;est.dispatchEvent(new Event('change'));setTimeout(()=>{const cidadeSel=document.getElementById('cidadeSelect');if(cidadeSel&&data.localidade){for(let i=0;i<cidadeSel.options.length;i++){if(cidadeSel.options[i].value.toLowerCase()===data.localidade.toLowerCase()){cidadeSel.selectedIndex=i;break;}}}},600);}}}}).catch(()=>{});});}
+fetch('/api/favoritos')
+    .then(res => res.json())
+    .then(favoritos => {
+        if (!favoritos || favoritos.length === 0) {
+            favoritosContent.innerHTML = `
+                <div class="sem-dados">
+                    <div class="sem-dados-icon">❤️</div>
+                    <h3>Nenhum favorito ainda</h3>
+                    <p>Adicione produtos aos seus favoritos para vê-los aqui</p>
+                </div>
+            `;
+            return;
+        }
 
-function mask(o,f){setTimeout(()=>{o.value=f(o.value);},1);}function cpfMask(v){v=v.replace(/\D/g,'').slice(0,11);v=v.replace(/(\d{3})(\d)/,'$1.$2');v=v.replace(/(\d{3})(\d)/,'$1.$2');v=v.replace(/(\d{3})(\d{1,2})$/,'$1-$2');return v;}function cepMask(v){v=v.replace(/\D/g,'').slice(0,8);if(v.length>5)return v.slice(0,5)+'-'+v.slice(5);return v;}function cardMask(v){v=v.replace(/\D/g,'').slice(0,16);return v.replace(/(\d{4})/g,'$1 ').trim();}function validadeMask(v){v=v.replace(/\D/g,'').slice(0,4);if(v.length>2)return v.slice(0,2)+'/'+v.slice(2);return v;}
+        favoritosContent.className = 'favoritos-grid';
+        favoritosContent.innerHTML = favoritos.map(fav => `
+            <a href="/produto/${fav.id}" class="produto-card">
+                <img src="${fav.imagem_principal}" alt="${fav.nome}">
+                <div class="produto-info">
+                    <h3>${fav.nome}</h3>
+                    <p class="preco">R$ ${parseFloat(fav.preco).toFixed(2)}</p>
+                </div>
+            </a>
+        `).join('');
+    })
+    .catch(() => {
+        favoritosContent.innerHTML = '<div class="sem-dados">Erro ao carregar favoritos</div>';
+    });
 
-const cpfEl=document.getElementById('cpfInput');const cepEl=document.getElementById('cepEndereco');const cardEl=document.getElementById('cardNumber');const valEl=document.getElementById('cardVal');if(cpfEl)cpfEl.addEventListener('input',e=>mask(e.target,cpfMask));if(cepEl)cepEl.addEventListener('input',e=>mask(e.target,cepMask));if(cardEl)cardEl.addEventListener('input',e=>mask(e.target,cardMask));if(valEl)valEl.addEventListener('input',e=>mask(e.target,validadeMask));
+// ===== CARREGAR ESTADOS E CIDADES =====
+async function carregarEstados() {
+    const ufSelect = document.getElementById('estadoSelect');
+    const cidadeSelect = document.getElementById('cidadeSelect');
+    
+    if (!ufSelect) return;
+    
+    ufSelect.innerHTML = '<option value="">Carregando...</option>';
+    
+    try {
+        const res = await fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome');
+        const estados = await res.json();
+        
+        ufSelect.innerHTML = '<option value="">Selecione o estado</option>';
+        estados.forEach(e => {
+            const opt = document.createElement('option');
+            opt.value = e.sigla;
+            opt.textContent = e.nome + ' (' + e.sigla + ')';
+            ufSelect.appendChild(opt);
+        });
+    } catch (err) {
+        ufSelect.innerHTML = '<option value="">Erro ao carregar</option>';
+    }
+    
+    ufSelect.addEventListener('change', async () => {
+        const uf = ufSelect.value;
+        cidadeSelect.innerHTML = '<option>Carregando...</option>';
+        
+        if (!uf) {
+            cidadeSelect.innerHTML = '<option value="">Selecione o estado primeiro</option>';
+            return;
+        }
+        
+        try {
+            const r2 = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios?orderBy=nome`);
+            const cidades = await r2.json();
+            
+            cidadeSelect.innerHTML = '<option value="">Selecione a cidade</option>';
+            cidades.forEach(c => {
+                const o = document.createElement('option');
+                o.value = c.nome;
+                o.textContent = c.nome;
+                cidadeSelect.appendChild(o);
+            });
+        } catch (err) {
+            cidadeSelect.innerHTML = '<option value="">Erro ao carregar cidades</option>';
+        }
+    });
+}
 
-const statsLoading=document.getElementById('statsLoading');const statsContent=document.getElementById('statsContent');const semDadosStats=document.getElementById('semDadosStats');const graficoBarras=document.getElementById('graficoBarras');const statsCards=document.getElementById('statsCards');const meses={1:'Jan',2:'Fev',3:'Mar',4:'Abr',5:'Mai',6:'Jun',7:'Jul',8:'Ago',9:'Set',10:'Out',11:'Nov',12:'Dez'};
+carregarEstados();
 
-fetch('/api/estatisticas').then(r=>r.json()).then(dados=>{statsLoading.style.display='none';if(!dados||dados.length===0){semDadosStats.style.display='block';return;}statsContent.style.display='block';const maxTotal=Math.max(...dados.map(d=>d.total));const alturaMax=240;dados.forEach(item=>{const proporcao=maxTotal>0?(item.total/maxTotal):0;const altura=Math.max(proporcao*alturaMax,50);const barraItem=document.createElement('div');barraItem.className='barra-item';barraItem.innerHTML=`<div class="barra" style="height:${altura}px"><span class="barra-valor">${item.total}</span></div><div class="barra-mes">${meses[item.mes]}</div>`;graficoBarras.appendChild(barraItem);});const totalPedidos=dados.reduce((s,d)=>s+d.total,0);const media=(totalPedidos/dados.length).toFixed(1);const melhorMes=dados.reduce((max,d)=>d.total>max.total?d:max);statsCards.innerHTML=`<div class="stat-card"><div class="stat-card-icon">📦</div><div class="stat-card-valor">${totalPedidos}</div><div class="stat-card-label">Total de Pedidos</div></div><div class="stat-card"><div class="stat-card-icon">📊</div><div class="stat-card-valor">${media}</div><div class="stat-card-label">Média Mensal</div></div><div class="stat-card"><div class="stat-card-icon">🏆</div><div class="stat-card-valor">${melhorMes.total}</div><div class="stat-card-label">Melhor Mês (${meses[melhorMes.mes]})</div></div><div class="stat-card"><div class="stat-card-icon">📅</div><div class="stat-card-valor">${dados.length}</div><div class="stat-card-label">Meses Ativos</div></div>`;}).catch(()=>{statsLoading.style.display='none';semDadosStats.style.display='block';});
+// ===== BUSCAR CEP =====
+const cepInput = document.getElementById('cepEndereco');
+
+if (cepInput) {
+    cepInput.addEventListener('blur', function() {
+        const v = this.value.replace(/\D/g, '');
+        if (v.length !== 8) return;
+        
+        fetch(`https://viacep.com.br/ws/${v}/json/`)
+            .then(res => res.json())
+            .then(data => {
+                if (!data.erro) {
+                    document.getElementById('ruaEndereco').value = data.logradouro || '';
+                    document.getElementById('bairroEndereco').value = data.bairro || '';
+                    
+                    if (data.uf) {
+                        const est = document.getElementById('estadoSelect');
+                        if (est) {
+                            est.value = data.uf;
+                            est.dispatchEvent(new Event('change'));
+                            
+                            setTimeout(() => {
+                                const cidadeSel = document.getElementById('cidadeSelect');
+                                if (cidadeSel && data.localidade) {
+                                    for (let i = 0; i < cidadeSel.options.length; i++) {
+                                        if (cidadeSel.options[i].value.toLowerCase() === data.localidade.toLowerCase()) {
+                                            cidadeSel.selectedIndex = i;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }, 600);
+                        }
+                    }
+                }
+            })
+            .catch(() => {});
+    });
+}
+
+// ===== MÁSCARAS DE ENTRADA =====
+function mask(o, f) {
+    setTimeout(() => {
+        o.value = f(o.value);
+    }, 1);
+}
+
+function cpfMask(v) {
+    v = v.replace(/\D/g, '').slice(0, 11);
+    v = v.replace(/(\d{3})(\d)/, '$1.$2');
+    v = v.replace(/(\d{3})(\d)/, '$1.$2');
+    v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    return v;
+}
+
+function cepMask(v) {
+    v = v.replace(/\D/g, '').slice(0, 8);
+    if (v.length > 5) return v.slice(0, 5) + '-' + v.slice(5);
+    return v;
+}
+
+function cardMask(v) {
+    v = v.replace(/\D/g, '').slice(0, 16);
+    return v.replace(/(\d{4})/g, '$1 ').trim();
+}
+
+function validadeMask(v) {
+    v = v.replace(/\D/g, '').slice(0, 4);
+    if (v.length > 2) return v.slice(0, 2) + '/' + v.slice(2);
+    return v;
+}
+
+const cpfEl = document.getElementById('cpfInput');
+const cepEl = document.getElementById('cepEndereco');
+const cardEl = document.getElementById('cardNumber');
+const valEl = document.getElementById('cardVal');
+
+if (cpfEl) cpfEl.addEventListener('input', e => mask(e.target, cpfMask));
+if (cepEl) cepEl.addEventListener('input', e => mask(e.target, cepMask));
+if (cardEl) cardEl.addEventListener('input', e => mask(e.target, cardMask));
+if (valEl) valEl.addEventListener('input', e => mask(e.target, validadeMask));
+
+// ===== ESTATÍSTICAS =====
+const statsLoading = document.getElementById('statsLoading');
+const statsContent = document.getElementById('statsContent');
+const semDadosStats = document.getElementById('semDadosStats');
+const graficoBarras = document.getElementById('graficoBarras');
+const statsCards = document.getElementById('statsCards');
+const meses = {1:'Jan',2:'Fev',3:'Mar',4:'Abr',5:'Mai',6:'Jun',7:'Jul',8:'Ago',9:'Set',10:'Out',11:'Nov',12:'Dez'};
+
+fetch('/api/estatisticas')
+    .then(r => r.json())
+    .then(dados => {
+        statsLoading.style.display = 'none';
+        
+        if (!dados || dados.length === 0) {
+            semDadosStats.style.display = 'block';
+            return;
+        }
+        
+        statsContent.style.display = 'block';
+        
+        const maxTotal = Math.max(...dados.map(d => d.total));
+        const alturaMax = 240;
+        
+        dados.forEach(item => {
+            const proporcao = maxTotal > 0 ? (item.total / maxTotal) : 0;
+            const altura = Math.max(proporcao * alturaMax, 50);
+            
+            const barraItem = document.createElement('div');
+            barraItem.className = 'barra-item';
+            barraItem.innerHTML = `
+                <div class="barra" style="height:${altura}px">
+                    <span class="barra-valor">${item.total}</span>
+                </div>
+                <div class="barra-mes">${meses[item.mes]}</div>
+            `;
+            graficoBarras.appendChild(barraItem);
+        });
+        
+        const totalPedidos = dados.reduce((s, d) => s + d.total, 0);
+        const media = (totalPedidos / dados.length).toFixed(1);
+        const melhorMes = dados.reduce((max, d) => d.total > max.total ? d : max);
+        
+        statsCards.innerHTML = `
+            <div class="stat-card">
+                <div class="stat-card-icon">📦</div>
+                <div class="stat-card-valor">${totalPedidos}</div>
+                <div class="stat-card-label">Total de Pedidos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-icon">📊</div>
+                <div class="stat-card-valor">${media}</div>
+                <div class="stat-card-label">Média Mensal</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-icon">🏆</div>
+                <div class="stat-card-valor">${melhorMes.total}</div>
+                <div class="stat-card-label">Melhor Mês (${meses[melhorMes.mes]})</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-icon">📅</div>
+                <div class="stat-card-valor">${dados.length}</div>
+                <div class="stat-card-label">Meses Ativos</div>
+            </div>
+        `;
+    })
+    .catch(() => {
+        statsLoading.style.display = 'none';
+        semDadosStats.style.display = 'block';
+    });
 </script>
 
 {% endblock %}

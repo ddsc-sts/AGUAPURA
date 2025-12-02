@@ -12,12 +12,12 @@
         <div class="grid-produtos">
             {% for p in resultados %}
             <div class="produto">
-                <img src="{{ p.imagem_principal }}" alt="{{ p.nome }}">
+                <img src="{{ p.imagem_principal or '/static/placeholder.png' }}" alt="{{ p.nome }}">
                 <h3>{{ p.nome }}</h3>
-                <p>R$ {{ "%.2f"|format(p.preco) }}</p>
-                <button onclick="window.location.href='{{ url_for('produto', id=p.id) }}'">
-                    Ver detalhes
-                </button>
+                <p>R$ {{ "%.2f"|format(p.preco|float) }}</p>
+                <a href="{{ url_for('produto', id=p.id) }}">
+                    <button>Ver detalhes</button>
+                </a>
             </div>
             {% endfor %}
         </div>

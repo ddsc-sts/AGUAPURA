@@ -1,5 +1,0 @@
-alterações aguapura:
-
-checkout nao esta mais criando pedido, preço da estampa e cor nao estao contando
-link cloud: https://claude.ai/share/a8986301-512b-4474-982e-50d149bd1cd1
-

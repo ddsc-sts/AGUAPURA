@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Pagamento PIX - AQUAPURA{% endblock %}
+{% block title %}Pagamento PIX - AGUAPURA{% endblock %}
 
 {% block content %}
 <div style="max-width:700px; margin:40px auto; padding:20px;">
@@ -29,7 +29,7 @@
     
     <div style="display:inline-block; background:#ffffff; padding:20px; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.1); margin-bottom:20px;">
       <img 
-        src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=00020126580014BR.GOV.BCB.PIX0136{{ pedido.id }}{{ '%014d' | format(pedido.id) }}5204000053039865802BR5925AQUAPURA%20ECOMMERCE6009SAO%20PAULO62070503***6304{{ '%04d' | format(pedido.id) }}"
+        src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=00020126580014BR.GOV.BCB.PIX0136{{ pedido.id }}{{ '%014d' | format(pedido.id) }}5204000053039865802BR5925AGUAPURA%20ECOMMERCE6009SAO%20PAULO62070503***6304{{ '%04d' | format(pedido.id) }}"
         alt="QR Code PIX"
         width="220"
         height="220"
@@ -45,7 +45,7 @@
           type="text" 
           id="pixCode" 
           readonly 
-          value="00020126580014BR.GOV.BCB.PIX0136{{ pedido.id }}{{ '%014d' | format(pedido.id) }}5204000053039865802BR5925AQUAPURA ECOMMERCE6009SAO PAULO62070503***6304{{ '%04d' | format(pedido.id) }}"
+          value="00020126580014BR.GOV.BCB.PIX0136{{ pedido.id }}{{ '%014d' | format(pedido.id) }}5204000053039865802BR5925AGUAPURA ECOMMERCE6009SAO PAULO62070503***6304{{ '%04d' | format(pedido.id) }}"
           style="width:100%; padding:14px; border-radius:10px; border:1px solid var(--border); background:var(--card-bg); color:var(--texto); font-size:0.85rem; font-family:monospace; padding-right:120px;"
         >
         <button 
@@ -79,7 +79,7 @@
     </div>
     <div style="display:flex; justify-content:space-between; padding-top:8px; border-top:1px solid var(--border);">
       <span style="color:var(--texto); opacity:0.8;">Beneficiário:</span>
-      <strong>AQUAPURA</strong>
+      <strong>AGUAPURA</strong>
     </div>
   </div>
 
