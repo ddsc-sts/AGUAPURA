@@ -198,55 +198,101 @@
     background: #f87171;
 }
 
-/* PRODUTOS MAIS VENDIDOS */
+/* ✅ PRODUTOS MAIS VENDIDOS - MELHORADO */
 .produto-top {
     display: flex;
     gap: 15px;
     padding: 15px;
     background: rgba(59, 130, 246, 0.1);
-    border-radius: 10px;
+    border-radius: 12px;
     margin-bottom: 12px;
     border: 1px solid rgba(59, 130, 246, 0.2);
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
+    align-items: stretch;
 }
 
 .produto-top:hover {
     background: rgba(59, 130, 246, 0.15);
-    border-color: rgba(59, 130, 246, 0.3);
+    border-color: rgba(59, 130, 246, 0.4);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+    transform: translateY(-2px);
 }
 
-.produto-top img {
-    width: 60px;
-    height: 60px;
+/* Container da imagem com efeito */
+.produto-top-img-wrapper {
+    position: relative;
+    width: 90px;
+    height: 90px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.2);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.produto-top-img-wrapper img {
+    width: 100%;
+    height: 100%;
     object-fit: cover;
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    object-position: center;
+    transition: transform 0.3s ease;
 }
 
+.produto-top:hover .produto-top-img-wrapper img {
+    transform: scale(1.1);
+}
+
+/* Fallback para imagem não encontrada */
+.produto-top-img-wrapper::before {
+    content: '📦';
+    position: absolute;
+    font-size: 2.5em;
+    z-index: 1;
+}
+
+.produto-top-img-wrapper img:not([src]),
+.produto-top-img-wrapper img[src=""] {
+    display: none;
+}
+
+/* Info do produto */
 .produto-top-info {
     flex: 1;
     color: var(--text-sidebar);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .produto-top-info h4 {
     margin-bottom: 5px;
     color: var(--text-sidebar);
     font-weight: 600;
+    font-size: 1em;
+    line-height: 1.3;
 }
 
 .produto-top-info p {
     color: var(--text-sidebar-muted);
-    font-size: 0.9em;
+    font-size: 0.85em;
+    margin: 0;
 }
 
 /* BADGE DE VENDAS */
 .vendas-badge {
     background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
     color: white;
-    padding: 8px 15px;
-    border-radius: 20px;
-    font-weight: 600;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 1.1em;
     box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
 }
 
 /* MENSAGEM VAZIA */
@@ -278,6 +324,15 @@
 
     .conteudo-grid {
         grid-template-columns: 1fr;
+    }
+
+    .produto-top {
+        flex-direction: row;
+    }
+
+    .produto-top-img-wrapper {
+        width: 80px;
+        height: 80px;
     }
 }
 
@@ -337,18 +392,27 @@
         {% endfor %}
     </div>
 
-    <!-- PRODUTOS MAIS VENDIDOS -->
+    <!-- PRODUTOS MAIS VENDIDOS - MELHORADO -->
     <div class="card-secao">
         <h3>🏆 Produtos Mais Vendidos</h3>
         {% for produto in produtos_top %}
         <div class="produto-top">
-            <img src="{{ url_for('static', filename=produto.imagem_principal) }}" 
-                 alt="{{ produto.nome }}">
+            <!-- ✅ Container com efeito de zoom -->
+            <div class="produto-top-img-wrapper">
+                <img 
+                    src="{{ url_for('static', filename=produto.imagem_principal) }}" 
+                    alt="{{ produto.nome }}"
+                    onerror="this.style.display='none'">
+            </div>
+
+            <!-- Info -->
             <div class="produto-top-info">
                 <h4>{{ produto.nome }}</h4>
-                <p>{{ produto.vendas }} vendas</p>
+                <p>{{ produto.vendas }} unidades vendidas</p>
             </div>
-            <span class="vendas-badge">{{ produto.vendas }}</span>
+
+            <!-- Badge -->
+            <span class="vendas-badge">{{ produto.vendas }}x</span>
         </div>
         {% else %}
         <p class="mensagem-vazia">

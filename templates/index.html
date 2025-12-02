@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Página Inicial - AquaPura{% endblock %}
+
 {% block content %}
 
 <!-- ===== Carrossel de Promoções ===== -->
@@ -37,21 +38,35 @@
 
     <div class="grid-produtos">
         {% for p in produtos %}
-        <div class="produto">
+        <!-- ✅ Adicionar classe 'esgotado' se estoque for 0 -->
+        <div class="produto {% if p.estoque == 0 %}esgotado{% endif %}">
+            {% if p.estoque > 0 %}
             <a href="/produto/{{ p.id }}">
                 <img src="{{ p.imagem_principal }}" alt="{{ p.nome }}">
             </a>
+            {% else %}
+            <div style="position: relative;">
+                <img src="{{ p.imagem_principal }}" alt="{{ p.nome }}">
+                <div class="badge-esgotado-index">Esgotado</div>
+            </div>
+            {% endif %}
 
             <h3>{{ p.nome }}</h3>
             <p>R$ {{ "%.2f"|format(p.preco) }}</p>
 
-            <a href="/produto/{{ p.id }}">
-                <button>Ver detalhes</button>
+            <!-- ✅ BOTÃO DINÂMICO -->
+            {% if p.estoque > 0 %}
+            <a href="/produto/{{ p.id }}" style="display: block; width: 100%;">
+                <button style="width: 100%; margin: 0; padding: 10px 20px;">Ver detalhes</button>
             </a>
+            {% else %}
+            <button class="btn-esgotado-index" disabled style="background: #ef4444 !important; border: 2px solid #dc2626 !important; margin: 0; padding: 10px 20px; width: 100%;">Esgotado</button>
+            {% endif %}
         </div>
         {% endfor %}
     </div>
 </section>
+
 <!-- ===== Categorias ===== -->
 <section class="categorias">
     <a href="/garrafas" class="categoria">

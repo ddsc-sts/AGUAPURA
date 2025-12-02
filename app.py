@@ -47,8 +47,8 @@ def conectar():
         host="localhost",
         user="root",
 
-        port=3407,
-        password="root",   # altere se tiver senha
+        port=3306,
+        password="",   # altere se tiver senha
         database="aguapura"
     )
 
@@ -785,96 +785,7 @@ def politica_privacidade():
 # ---------------------------
 # CARRINHO
 # ---------------------------
-
-# ============================================
-# ROTAS DO CARRINHO - VERSÃO MELHORADA
-# ============================================
-
-@app.route("/carrinho")
-@login_required
-def carrinho():
-    db = conectar()
-    cursor = db.cursor(dictionary=True)
-
-    session_id = get_session_id()
-
-    # Buscar itens com personalização
-    cursor.execute("""
-    SELECT 
-        c.id AS carrinho_id,
-        c.quantidade,
-        c.cor,
-        c.personalizacao,
-        c.extra_preco,
-        c.estampa,
-
-        p.id AS produto_id,
-        p.nome,
-        p.preco,
-        p.imagem_principal,
-        p.estoque
-    FROM carrinho c
-    JOIN produtos p ON p.id = c.produto_id
-    WHERE c.session_id = %s
-""", (session_id,))
-
-    itens = cursor.fetchall()
-
-    subtotal = Decimal("0.00")
-    for item in itens:
-        preco_base = Decimal(item["preco"])
-        extra = Decimal(item["extra_preco"] or 0)
-        qtd = int(item["quantidade"])
-
-        subtotal += (preco_base + extra) * qtd
-
-
-    frete = Decimal("12.00") if subtotal > 0 else Decimal("0.00")
-    
-    # Verificar se há cupom aplicado na sessão
-    desconto = Decimal("0.00")
-    cupom_info = None
-    if 'cupom_codigo' in session:
-        cursor.execute("""
-            SELECT * FROM cupons 
-            WHERE codigo = %s AND ativo = TRUE
-            AND (data_expiracao IS NULL OR data_expiracao >= CURDATE())
-            AND (uso_maximo IS NULL OR uso_atual < uso_maximo)
-        """, (session['cupom_codigo'],))
-        cupom = cursor.fetchone()
-        
-        if cupom:
-            if cupom['tipo'] == 'percentual':
-                desconto = subtotal * (Decimal(cupom['valor']) / Decimal("100"))
-            else:  # fixo
-                desconto = Decimal(cupom['valor'])
-            
-            cupom_info = {
-                'codigo': cupom['codigo'],
-                'tipo': cupom['tipo'],
-                'valor': cupom['valor']
-            }
-        else:
-            # Cupom inválido, remover da sessão
-            session.pop('cupom_codigo', None)
-    
-    total = subtotal + frete - desconto
-    if total < 0:
-        total = Decimal("0.00")
-
-    cursor.close()
-    db.close()
-
-    return render_template("carrinho.html", 
-                          itens=itens, 
-                          subtotal=subtotal, 
-                          frete=frete, 
-                          desconto=desconto,
-                          cupom_info=cupom_info,
-                          total=total)
-
-
-# ---------------------------
+# --------------------------- 
 # APLICAR CUPOM
 # ---------------------------
 @app.route("/carrinho/aplicar_cupom", methods=["POST"])
@@ -945,6 +856,7 @@ def atualizar_personalizacao(id):
     return redirect(url_for("carrinho"))
 
 
+# ========== ROTA: ADD_CARRINHO - CORRIGIDA ==========
 @app.route("/add_carrinho/<int:produto_id>", methods=["POST"])
 def add_carrinho(produto_id):
     db = conectar()
@@ -957,10 +869,10 @@ def add_carrinho(produto_id):
     nome_personalizado = request.form.get("personalizacao", "").strip() or None
     estampa = request.form.get("estampa", "").strip() or None
 
-    # Calcular preços extra
+    # ✅ CORRIGIDO: Calcular preços extra CORRETOS
     extra_preco = 0
     if nome_personalizado:
-        extra_preco += 15
+        extra_preco += 10  # ← CORRIGIDO DE 15 PARA 10
     if estampa:
         extra_preco += 20
 
@@ -1029,6 +941,103 @@ def add_carrinho(produto_id):
     flash("Produto(s) adicionados ao carrinho!", "sucesso")
     return redirect(url_for("carrinho"))
 
+
+# ========== ROTA: CARRINHO (GET) - CORRIGIDA ==========
+@app.route("/carrinho")
+@login_required
+def carrinho():
+    db = conectar()
+    cursor = db.cursor(dictionary=True)
+
+    session_id = get_session_id()
+
+    # Buscar itens com personalização
+    cursor.execute("""
+    SELECT 
+        c.id AS carrinho_id,
+        c.quantidade,
+        c.cor,
+        c.personalizacao,
+        c.extra_preco,
+        c.estampa,
+        p.id AS produto_id,
+        p.nome,
+        p.preco,
+        p.imagem_principal,
+        p.estoque
+    FROM carrinho c
+    JOIN produtos p ON p.id = c.produto_id
+    WHERE c.session_id = %s
+""", (session_id,))
+
+    itens = cursor.fetchall()
+
+    # ✅ CORRIGIDO: Usar extra_preco direto do carrinho
+    subtotal = Decimal("0.00")
+    for item in itens:
+        preco_base = Decimal(item["preco"])
+        extra = Decimal(item["extra_preco"] or 0)  # ← Já inclui 10 (nome) + 20 (estampa)
+        qtd = int(item["quantidade"])
+
+        subtotal += (preco_base + extra) * qtd
+
+    # ✅ CORRIGIDO: Frete grátis EM SC, R$12 PARA FORA
+    frete = Decimal("12.00")
+    
+    # Verificar se há cupom aplicado na sessão
+    desconto = Decimal("0.00")
+    cupom_info = None
+    if 'cupom_codigo' in session:
+        cursor.execute("""
+            SELECT * FROM cupons 
+            WHERE codigo = %s AND ativo = TRUE
+            AND (data_expiracao IS NULL OR data_expiracao >= CURDATE())
+            AND (uso_maximo IS NULL OR uso_atual < uso_maximo)
+        """, (session['cupom_codigo'],))
+        cupom = cursor.fetchone()
+        
+        if cupom:
+            if cupom['tipo'] == 'percentual':
+                desconto = subtotal * (Decimal(cupom['valor']) / Decimal("100"))
+            else:  # fixo
+                desconto = Decimal(cupom['valor'])
+            
+            cupom_info = {
+                'codigo': cupom['codigo'],
+                'tipo': cupom['tipo'],
+                'valor': cupom['valor']
+            }
+        else:
+            # Cupom inválido, remover da sessão
+            session.pop('cupom_codigo', None)
+    
+    total = subtotal + frete - desconto
+    if total < 0:
+        total = Decimal("0.00")
+
+    cursor.close()
+    db.close()
+
+    return render_template("carrinho.html", 
+                          itens=itens, 
+                          subtotal=subtotal, 
+                          frete=frete, 
+                          desconto=desconto,
+                          cupom_info=cupom_info,
+                          total=total)
+
+
+# ========== ROTA: CHECKOUT (POST) - FRETE CORRIGIDO ==========
+# Dentro da função checkout(), na parte do POST, procure por:
+
+    # ========== CALCULAR FRETE (GRÁTIS EM SC, R$12 PARA FORA) ==========
+    estado_limpo = estado.strip().upper()
+    
+    # ✅ CORRIGIDO: Frete grátis para SC, sem condição de valor mínimo
+    if estado_limpo == "SC":
+        frete = Decimal("0.00")
+    else:
+        frete = Decimal("12.00")
 
 # ---------------------------
 # AUMENTAR QUANTIDADE (CHECK DE ESTOQUE)
@@ -1323,12 +1332,8 @@ def checkout():
             preco_total_item = (preco_base + extra_nome + extra_estampa) * qtd
             subtotal += preco_total_item
 
-        # ========== FRETE GRÁTIS SE SC E SUBTOTAL > R$129,90 ==========
-        frete = Decimal("12.00")
-        
-        # Para calcular frete grátis, precisamos do estado
-        # Como ainda não temos o estado no GET, usamos frete padrão
-        # O frete correto será calculado no POST com o estado informado
+        # ========== FRETE - SERÁ CALCULADO NO POST ==========
+        frete = Decimal("12.00")  # padrão, vai mudar no POST
         
         # ========== VERIFICAR CUPOM APLICADO ==========
         desconto = Decimal("0.00")
@@ -1550,13 +1555,15 @@ def checkout():
         
         subtotal += preco_total_item
 
-    # ========== CALCULAR FRETE (GRÁTIS SE SC E SUBTOTAL > R$129,90) ==========
+    # ========== CALCULAR FRETE (GRÁTIS EM SC, R$12 PARA FORA) ==========
     frete = Decimal("12.00")
     estado_limpo = estado.strip().upper()
     
-    # Frete grátis para SC se subtotal (incluindo personalização) for maior que R$129,90
-    if estado_limpo == "SC" and subtotal > Decimal("129.90"):
+    # ✅ CORRIGIDO: Frete grátis para SC (SEM condição de valor mínimo)
+    if estado_limpo == "SC":
         frete = Decimal("0.00")
+    else:
+        frete = Decimal("12.00")
     
     # ========== APLICAR CUPOM DE DESCONTO ==========
     desconto = Decimal("0.00")
@@ -1612,11 +1619,11 @@ def checkout():
         cursor.execute("""
             INSERT INTO pedidos (usuario_id, valor_total, status, pagamento_metodo, 
                                  cliente_nome, cliente_cpf, cliente_endereco, 
-                                 cupom_usado, desconto)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                 cupom_usado)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         """, (usuario_for_insert, str(total), "aguardando_pagamento", metodo_pagamento, 
               nome_destinatario or nome, cpf_digits, endereco_texto, 
-              cupom_usado, str(desconto)))
+              cupom_usado))
         db.commit()
     except Exception as e:
         db.rollback()
@@ -1628,7 +1635,7 @@ def checkout():
 
     pedido_id = cursor.lastrowid
 
-    # ========== INSERIR ITENS COM PERSONALIZAÇÃO, ESTAMPA E REDUZIR ESTOQUE ==========
+    # ========== INSERIR ITENS COM PERSONALIZAÇÃO, ESTAMPA, COR E REDUZIR ESTOQUE ==========
     try:
         for item in itens:
             produto_id = item["produto_id"]
@@ -1636,17 +1643,19 @@ def checkout():
             preco = Decimal(item["preco"])
             personalizacao = item.get("personalizacao")
             estampa = item.get("estampa")
+            cor = item.get("cor")
             
-            # Calcular valor total do item (incluindo personalização e estampa)
+            # Calcular valor unitário (com personalização e estampa)
             extra_nome = Decimal("10.00") if personalizacao else Decimal("0.00")
             extra_estampa = Decimal("20.00") if estampa else Decimal("0.00")
-            valor_total_item = preco + extra_nome + extra_estampa
+            valor_unitario = preco + extra_nome + extra_estampa
 
             cursor.execute("""
-                INSERT INTO pedido_itens (pedido_id, produto_id, quantidade, valor, personalizacao, estampa)
-                VALUES (%s, %s, %s, %s, %s, %s)
-            """, (pedido_id, produto_id, qtd, str(valor_total_item), personalizacao, estampa))
+                INSERT INTO pedido_itens (pedido_id, produto_id, quantidade, valor, personalizacao, estampa, cor)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (pedido_id, produto_id, qtd, str(valor_unitario), personalizacao, estampa, cor))
 
+            # Reduzir estoque
             cursor.execute("UPDATE produtos SET estoque = estoque - %s WHERE id = %s", (qtd, produto_id))
 
         # ========== INCREMENTAR USO DO CUPOM ==========
@@ -1693,8 +1702,6 @@ def checkout():
     else:
         # Se for CARTÃO, vai direto para pedido finalizado com flag de pagamento
         return redirect(url_for("pedido_finalizado", pedido_id=pedido_id) + "?pago=true")
-
-
 # ============================================================
 # ROTA: PÁGINA DE PAGAMENTO PIX
 # ============================================================

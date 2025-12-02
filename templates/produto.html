@@ -101,6 +101,45 @@
     pointer-events: none;
   }
 
+  /* ✅ BADGE ESGOTADO */
+  .badge-esgotado {
+    display: inline-block;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 1.1em;
+    margin-top: 12px;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  }
+
+  /* ✅ BOTÃO ESGOTADO */
+  .btn-add-carrinho-esgotado {
+    padding: 12px 22px;
+    background: #9ca3af;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: not-allowed;
+    opacity: 0.7;
+    width: 100%;
+    max-width: 300px;
+    font-size: 1rem;
+    margin-top: 18px;
+  }
+
+  /* ✅ OVERLAY ESGOTADO */
+  .produto-esgotado {
+    opacity: 0.7;
+  }
+
+  .produto-esgotado .produto-imagem img {
+    filter: grayscale(100%);
+    opacity: 0.6;
+  }
+
   @media (max-width: 768px) {
     .btn-favorito-produto {
       width: 50px;
@@ -112,7 +151,7 @@
   }
 </style>
 
-<section class="produto-pagina" style="padding:40px 5%; position: relative;">
+<section class="produto-pagina {% if produto.estoque == 0 %}produto-esgotado{% endif %}" style="padding:40px 5%; position: relative;">
   
   <!-- ✅ BOTÃO DE FAVORITO (dentro da section, posição absoluta) -->
   {% if session.get("logado") %}
@@ -130,9 +169,18 @@
   <div class="produto-container">
 
     <!-- IMAGEM PRINCIPAL -->
-    <div class="produto-imagem" style="min-width:320px;">
+    <div class="produto-imagem" style="min-width:320px; position: relative;">
       <img id="mainImage" src="{{ produto.imagem_principal }}" alt="{{ produto.nome }}"
            style="width:100%; border-radius:12px; object-fit:cover;">
+
+      <!-- ✅ BADGE ESGOTADO NA IMAGEM -->
+      {% if produto.estoque == 0 %}
+      <div style="position: absolute; top: 20px; left: 20px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); 
+                  color: white; padding: 12px 20px; border-radius: 8px; font-weight: 700; font-size: 1.1em;
+                  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.5); display: flex; align-items: center; gap: 8px;">
+        ⚠️ Esgotado
+      </div>
+      {% endif %}
 
       {% if imagens %}
       <div style="display:flex; gap:10px; margin-top:12px; justify-content:center; flex-wrap:wrap;">
@@ -154,14 +202,24 @@
       <p class="produto-descricao">{{ produto.descricao }}</p>
       {% endif %}
 
+      <!-- ✅ INDICADOR DE ESTOQUE -->
+      {% if produto.estoque == 0 %}
+      <div class="badge-esgotado">🚫 Produto Esgotado</div>
+      {% else %}
+      <p style="margin-top:14px; color:var(--texto); opacity:0.8;">
+        Em estoque: <strong>{{ produto.estoque }}</strong>
+      </p>
+      {% endif %}
+
       <!-- PERSONALIZAR (não aparece em acessórios) -->
-      {% if produto.categoria != "Acessório" %}
+      {% if produto.categoria != "Acessório" and produto.estoque > 0 %}
       <div style="margin-top:18px;">
         <button id="btnPersonalizar" class="btn-personalizar" type="button">Personalizar ✏️</button>
       </div>
       {% endif %}
 
-      <!-- FORM PRINCIPAL -->
+      <!-- FORM PRINCIPAL - DESABILITADO SE ESGOTADO -->
+      {% if produto.estoque > 0 %}
       <form id="addCartForm" method="post" action="{{ url_for('add_carrinho', produto_id=produto.id) }}">
 
         {% if produto.categoria != "Acessório" %}
@@ -252,10 +310,10 @@
         </div>
 
       </form>
-
-      <p style="margin-top:14px; color:var(--texto); opacity:0.8;">
-        Em estoque: <strong>{{ produto.estoque }}</strong>
-      </p>
+      {% else %}
+      <!-- ✅ BOTÃO ESGOTADO -->
+      <button class="btn-add-carrinho-esgotado" disabled>🚫 Produto Esgotado</button>
+      {% endif %}
     </div>
 
   </div>

@@ -443,7 +443,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const subtotal = {{ subtotal }};
   const descontoAplicado = {{ desconto if desconto else 0 }};
   
-  // Função para atualizar frete e total
+  // ✅ FUNÇÃO PARA ATUALIZAR FRETE (CORRIGIDA)
   function atualizarFrete() {
     const estadoSelecionado = document.getElementById('estado').value;
     const enderecoSalvoRadio = document.querySelector('input[name="endereco_selecionado"]:checked');
@@ -461,8 +461,8 @@ document.addEventListener("DOMContentLoaded", () => {
     
     let frete = 12.00;
     
-    // Verifica se é SC e valor > 129.90
-    if (estadoFinal.toUpperCase() === 'SC' && subtotal > 129.90) {
+    // ✅ CORRIGIDO: Frete GRÁTIS para SC (SEM condição de valor)
+    if (estadoFinal.toUpperCase() === 'SC') {
       frete = 0.00;
       document.getElementById('freteDisplay').innerHTML = '<span style="color: #28a745; font-weight: 600;">GRÁTIS</span>';
     } else {
@@ -472,15 +472,15 @@ document.addEventListener("DOMContentLoaded", () => {
     // Atualizar total
     const total = subtotal + frete - descontoAplicado;
     document.getElementById('totalDisplay').textContent = 'R$ ' + total.toFixed(2);
+    
+    console.log(`🔍 DEBUG: Estado="${estadoFinal}", Frete=R$ ${frete.toFixed(2)}, Total=R$ ${total.toFixed(2)}`);
   }
 
   // ========== ENDEREÇO ==========
-  // Verificar se há endereços salvos ao carregar
   const enderecosRadios = document.querySelectorAll('input[name="endereco_selecionado"]');
   if (enderecosRadios.length > 0) {
     const primeiroEndereco = enderecosRadios[0];
     if (primeiroEndereco.checked && primeiroEndereco.value !== 'novo') {
-      // Se o primeiro endereço está marcado, esconde o formulário
       enderecoFormWrapper.style.display = 'none';
       document.getElementById('rua').required = false;
       document.getElementById('numero').required = false;
@@ -488,7 +488,7 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById('cidade').required = false;
       document.getElementById('cep').required = false;
       
-      // Atualizar frete imediatamente
+      // ✅ Chamar função ao carregar
       atualizarFrete();
     }
   }
@@ -498,7 +498,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const selected = document.querySelector('input[name="endereco_selecionado"]:checked').value;
       if (selected === 'novo') {
         enderecoFormWrapper.style.display = 'block';
-        // Torna campos obrigatórios
         document.getElementById('rua').required = true;
         document.getElementById('numero').required = true;
         document.getElementById('estado').required = true;
@@ -506,7 +505,6 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('cep').required = true;
       } else {
         enderecoFormWrapper.style.display = 'none';
-        // Remove obrigatoriedade
         document.getElementById('rua').required = false;
         document.getElementById('numero').required = false;
         document.getElementById('estado').required = false;
@@ -514,12 +512,12 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('cep').required = false;
       }
       
-      // Atualizar frete quando mudar endereço
+      // ✅ Atualizar frete quando mudar endereço
       atualizarFrete();
     });
   });
   
-  // Atualizar frete quando mudar o estado no select
+  // ✅ Atualizar frete quando mudar o estado no select
   const estadoSelect = document.getElementById('estado');
   if (estadoSelect) {
     estadoSelect.addEventListener('change', atualizarFrete);
@@ -531,10 +529,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const sel = document.querySelector('input[name="pagamento_selecionado"]:checked').value;
       
       if (sel === 'novo') {
-        // Mostra box de cartão
         novoCartaoBox.style.display = 'block';
       } else {
-        // Esconde box de cartão
         novoCartaoBox.style.display = 'none';
       }
     });
@@ -546,7 +542,6 @@ document.addEventListener("DOMContentLoaded", () => {
   form.addEventListener('submit', function(e) {
     e.preventDefault();
     
-    // Validar método de pagamento
     const pagoSel = document.querySelector('input[name="pagamento_selecionado"]:checked');
     
     if (!pagoSel) {
@@ -554,7 +549,6 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     
-    // Se escolheu "novo", precisa ter cartão preenchido
     if (pagoSel.value === 'novo') {
       const cartaoNum = document.getElementById('cartao_num').value.replace(/\s/g, '');
       const cartaoNome = document.getElementById('cartao_nome').value.trim();
@@ -579,7 +573,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
     
-    // Validar endereço se novo
     const endSel = document.querySelector('input[name="endereco_selecionado"]:checked');
     if (endSel && endSel.value === 'novo') {
       if (!form.checkValidity()) {
@@ -588,7 +581,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
     
-    // Tudo OK, submete
     form.submit();
   });
 });
