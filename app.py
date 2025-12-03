@@ -3,6 +3,7 @@ import mysql.connector, uuid, re
 from decimal import Decimal
 from werkzeug.security import generate_password_hash, check_password_hash
 
+
 app = Flask(__name__)
 
 app.secret_key = "chave-muito-segura"
@@ -245,24 +246,268 @@ def funcionario_atualizar_status(pedido_id):
     return redirect(f"/funcionario/pedido/{pedido_id}")
 
 
+# ============================
+# GERENCIAR CLIENTES - ROTAS COMPLETAS
+# ============================
+
 @app.route("/funcionario/clientes")
 @funcionario_required
 def funcionario_clientes():
-    db = conectar()
-    cursor = db.cursor(dictionary=True)
+    """Lista todos os clientes/usuários do sistema"""
+    try:
+        db = conectar()
+        cursor = db.cursor(dictionary=True)
+        
+        # Buscar todos os usuários ordenados por data de cadastro
+        cursor.execute("""
+            SELECT id, nome, email, tipo, avatar, criado_em
+            FROM usuarios 
+            ORDER BY criado_em DESC
+        """)
+        clientes = cursor.fetchall()
+        
+        # Garantir que avatar tenha valor padrão se estiver vazio
+        for cliente in clientes:
+            if not cliente.get('avatar'):
+                cliente['avatar'] = 'uploads/avatars/user.png'
+        
+        cursor.close()
+        db.close()
+        
+        return render_template('funcionario/clientes.html', clientes=clientes)
+        
+    except Exception as e:
+        print(f"❌ ERRO ao carregar clientes: {e}")
+        import traceback
+        traceback.print_exc()
+        if 'db' in locals():
+            db.close()
+        flash(f'Erro ao carregar clientes: {str(e)}', 'erro')
+        return redirect(url_for('funcionario_painel'))
 
-    cursor.execute("""
-        SELECT u.*, COUNT(p.id) as total_pedidos
-        FROM usuarios u
-        LEFT JOIN pedidos p ON p.usuario_id = u.id
-        WHERE u.tipo = 'cliente'
-        GROUP BY u.id
-        ORDER BY total_pedidos DESC
-    """)
-    clientes = cursor.fetchall()
 
-    return render_template("funcionario/clientes.html", clientes=clientes)
+@app.route("/funcionario/clientes/<int:cliente_id>")
+@funcionario_required
+def funcionario_cliente_detalhe(cliente_id):
+    """Exibe detalhes completos de um cliente"""
+    try:
+        db = conectar()
+        cursor = db.cursor(dictionary=True)
+        
+        # Buscar dados do cliente
+        cursor.execute("SELECT * FROM usuarios WHERE id = %s", (cliente_id,))
+        cliente = cursor.fetchone()
+        
+        if not cliente:
+            flash("Cliente não encontrado!", "erro")
+            cursor.close()
+            db.close()
+            return redirect(url_for("funcionario_clientes"))
+        
+        # Garantir avatar padrão
+        if not cliente.get('avatar'):
+            cliente['avatar'] = 'uploads/avatars/user.png'
+        
+        # Buscar endereços do cliente
+        cursor.execute("""
+            SELECT id, nome_destinatario, cpf, rua, numero, bairro, cidade, estado, cep, criado_em
+            FROM enderecos_usuarios 
+            WHERE usuario_id = %s 
+            ORDER BY criado_em DESC
+        """, (cliente_id,))
+        enderecos = cursor.fetchall()
+        
+        # Buscar pedidos do cliente
+        cursor.execute("""
+            SELECT id, valor_total, status, criado_em, pagamento_metodo, cliente_endereco
+            FROM pedidos 
+            WHERE usuario_id = %s 
+            ORDER BY criado_em DESC
+            LIMIT 10
+        """, (cliente_id,))
+        pedidos = cursor.fetchall()
+        
+        # Buscar métodos de pagamento
+        cursor.execute("""
+            SELECT id, tipo, nome_impresso, numero_mascarado, validade, chave_pix, criado_em
+            FROM pagamentos_usuarios 
+            WHERE usuario_id = %s 
+            ORDER BY criado_em DESC
+        """, (cliente_id,))
+        pagamentos = cursor.fetchall()
+        
+        # Calcular estatísticas
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as total_pedidos,
+                SUM(CASE WHEN status = 'entregue' THEN 1 ELSE 0 END) as pedidos_entregues,
+                SUM(CASE WHEN status = 'entregue' THEN valor_total ELSE 0 END) as total_gasto
+            FROM pedidos 
+            WHERE usuario_id = %s
+        """, (cliente_id,))
+        stats = cursor.fetchone()
+        
+        cursor.close()
+        db.close()
+        
+        return render_template('funcionario/cliente_detalhe.html', 
+                             cliente=cliente,
+                             enderecos=enderecos,
+                             pedidos=pedidos,
+                             pagamentos=pagamentos,
+                             stats=stats)
+                             
+    except Exception as e:
+        print(f"❌ ERRO ao carregar detalhes do cliente: {e}")
+        import traceback
+        traceback.print_exc()
+        if 'db' in locals():
+            db.close()
+        flash(f'Erro ao carregar detalhes: {str(e)}', 'erro')
+        return redirect(url_for('funcionario_clientes'))
 
+
+@app.route("/funcionario/clientes/<int:cliente_id>/editar", methods=["GET", "POST"])
+@funcionario_required
+def funcionario_editar_cliente(cliente_id):
+    """Permite editar informações de um cliente"""
+    try:
+        db = conectar()
+        cursor = db.cursor(dictionary=True)
+        
+        if request.method == "POST":
+            nome = request.form.get("nome", "").strip()
+            email = request.form.get("email", "").strip()
+            tipo = request.form.get("tipo", "").strip().lower()
+            
+            # Validações
+            if not nome or not email or not tipo:
+                flash("Preencha todos os campos!", "erro")
+                cursor.close()
+                db.close()
+                return redirect(url_for('funcionario_editar_cliente', cliente_id=cliente_id))
+            
+            # Validar tipo
+            tipos_validos = ['cliente', 'funcionario', 'admin']
+            if tipo not in tipos_validos:
+                flash(f"Tipo de usuário inválido: {tipo}", "erro")
+                cursor.close()
+                db.close()
+                return redirect(url_for('funcionario_editar_cliente', cliente_id=cliente_id))
+            
+            # Verificar se email já existe (exceto para o próprio cliente)
+            cursor.execute("""
+                SELECT id FROM usuarios 
+                WHERE email = %s AND id != %s
+            """, (email, cliente_id))
+            
+            if cursor.fetchone():
+                flash("Este email já está sendo utilizado por outro usuário!", "erro")
+                cursor.close()
+                db.close()
+                return redirect(url_for('funcionario_editar_cliente', cliente_id=cliente_id))
+            
+            # Atualizar dados
+            cursor.execute("""
+                UPDATE usuarios 
+                SET nome = %s, email = %s, tipo = %s
+                WHERE id = %s
+            """, (nome, email, tipo, cliente_id))
+            
+            db.commit()
+            
+            linhas_afetadas = cursor.rowcount
+            print(f"✅ Cliente {nome} atualizado. Linhas afetadas: {linhas_afetadas}")
+            
+            cursor.close()
+            db.close()
+            
+            flash(f"✅ Cliente {nome} atualizado com sucesso!", "sucesso")
+            return redirect(url_for('funcionario_cliente_detalhe', cliente_id=cliente_id))
+        
+        # GET - Buscar dados para exibir no formulário
+        cursor.execute("SELECT * FROM usuarios WHERE id = %s", (cliente_id,))
+        cliente = cursor.fetchone()
+        
+        if not cliente:
+            flash("Cliente não encontrado!", "erro")
+            cursor.close()
+            db.close()
+            return redirect(url_for('funcionario_clientes'))
+        
+        # Garantir avatar padrão
+        if not cliente.get('avatar'):
+            cliente['avatar'] = 'uploads/avatars/user.png'
+        
+        cursor.close()
+        db.close()
+        
+        return render_template('funcionario/editar_cliente.html', cliente=cliente)
+        
+    except Exception as e:
+        print(f"❌ ERRO ao editar cliente: {e}")
+        import traceback
+        traceback.print_exc()
+        if 'db' in locals():
+            db.rollback()
+            db.close()
+        flash(f'Erro ao editar cliente: {str(e)}', 'erro')
+        return redirect(url_for('funcionario_clientes'))
+
+
+@app.route("/funcionario/clientes/<int:cliente_id>/excluir", methods=["POST"])
+@funcionario_required
+def funcionario_excluir_cliente(cliente_id):
+    """Exclui um cliente do sistema (apenas funcionários/admins)"""
+    try:
+        # Impedir que exclua a própria conta
+        if cliente_id == session.get('usuario_id'):
+            flash("Você não pode excluir sua própria conta!", "erro")
+            return redirect(url_for('funcionario_clientes'))
+        
+        db = conectar()
+        cursor = db.cursor(dictionary=True)
+        
+        # Buscar nome do cliente antes de excluir
+        cursor.execute("SELECT nome, tipo FROM usuarios WHERE id = %s", (cliente_id,))
+        cliente = cursor.fetchone()
+        
+        if not cliente:
+            flash("Cliente não encontrado!", "erro")
+            cursor.close()
+            db.close()
+            return redirect(url_for('funcionario_clientes'))
+        
+        # Impedir exclusão de outros admins (só admin pode excluir admin)
+        if cliente['tipo'] == 'admin' and session.get('tipo') != 'admin':
+            flash("Apenas administradores podem excluir outros administradores!", "erro")
+            cursor.close()
+            db.close()
+            return redirect(url_for('funcionario_clientes'))
+        
+        nome_cliente = cliente['nome']
+        
+        # Excluir cliente (CASCADE vai deletar endereços, pagamentos, etc.)
+        cursor.execute("DELETE FROM usuarios WHERE id = %s", (cliente_id,))
+        db.commit()
+        
+        print(f"✅ Cliente {nome_cliente} (ID: {cliente_id}) excluído com sucesso")
+        
+        cursor.close()
+        db.close()
+        
+        flash(f"Cliente {nome_cliente} excluído com sucesso!", "sucesso")
+        return redirect(url_for('funcionario_clientes'))
+        
+    except Exception as e:
+        print(f"❌ ERRO ao excluir cliente: {e}")
+        import traceback
+        traceback.print_exc()
+        if 'db' in locals():
+            db.rollback()
+            db.close()
+        flash(f'Erro ao excluir cliente: {str(e)}', 'erro')
+        return redirect(url_for('funcionario_clientes'))
 
 # ============================
 # GERENCIAR ESTOQUE
@@ -1351,8 +1596,22 @@ def checkout():
             preco_total_item = (preco_base + extra_nome + extra_estampa) * qtd
             subtotal += preco_total_item
 
-        # ========== FRETE - SERÁ CALCULADO NO POST ==========
-        frete = Decimal("12.00")  # padrão, vai mudar no POST
+        # ========== FRETE - Provisório para SC (será ajustado se endereço for informado) ==========
+        # Por padrão, assume R$12 - mas na tela pode ser ajustado via JS se o usuário selecionar SC
+        frete = Decimal("12.00")
+        
+        # Se o usuário tiver endereço salvo em SC e subtotal > 129.90, já mostra frete grátis
+        if "usuario_id" in session:
+            user_id = session["usuario_id"]
+            cursor.execute("""
+                SELECT estado FROM enderecos_usuarios 
+                WHERE usuario_id = %s 
+                ORDER BY criado_em DESC LIMIT 1
+            """, (user_id,))
+            endereco_padrao = cursor.fetchone()
+            
+            if endereco_padrao and endereco_padrao["estado"].strip().upper() == "SC" and subtotal > Decimal("129.90"):
+                frete = Decimal("0.00")
         
         # ========== VERIFICAR CUPOM APLICADO ==========
         desconto = Decimal("0.00")
@@ -1574,12 +1833,12 @@ def checkout():
         
         subtotal += preco_total_item
 
-    # ========== CALCULAR FRETE (GRÁTIS EM SC, R$12 PARA FORA) ==========
+    # ========== CALCULAR FRETE (GRÁTIS EM SC ACIMA DE R$129,90, R$12 PARA FORA) ==========
     frete = Decimal("12.00")
     estado_limpo = estado.strip().upper()
     
-    # ✅ CORRIGIDO: Frete grátis para SC (SEM condição de valor mínimo)
-    if estado_limpo == "SC":
+    # Frete grátis para SC apenas se subtotal for maior que R$ 129,90
+    if estado_limpo == "SC" and subtotal > Decimal("129.90"):
         frete = Decimal("0.00")
     else:
         frete = Decimal("12.00")
@@ -2857,6 +3116,81 @@ def excluir_usuario():
             db.close()
         flash(f'Erro ao excluir usuário: {str(e)}', 'erro')
         return redirect(url_for('admin_usuarios'))
+    
+@app.route('/api/pedidos')
+@login_required
+def api_pedidos():
+    try:
+        db = conectar()
+        cursor = db.cursor(dictionary=True)
+
+        # ============================
+        # 1. BUSCAR PEDIDOS DO USUÁRIO
+        # ============================
+        cursor.execute("""
+    SELECT *
+    FROM pedidos
+    WHERE usuario_id = %s
+    ORDER BY criado_em DESC
+""", (session.get('usuario_id'),))
+
+        
+        pedidos = cursor.fetchall()
+
+        resultado = []
+
+        # =====================================
+        # 2. BUSCAR ITENS DE CADA PEDIDO
+        # =====================================
+        for pedido in pedidos:
+            cursor.execute("""
+                SELECT 
+                    pi.quantidade,
+                    pi.valor AS preco_unitario,
+                    p.nome,
+                    p.imagem_principal
+                FROM pedido_itens pi
+                JOIN produtos p ON p.id = pi.produto_id
+                WHERE pi.pedido_id = %s
+            """, (pedido['id'],))
+
+            itens = cursor.fetchall()
+
+            itens_lista = []
+            for item in itens:
+                itens_lista.append({
+                    "nome": item["nome"],
+                    "imagem_principal": item["imagem_principal"] or "/static/img/produto-default.jpg",
+                    "quantidade": item["quantidade"],
+                    "preco_unitario": float(item["preco_unitario"])
+                })
+
+            pedido_obj = {
+                "id": pedido["id"],
+                "data": pedido["criado_em"].strftime("%d/%m/%Y às %H:%M"),
+                "status": pedido["status"],
+                "valor_total": float(pedido["valor_total"]),
+                "pagamento_metodo": pedido["pagamento_metodo"] or "Não informado",
+                "endereco": pedido["cliente_endereco"] or "Não informado",
+                "rastreio": None,
+                "itens": itens_lista
+            }
+
+            resultado.append(pedido_obj)
+
+        cursor.close()
+        db.close()
+
+        return jsonify(resultado)
+
+    except Exception as e:
+        print("ERRO /api/pedidos:", e)
+        return jsonify([]), 500
+
+
+
+
+
     
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

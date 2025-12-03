@@ -1,0 +1,349 @@
+{% extends "base_painel.html" %}
+
+{% block title %}Editar Cliente - {{ cliente.nome }} - AquaPura{% endblock %}
+
+{% block painel_content %}
+
+<style>
+/* HEADER */
+.page-header {
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.page-header h1 {
+    color: var(--text-sidebar);
+    font-size: 2.2em;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.btn-voltar {
+    padding: 12px 24px;
+    background: rgba(100, 116, 139, 0.2);
+    color: #94a3b8;
+    border: 1px solid rgba(100, 116, 139, 0.3);
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-voltar:hover {
+    background: rgba(100, 116, 139, 0.3);
+    transform: translateY(-2px);
+}
+
+/* FORMULÁRIO */
+.form-container {
+    background: var(--sidebar-bg);
+    border-radius: 15px;
+    padding: 35px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    max-width: 700px;
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-group label {
+    display: block;
+    color: var(--text-sidebar);
+    font-weight: 600;
+    margin-bottom: 10px;
+    font-size: 1em;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-sidebar);
+    font-size: 1em;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--primary-light);
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.form-group input::placeholder {
+    color: var(--text-sidebar-muted);
+}
+
+.form-group small {
+    display: block;
+    color: var(--text-sidebar-muted);
+    font-size: 0.9em;
+    margin-top: 5px;
+}
+
+/* AVATAR PREVIEW */
+.avatar-preview {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 25px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.avatar-preview img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid rgba(59, 130, 246, 0.3);
+}
+
+.avatar-preview .info {
+    flex: 1;
+}
+
+.avatar-preview .info h3 {
+    color: var(--text-sidebar);
+    margin: 0 0 5px 0;
+    font-size: 1.2em;
+}
+
+.avatar-preview .info p {
+    color: var(--text-sidebar-muted);
+    margin: 0;
+    font-size: 0.9em;
+}
+
+/* BADGE TIPO */
+.badge-tipo {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.9em;
+    font-weight: 600;
+    margin-top: 5px;
+}
+
+.badge-cliente {
+    background: rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+    border: 1px solid #4ade80;
+}
+
+.badge-admin {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    border: 1px solid #f87171;
+}
+
+.badge-funcionario {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+    border: 1px solid #60a5fa;
+}
+
+/* BOTÕES */
+.form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+    padding-top: 25px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn {
+    padding: 14px 28px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-salvar {
+    background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+    color: white;
+    flex: 1;
+}
+
+.btn-salvar:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.btn-cancelar {
+    background: rgba(100, 116, 139, 0.2);
+    color: #94a3b8;
+    border: 1px solid rgba(100, 116, 139, 0.3);
+}
+
+.btn-cancelar:hover {
+    background: rgba(100, 116, 139, 0.3);
+    transform: translateY(-2px);
+}
+
+/* ALERT INFO */
+.alert-info {
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 10px;
+    padding: 15px 20px;
+    margin-bottom: 25px;
+    color: var(--text-sidebar);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.alert-info .icon {
+    font-size: 1.5em;
+}
+
+/* RESPONSIVO */
+@media (max-width: 768px) {
+    .form-container {
+        padding: 25px 20px;
+    }
+    
+    .avatar-preview {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+
+<div class="page-header">
+    <h1>✏️ Editar Cliente</h1>
+    <a href="/funcionario/clientes/{{ cliente.id }}" class="btn-voltar">
+        ← Voltar
+    </a>
+</div>
+
+<div class="form-container">
+    <!-- PREVIEW DO PERFIL -->
+    <div class="avatar-preview">
+        <img src="{{ url_for('static', filename=cliente.avatar) if cliente.avatar else url_for('static', filename='uploads/avatars/user.png') }}" 
+             alt="{{ cliente.nome }}"
+             onerror="this.src='{{ url_for('static', filename='uploads/avatars/user.png') }}'">
+        
+        <div class="info">
+            <h3>{{ cliente.nome }}</h3>
+            <p>ID: #{{ cliente.id }}</p>
+            <span class="badge-tipo badge-{{ cliente.tipo }}">
+                {% if cliente.tipo == 'admin' %}
+                    🔐 Administrador
+                {% elif cliente.tipo == 'funcionario' %}
+                    👨‍💼 Funcionário
+                {% else %}
+                    👤 Cliente
+                {% endif %}
+            </span>
+        </div>
+    </div>
+
+    <div class="alert-info">
+        <span class="icon">ℹ️</span>
+        <p>Você está editando as informações de <strong>{{ cliente.nome }}</strong>. As alterações serão aplicadas imediatamente.</p>
+    </div>
+
+    <!-- FORMULÁRIO DE EDIÇÃO -->
+    <form method="POST" action="/funcionario/clientes/{{ cliente.id }}/editar">
+        
+        <!-- NOME -->
+        <div class="form-group">
+            <label for="nome">👤 Nome Completo</label>
+            <input type="text" 
+                   id="nome" 
+                   name="nome" 
+                   value="{{ cliente.nome }}"
+                   placeholder="Digite o nome completo"
+                   required>
+        </div>
+
+        <!-- EMAIL -->
+        <div class="form-group">
+            <label for="email">📧 E-mail</label>
+            <input type="email" 
+                   id="email" 
+                   name="email" 
+                   value="{{ cliente.email }}"
+                   placeholder="exemplo@email.com"
+                   required>
+            <small>O e-mail deve ser único no sistema</small>
+        </div>
+
+
+        <!-- DATA DE CADASTRO (READ-ONLY) -->
+        <div class="form-group">
+            <label>📅 Cadastrado em</label>
+            <input type="text" 
+                   value="{{ cliente.criado_em.strftime('%d/%m/%Y às %H:%M') }}"
+                   disabled
+                   style="background: rgba(255, 255, 255, 0.02); cursor: not-allowed;">
+            <small>Esta informação não pode ser alterada</small>
+        </div>
+
+        <!-- AÇÕES -->
+        <div class="form-actions">
+            <button type="submit" class="btn btn-salvar">
+                ✅ Salvar Alterações
+            </button>
+            <a href="/funcionario/clientes/{{ cliente.id }}" class="btn btn-cancelar">
+                ❌ Cancelar
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+// Confirmar antes de mudar tipo para admin
+
+
+// Validar email em tempo real
+document.getElementById('email').addEventListener('blur', function() {
+    const email = this.value;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
+    if (!emailRegex.test(email)) {
+        this.style.borderColor = '#f87171';
+        alert('⚠️ Por favor, digite um e-mail válido');
+    } else {
+        this.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+    }
+});
+</script>
+
+{% endblock %}

@@ -380,30 +380,20 @@
                 Preferências
             </h3>
 
-            <div class="toggle-setting">
-                <div class="toggle-info">
-                    <h4>Notificações por E-mail</h4>
-                    <p>Receba atualizações sobre seus pedidos</p>
+         
+            <!-- Adicione/garanta isto em Preferências -->
+                <div class="toggle-setting">
+                    <div class="toggle-info">
+                    <h4>Modo Escuro</h4>
+                    <p>Altere entre tema claro e escuro</p>
+                    </div>
+                    <!-- id opcional: o script aceita id ou data-purpose -->
+                    <div class="toggle-switch" id="theme-toggle" data-purpose="theme"></div>
                 </div>
-                <div class="toggle-switch" onclick="toggleSwitch(this)"></div>
-            </div>
+  
+            
 
-            <div class="toggle-setting">
-                <div class="toggle-info">
-                    <h4>Newsletter</h4>
-                    <p>Receba promoções e novidades</p>
-                </div>
-                <div class="toggle-switch" onclick="toggleSwitch(this)"></div>
-            </div>
-
-            <div class="toggle-setting">
-                <div class="toggle-info">
-                    <h4>Notificações de Estoque</h4>
-                    <p>Seja avisado quando produtos voltarem</p>
-                </div>
-                <div class="toggle-switch" onclick="toggleSwitch(this)"></div>
-            </div>
-        </div>
+           
 
         <!-- ZONA DE PERIGO -->
         <div class="config-section danger-zone">
@@ -481,6 +471,121 @@ document.getElementById('cep')?.addEventListener('input', function(e) {
     }
     e.target.value = value;
 });
+
+(function() {
+  const STORAGE_KEY = 'theme';
+  const root = document.documentElement;
+  const logo = document.getElementById('site-logo');
+
+  function safeSetStorage(key, value) {
+    try { localStorage.setItem(key, value); } catch(e) {}
+  }
+  function safeGetStorage(key) {
+    try { return localStorage.getItem(key); } catch(e) { return null; }
+  }
+
+  function applyTheme(theme) {
+    if (!theme) theme = 'light';
+    root.setAttribute('data-theme', theme);
+    safeSetStorage(STORAGE_KEY, theme);
+
+    if (logo && logo.dataset) {
+      // troca suave do logo se presente
+      logo.style.transition = 'opacity 0.25s ease';
+      logo.style.opacity = '0';
+      setTimeout(() => {
+        if (logo.dataset.dark && logo.dataset.light) {
+          logo.src = (theme === 'dark') ? logo.dataset.dark : logo.dataset.light;
+        }
+        logo.style.opacity = '1';
+      }, 150);
+    }
+  }
+
+  // lê tema salvo (fallback 'light')
+  const initialSaved = safeGetStorage(STORAGE_KEY) || 'light';
+  applyTheme(initialSaved);
+
+  // função que aplica visual do toggle (ativa/desativa)
+  function setToggleVisual(el, theme) {
+    if (!el) return;
+    if (theme === 'dark') el.classList.add('active');
+    else el.classList.remove('active');
+  }
+
+  // função para ligar/desligar tema a partir do elemento
+  function toggleFromElement(el) {
+    if (!el) return;
+    // se existir função global toggleSwitch (a sua), tenta reutilizar para manter comportamento/AJAX
+    if (typeof window.toggleSwitch === 'function') {
+      try {
+        window.toggleSwitch(el);
+      } catch (err) {
+        el.classList.toggle('active');
+      }
+    } else {
+      el.classList.toggle('active');
+    }
+    const newTheme = el.classList.contains('active') ? 'dark' : 'light';
+    applyTheme(newTheme);
+  }
+
+  // encontra o elemento de toggle: por id, por data-purpose ou por classe específica (fallback)
+  function findThemeToggle() {
+    return document.getElementById('theme-toggle') ||
+           document.querySelector('.toggle-switch[data-purpose="theme"]') ||
+           Array.from(document.querySelectorAll('.toggle-switch')).find(e => e.closest('.toggle-setting') && e.previousElementSibling?.querySelector('h4')?.textContent?.trim().toLowerCase().includes('modo escuro'));
+  }
+
+  // anexa o listener se o elemento existir
+  function attachOnce() {
+    const el = findThemeToggle();
+    if (!el) return false;
+
+    // evita anexar múltiplos listeners
+    if (el.__theme_attached) return true;
+    el.__theme_attached = true;
+
+    // atualiza visual conforme tema atual
+    const current = safeGetStorage(STORAGE_KEY) || 'light';
+    setToggleVisual(el, current);
+
+    // clique
+    el.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      toggleFromElement(el);
+    });
+
+    // acessibilidade: permite usar Enter/Space
+    el.setAttribute('role', 'button');
+    el.setAttribute('tabindex', '0');
+    el.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter' || ev.key === ' ') {
+        ev.preventDefault();
+        toggleFromElement(el);
+      }
+    });
+
+    return true;
+  }
+
+  // tenta anexar imediatamente no DOMContentLoaded
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!attachOnce()) {
+      // se não encontrou, observa o DOM por alterações e anexa quando aparecer
+      const mo = new MutationObserver((mutations, observer) => {
+        if (attachOnce()) {
+          observer.disconnect();
+        }
+      });
+      mo.observe(document.body || document.documentElement, { childList: true, subtree: true });
+      // timeout de segurança: depois de 6s desliga observer
+      setTimeout(() => mo.disconnect(), 6000);
+    }
+  });
+
+})();
+
 </script>
 
 {% endblock %}

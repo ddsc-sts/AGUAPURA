@@ -9,29 +9,37 @@ USE aguapura;
 -- ============================================================
 -- TABELA: usuarios
 -- ============================================================
-DROP TABLE IF EXISTS usuarios;
+
 CREATE TABLE usuarios (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(150) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
     senha VARCHAR(255) NOT NULL,
     avatar VARCHAR(255),
-    tipo ENUM('admin','cliente') DEFAULT 'cliente',
+    tipo ENUM('admin','cliente','funcionario') DEFAULT 'cliente',
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO usuarios VALUES
-(1,'Administrador','admin@aguapura.com',
+
+ (1,'Administrador','admin@aguapura.com',
  'scrypt:32768:8:1$so3Bg6a8P0OXkBQg$d336d5fe08059bf79b0d3ae47e11260030706a2c9b010b1d1dd66ae79cac169e4040b74cd8a888bbac3a6f2eff263749a018e4084310bb8cc69fd3785b3f5bc6',
  'uploads/avatars/user_admin.png','admin','2025-11-24 18:42:17'),
+ 
 (2,'daniel','teste@teste.com',
  'scrypt:32768:8:1$8wRrR5kCYscW53Rv$df2a6f41c305f1854908af5f3d0eba7bdd7f1910ec387001baff74255c4556f61cf0c7582c9cb7273616aad87d0cc5db075ca4ab4862b837d8fed82442e1c9d7',
- 'uploads/avatars/user.png','cliente','2025-11-24 19:12:44');
+ 'uploads/avatars/user.png','cliente','2025-11-24 19:12:44'),
+ 
+ (3,'Funcionario','funcionario@aguapura.com',
+ 'scrypt:32768:8:1$so3Bg6a8P0OXkBQg$d336d5fe08059bf79b0d3ae47e11260030706a2c9b010b1d1dd66ae79cac169e4040b74cd8a888bbac3a6f2eff263749a018e4084310bb8cc69fd3785b3f5bc6',
+ 'uploads/avatars/user_admin.png','funcionario','2025-11-24 18:43:17');
+
+
 
 -- ============================================================
 -- TABELA: categorias
 -- ============================================================
-DROP TABLE IF EXISTS categorias;
+
 CREATE TABLE categorias (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(150) NOT NULL
@@ -43,7 +51,7 @@ INSERT INTO categorias VALUES
 -- ============================================================
 -- TABELA: produtos
 -- ============================================================
-DROP TABLE IF EXISTS produtos;
+
 CREATE TABLE produtos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(150) NOT NULL,
@@ -77,24 +85,16 @@ INSERT INTO produtos VALUES
 -- ============================================================
 -- TABELA: carrinho
 -- ============================================================
-DROP TABLE IF EXISTS carrinho;
+
 CREATE TABLE carrinho (
     id INT AUTO_INCREMENT PRIMARY KEY,
-
     session_id VARCHAR(255) NOT NULL,
     produto_id INT NOT NULL,
-
     quantidade INT DEFAULT 1,
-
     cor VARCHAR(30) DEFAULT NULL,
-
     personalizacao VARCHAR(100) DEFAULT NULL,   -- Nome personalizado
-
     estampa VARCHAR(255) DEFAULT NULL,          -- Caminho/arquivo da estampa escolhida
-
     extra_preco DECIMAL(10,2) DEFAULT 0.00,     -- Taxa extra (nome + estampa)
-
-
     CONSTRAINT fk_carrinho_produto 
         FOREIGN KEY (produto_id) REFERENCES produtos(id)
         ON DELETE CASCADE
@@ -103,7 +103,7 @@ CREATE TABLE carrinho (
 -- ============================================================
 -- TABELA: cupons
 -- ============================================================
-DROP TABLE IF EXISTS cupons;
+
 CREATE TABLE cupons (
     id INT AUTO_INCREMENT PRIMARY KEY,
     codigo VARCHAR(50) UNIQUE NOT NULL,
@@ -121,7 +121,7 @@ INSERT INTO cupons (codigo,tipo,valor,ativo) VALUES ('NATAL10','percentual',10.0
 -- ============================================================
 -- TABELA: imagens_produto
 -- ============================================================
-DROP TABLE IF EXISTS imagens_produto;
+
 CREATE TABLE imagens_produto (
     id INT AUTO_INCREMENT PRIMARY KEY,
     produto_id INT NOT NULL,
@@ -132,7 +132,7 @@ CREATE TABLE imagens_produto (
 -- ============================================================
 -- TABELA: favoritos
 -- ============================================================
-DROP TABLE IF EXISTS favoritos;
+
 CREATE TABLE favoritos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT,
@@ -145,7 +145,7 @@ CREATE TABLE favoritos (
 -- ============================================================
 -- TABELA: enderecos_usuarios
 -- ============================================================
-DROP TABLE IF EXISTS enderecos_usuarios;
+
 CREATE TABLE enderecos_usuarios (
     id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT NOT NULL,
@@ -161,14 +161,11 @@ CREATE TABLE enderecos_usuarios (
     CONSTRAINT fk_end_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT INTO enderecos_usuarios VALUES
-(1,1,'DANIEL DOS SANTOS COSTA','16000763948','Rua Janaúba','704','Jardim Iririu','Joinville','SC','89224280','2025-11-24 19:10:41'),
-(2,1,'Administrador','16000763948','Rua areia Branca','704','Jardim Iririu','Joinville','SC','89224280','2025-11-24 19:42:16');
 
 -- ============================================================
 -- TABELA: pagamentos_usuarios
 -- ============================================================
-DROP TABLE IF EXISTS pagamentos_usuarios;
+
 CREATE TABLE pagamentos_usuarios (
     id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT NOT NULL,
@@ -181,14 +178,11 @@ CREATE TABLE pagamentos_usuarios (
     CONSTRAINT fk_pag_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT INTO pagamentos_usuarios VALUES
-(1,1,'CARTAO','DANIEL DOS SANTOS COSTA','**** **** **** 2523','10/23',NULL,'2025-11-24 19:12:02'),
-(2,1,'CARTAO','DANIEL DOS SANTOS COSTA','**** **** **** 5235','22/22',NULL,'2025-11-24 19:35:40');
 
 -- ============================================================
 -- TABELA: pedidos
 -- ============================================================
-DROP TABLE IF EXISTS pedidos;
+
 CREATE TABLE pedidos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT,
@@ -204,15 +198,10 @@ CREATE TABLE pedidos (
     CONSTRAINT fk_pedido_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT INTO pedidos VALUES
-(2,1,161.80,'entregue','2025-11-24 19:25:45','CARTAO','DANIEL DOS SANTOS COSTA','16000763948','Rua Janaúba, 704 - Jardim Iririu - Joinville/SC - CEP 89224280',NULL,0.00),
-(3,1,161.80,'aguardando_pagamento','2025-11-24 19:35:40','CARTAO','Administrador','16000763948','Rua areia Branca, 704 - Jardim Iririu - Joinville/SC - CEP 89224280',NULL,0.00),
-(4,1,131.90,'aguardando_pagamento','2025-11-24 19:42:16','CARTAO','Administrador','16000763948','Rua areia Branca, 704 - Jardim Iririu - Joinville/SC - CEP 89224280',NULL,0.00);
-
 -- ============================================================
 -- TABELA: pedido_itens
 -- ============================================================
-DROP TABLE IF EXISTS pedido_itens;
+
 CREATE TABLE pedido_itens (
     id INT AUTO_INCREMENT PRIMARY KEY,
     pedido_id INT NOT NULL,
@@ -221,21 +210,16 @@ CREATE TABLE pedido_itens (
     valor DECIMAL(10,2) NOT NULL,
     personalizacao VARCHAR(100) DEFAULT NULL,
     estampa VARCHAR(255) DEFAULT NULL,
+    cor VARCHAR(50) DEFAULT NULL,
     CONSTRAINT fk_item_pedido FOREIGN KEY (pedido_id) REFERENCES pedidos(id) ON DELETE CASCADE,
     CONSTRAINT fk_item_produto FOREIGN KEY (produto_id) REFERENCES produtos(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT INTO pedido_itens VALUES
-(1,2,1,1,119.90,NULL),
-(2,2,3,1,29.90,NULL),
-(3,3,1,1,119.90,NULL),
-(4,3,3,1,29.90,NULL),
-(5,4,1,1,119.90,NULL);
 
 -- ============================================================
 -- TABELA: compras
 -- ============================================================
-DROP TABLE IF EXISTS compras;
+
 CREATE TABLE compras (
     id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT,
@@ -258,26 +242,5 @@ CREATE TABLE IF NOT EXISTS recuperacao_senha (
     CONSTRAINT fk_recup_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-ALTER TABLE carrinho ADD COLUMN extra_preco DECIMAL(10,2) DEFAULT 0.00;
 
-DESCRIBE pedido_itens;
-ALTER TABLE pedido_itens ADD COLUMN cor VARCHAR(50) DEFAULT NULL;
 
-UPDATE produtos SET estoque = 0 WHERE id = 1;
-
-USE aguapura;
-
--- Ver a estrutura atual
-SHOW COLUMNS FROM usuarios WHERE Field = 'tipo';
-
--- Corrigir para aceitar funcionario
-ALTER TABLE usuarios 
-MODIFY COLUMN tipo ENUM('admin','cliente','funcionario') 
-NOT NULL DEFAULT 'cliente';
-
--- Verificar se funcionou
-SHOW COLUMNS FROM usuarios WHERE Field = 'tipo';
-
-ALTER TABLE usuarios 
-MODIFY COLUMN tipo ENUM('cliente','funcionario','admin') 
-DEFAULT 'cliente';

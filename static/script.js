@@ -64,39 +64,65 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(nextSlide, 5000);
   }
 
-  // ===== MODO ESCURO / CLARO =====
-  const toggle = document.querySelector('.theme-btn');
+ // ===== MODO ESCURO / CLARO - VERSÃO COMPATÍVEL =====
+(function() {
   const root = document.documentElement;
   const logo = document.getElementById('site-logo');
+  const STORAGE_KEY = 'theme';
 
   function applyTheme(theme) {
     root.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
+    try { localStorage.setItem(STORAGE_KEY, theme); } catch(e){}
 
     if (logo) {
       logo.style.transition = 'opacity 0.4s ease';
       logo.style.opacity = '0';
       setTimeout(() => {
-        logo.src = theme === 'dark' ? logo.dataset.dark : logo.dataset.light;
+        if (logo.dataset) {
+          logo.src = theme === 'dark' ? logo.dataset.dark : logo.dataset.light;
+        }
         logo.style.opacity = '1';
       }, 200);
     }
-
-    if (toggle) {
-      toggle.textContent = theme === 'dark' ? '☀️' : '🌙';
-    }
   }
 
-  const savedTheme = localStorage.getItem('theme') || 'light';
+  // Inicializa tema (usa 'light' como padrão)
+  const savedTheme = (() => {
+    try { return localStorage.getItem(STORAGE_KEY) || 'light'; } catch(e){ return 'light'; }
+  })();
   applyTheme(savedTheme);
 
-  if (toggle) {
-    toggle.addEventListener('click', () => {
-      const current = root.getAttribute('data-theme');
-      const newTheme = current === 'dark' ? 'light' : 'dark';
+  // Quando DOM pronto, conecta o toggle nas configs
+  document.addEventListener('DOMContentLoaded', () => {
+    const themeToggle = document.getElementById('theme-toggle');
+
+    if (!themeToggle) {
+      // não encontrou o elemento — nada a fazer
+      return;
+    }
+
+    // marca estado inicial no toggle (para visual)
+    if (savedTheme === 'dark') themeToggle.classList.add('active');
+    else themeToggle.classList.remove('active');
+
+    // clique no toggle: sincroniza visual, chama toggleSwitch se existir e aplica tema
+    themeToggle.addEventListener('click', (e) => {
+      // se já existe função global toggleSwitch (usada pelos outros toggles), reutiliza para manter comportamento uniforme
+      if (typeof window.toggleSwitch === 'function') {
+        try { window.toggleSwitch(themeToggle); } catch (err) { themeToggle.classList.toggle('active'); }
+      } else {
+        themeToggle.classList.toggle('active');
+      }
+
+      const newTheme = themeToggle.classList.contains('active') ? 'dark' : 'light';
       applyTheme(newTheme);
+
+      // se quiser, aqui poderia enviar um fetch/AJAX para salvar preferência no servidor
     });
-  }
+  });
+})();
+
+
 
   // ===== CHAT DE SUPORTE =====
   const chatContainer = document.getElementById("chat-container");

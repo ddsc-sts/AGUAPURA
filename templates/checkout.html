@@ -443,7 +443,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const subtotal = {{ subtotal }};
   const descontoAplicado = {{ desconto if desconto else 0 }};
   
-  // ✅ FUNÇÃO PARA ATUALIZAR FRETE (CORRIGIDA)
+  // ✅ FUNÇÃO PARA ATUALIZAR FRETE (CORRIGIDA COM VALOR MÍNIMO)
   function atualizarFrete() {
     const estadoSelecionado = document.getElementById('estado').value;
     const enderecoSalvoRadio = document.querySelector('input[name="endereco_selecionado"]:checked');
@@ -461,8 +461,8 @@ document.addEventListener("DOMContentLoaded", () => {
     
     let frete = 12.00;
     
-    // ✅ CORRIGIDO: Frete GRÁTIS para SC (SEM condição de valor)
-    if (estadoFinal.toUpperCase() === 'SC') {
+    // ✅ CORRIGIDO: Frete GRÁTIS para SC apenas se subtotal > R$ 129,90
+    if (estadoFinal.toUpperCase() === 'SC' && subtotal > 129.90) {
       frete = 0.00;
       document.getElementById('freteDisplay').innerHTML = '<span style="color: #28a745; font-weight: 600;">GRÁTIS</span>';
     } else {
@@ -473,7 +473,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const total = subtotal + frete - descontoAplicado;
     document.getElementById('totalDisplay').textContent = 'R$ ' + total.toFixed(2);
     
-    console.log(`🔍 DEBUG: Estado="${estadoFinal}", Frete=R$ ${frete.toFixed(2)}, Total=R$ ${total.toFixed(2)}`);
+    console.log(`🔍 DEBUG: Estado="${estadoFinal}", Subtotal=R$ ${subtotal.toFixed(2)}, Frete=R$ ${frete.toFixed(2)}, Total=R$ ${total.toFixed(2)}`);
   }
 
   // ========== ENDEREÇO ==========

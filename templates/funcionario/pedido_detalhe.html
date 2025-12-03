@@ -327,7 +327,7 @@
         
         {% for item in itens %}
         <div class="item-produto">
-            <img src="{{ url_for('static', filename=item.imagem_principal) }}" alt="{{ item.nome }}">
+            <img src="{{ item.imagem_principal }}">
             <div class="item-info">
                 <h4>{{ item.nome }}</h4>
                 <p>Quantidade: {{ item.quantidade }}x</p>

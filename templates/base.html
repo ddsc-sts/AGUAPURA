@@ -464,7 +464,6 @@ body.home-page .chat-open-btn {
         <form action="{{ url_for('buscar') }}" method="get" class="search-box">
             <input type="text" name="q" placeholder="O que você está buscando?" required>
         </form>
-        <button id="theme-toggle" class="theme-btn" aria-label="Alternar tema">🌙</button>
         <a href="{{ url_for('carrinho') }}" class="cart">
             <img src="{{ url_for('static', filename='icons/cart.svg') }}" class="cart-icon">
             <span class="cart-count">{{ total_carrinho }}</span>
