@@ -40,6 +40,7 @@
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
         max-width: 800px;
         border: 1px solid #2d3748;
+        margin-bottom: 30px;
     }
 
     .form-group {
@@ -135,9 +136,184 @@
         color: #64748b;
     }
 
+    /* Status Badge */
+    .status-ativo {
+        display: inline-block;
+        padding: 8px 16px;
+        background: rgba(34, 197, 94, 0.2);
+        color: #22c55e;
+        border: 1px solid rgba(34, 197, 94, 0.4);
+        border-radius: 8px;
+        font-size: 0.95em;
+        font-weight: 600;
+        margin-bottom: 20px;
+    }
+
+    .status-inativo {
+        display: inline-block;
+        padding: 8px 16px;
+        background: rgba(239, 68, 68, 0.2);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.4);
+        border-radius: 8px;
+        font-size: 0.95em;
+        font-weight: 600;
+        margin-bottom: 20px;
+    }
+
+    /* Seção de Desativação */
+    .desativacao-section {
+        background: #1e293b;
+        padding: 30px;
+        border-radius: 15px;
+        border: 1px solid #2d3748;
+        margin-bottom: 30px;
+    }
+
+    .desativacao-section h3 {
+        color: #e2e8f0;
+        margin-bottom: 20px;
+        font-size: 1.3em;
+    }
+
+    .aviso-desativacao {
+        background: rgba(239, 68, 68, 0.15);
+        border-left: 4px solid #ef4444;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        color: #fca5a5;
+        font-weight: 500;
+    }
+
+    .checkbox-container {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px;
+        background: rgba(8, 145, 178, 0.1);
+        border: 1px solid rgba(8, 145, 178, 0.3);
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-bottom: 20px;
+    }
+
+    .checkbox-container:hover {
+        background: rgba(8, 145, 178, 0.15);
+    }
+
+    .checkbox-container input[type="checkbox"] {
+        width: 24px;
+        height: 24px;
+        cursor: pointer;
+        accent-color: #0891b2;
+    }
+
+    .checkbox-label {
+        flex: 1;
+        cursor: pointer;
+        color: #e2e8f0;
+        font-weight: 500;
+    }
+
+    .form-group-hidden {
+        display: none;
+        margin-top: 15px;
+    }
+
+    .form-group-hidden.show {
+        display: block;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .btn-primary {
+        flex: 1;
+        padding: 14px 24px;
+        background: #0891b2;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 1em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        min-width: 150px;
+    }
+
+    .btn-primary:hover {
+        background: #0e7490;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(8, 145, 178, 0.4);
+    }
+
+    .btn-danger {
+        flex: 1;
+        padding: 14px 24px;
+        background: #ef4444;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 1em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        min-width: 150px;
+    }
+
+    .btn-danger:hover {
+        background: #dc2626;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(239, 68, 68, 0.4);
+    }
+
+    .btn-success {
+        flex: 1;
+        padding: 14px 24px;
+        background: #22c55e;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 1em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        min-width: 150px;
+    }
+
+    .btn-success:hover {
+        background: #16a34a;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(34, 197, 94, 0.4);
+    }
+
+    .motivo-info {
+        padding: 12px;
+        background: rgba(239, 68, 68, 0.1);
+        border-radius: 8px;
+        margin-top: 10px;
+        color: #fca5a5;
+        font-size: 0.9em;
+    }
+
     @media (max-width: 768px) {
         .form-container {
             padding: 25px;
+        }
+
+        .button-group {
+            flex-direction: column;
+        }
+
+        .btn-primary,
+        .btn-danger,
+        .btn-success {
+            width: 100%;
         }
     }
 </style>
@@ -148,6 +324,19 @@
     <h1>✏️ Editar Produto</h1>
 </div>
 
+<!-- STATUS DO PRODUTO -->
+{% if produto.ativo %}
+    <div class="status-ativo">✅ Produto Ativo</div>
+{% else %}
+    <div class="status-inativo">❌ Produto Desativado</div>
+    {% if produto.motivo_desativacao %}
+        <div class="motivo-info">
+            <strong>Motivo:</strong> {{ produto.motivo_desativacao }}
+        </div>
+    {% endif %}
+{% endif %}
+
+<!-- FORMULÁRIO DE EDIÇÃO -->
 <div class="form-container">
     <div class="info-box">
         <span style="font-size: 1.3em;">💡</span>
@@ -187,5 +376,75 @@
         </button>
     </form>
 </div>
+
+<!-- SEÇÃO DE GERENCIAR DISPONIBILIDADE -->
+<div class="desativacao-section">
+    <h3>⚙️ Gerenciar Disponibilidade do Produto</h3>
+
+    {% if produto.ativo %}
+        <!-- PRODUTO ATIVO - OPÇÃO DE DESATIVAR -->
+        <p style="color: #94a3b8; margin-bottom: 20px;">
+            Desativar este produto cancelará todos os pedidos pendentes contendo este item.
+        </p>
+
+        <label class="checkbox-container" onclick="toggleDesativacao()">
+            <input type="checkbox" id="desativarCheckbox">
+            <span class="checkbox-label">🔴 Desativar este produto</span>
+        </label>
+
+        <div class="form-group-hidden" id="desativacaoForm">
+            <div class="aviso-desativacao">
+                ⚠️ <strong>Atenção!</strong> Todos os pedidos pendentes com este produto serão cancelados automaticamente e os clientes serão notificados!
+            </div>
+
+            <form method="POST" action="/admin/produtos/desativar/{{ produto.id }}">
+                <div class="form-group">
+                    <label>Motivo da Desativação (obrigatório)</label>
+                    <textarea name="motivo" placeholder="Ex: Descontinuado, Fora de estoque, Problema de qualidade..." style="min-height: 100px;" required></textarea>
+                </div>
+
+                <div class="button-group">
+                    <button type="button" class="btn-primary" onclick="toggleDesativacao()">
+                        ← Cancelar
+                    </button>
+                    <button type="submit" class="btn-danger" onclick="return confirm('⚠️ Tem certeza? Esta ação cancelará todos os pedidos pendentes com este produto.')">
+                        🔴 Desativar Produto
+                    </button>
+                </div>
+            </form>
+        </div>
+
+    {% else %}
+        <!-- PRODUTO INATIVO - OPÇÃO DE ATIVAR -->
+        <p style="color: #94a3b8; margin-bottom: 20px;">
+            Este produto está desativado. Clique abaixo para reativar e permitir que os clientes comprem novamente.
+        </p>
+
+        <div class="aviso-desativacao">
+            ⚠️ Motivo da desativação: <strong>{{ produto.motivo_desativacao or 'Não especificado' }}</strong>
+        </div>
+
+        <form method="POST" action="/admin/produtos/ativar/{{ produto.id }}" style="display: inline;">
+            <div class="button-group">
+                <button type="submit" class="btn-success" onclick="return confirm('✅ Tem certeza que deseja ativar este produto?')">
+                    🟢 Ativar Produto
+                </button>
+            </div>
+        </form>
+    {% endif %}
+</div>
+
+<script>
+function toggleDesativacao() {
+    const checkbox = document.getElementById('desativarCheckbox');
+    const form = document.getElementById('desativacaoForm');
+    
+    if (checkbox.checked) {
+        form.classList.add('show');
+    } else {
+        form.classList.remove('show');
+    }
+}
+</script>
 
 {% endblock %}

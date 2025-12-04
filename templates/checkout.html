@@ -153,7 +153,7 @@
           {% if session.usuario_id and pagamentos %}
             {% for p in pagamentos %}
             <label class="saved-pay-label" style="display:block; margin-bottom:6px; border:1px solid var(--border); padding:10px; border-radius:8px; cursor:pointer; transition: all 0.2s;">
-              <input type="radio" name="pagamento_selecionado" value="{{ p.id }}" data-tipo="{{ p.tipo }}" data-nome="{{ p.nome_impresso|default('') }}" data-validade="{{ p.validade|default('') }}" data-pix="{{ p.chave_pix|default('') }}" style="margin-right:8px;">
+              <input type="radio" name="pagamento_selecionado" value="{{ p.id }}" data-tipo="{{ p.tipo }}" data-nome="{{ p.nome_impresso|default('') }}" data-validade="{{ p.validade|default('') }}" data-pix="{{ p.chave_pix|default('') }}" data-permite-parcelamento="{{ p.permite_parcelamento|default('0') }}" style="margin-right:8px;">
               {% if p.tipo == 'PIX' %}
                 🔷 PIX Salvo — <small>{{ p.chave_pix }}</small>
               {% else %}
@@ -165,7 +165,7 @@
           
           <!-- Opção para adicionar novo -->
           <label style="display:block; margin-top:10px; padding-top:10px; border-top:1px solid var(--border); cursor:pointer;">
-            <input type="radio" name="pagamento_selecionado" value="novo" style="margin-right:8px;"> ➕ Adicionar novo método (Cartão)
+            <input type="radio" name="pagamento_selecionado" value="novo" data-tipo="CARTAO" style="margin-right:8px;"> ➕ Adicionar novo método (Cartão)
           </label>
         </div>
 
@@ -191,6 +191,35 @@
           </label>
         </div>
 
+        <!-- 💳 SELETOR DE PARCELAS (NOVO) -->
+        <div id="parcelas-container" style="display:none; margin-bottom:12px;">
+          <div class="glass-card" style="padding:16px; border-radius:10px; background:rgba(0,123,255,0.03);">
+            <h4 style="margin:0 0 12px 0; font-size:1rem; display:flex; align-items:center; gap:8px;">
+              💳 Parcelamento
+            </h4>
+            
+            <label style="display:block; margin-bottom:8px; font-weight:500; font-size:0.9rem;">
+              Número de Parcelas
+            </label>
+            
+            <select name="parcelas" id="parcelas-select" 
+                    class="glass-input glass-select"
+                    style="width:100%; padding:12px; border-radius:8px; margin-bottom:12px; cursor:pointer; font-weight:500;">
+              <option value="1">1x de R$ 0,00 sem juros</option>
+            </select>
+            
+            <div style="padding:12px; background:rgba(0,200,100,0.05); border-radius:8px; border:1px solid rgba(0,200,100,0.2);">
+              <p id="info-parcela" style="margin:0; font-size:0.9rem; text-align:center; color:var(--texto);">
+                ✓ Parcelamento sem juros
+              </p>
+            </div>
+            
+            <p style="margin:12px 0 0 0; font-size:0.8rem; color:var(--texto); opacity:0.6; text-align:center;">
+              📌 Parcela mínima de R$ 10,00
+            </p>
+          </div>
+        </div>
+
         <button type="submit" id="realizarBtn" class="btn-primary" style="margin-top:16px; width:100%;">
           Realizar compra
         </button>
@@ -199,14 +228,17 @@
   </form>
 </div>
 
-<!-- Styles -->
+<!-- CONTINUA NA PARTE 2 -->
 <style>
+
+/* Glass Card */
 .glass-card{
   background: var(--card-bg);
   border: 1px solid var(--border);
   box-shadow: 0 6px 20px var(--shadow);
 }
 
+/* Glass Input */
 .glass-input{
   width:100%;
   padding:10px;
@@ -275,6 +307,7 @@ body.dark .glass-select option {
   color: #e0e0e0;
 }
 
+/* Botão Primary */
 .btn-primary{
   padding:14px 24px;
   border-radius:12px;
@@ -333,6 +366,7 @@ body.dark .btn-primary:hover {
   box-shadow: 0 6px 20px rgba(13, 110, 253, 0.5);
 }
 
+/* Labels salvos */
 .saved-label:hover, .saved-pay-label:hover{
   background: rgba(0,0,0,0.03);
 }
@@ -346,244 +380,345 @@ body.dark .saved-pay-label:hover{
   border-color: var(--azul) !important;
   background: rgba(0, 123, 255, 0.05);
 }
-</style>
 
+/* Animação do container de parcelas */
+#parcelas-container {
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style>
+<!-- JS -->
 <!-- JS -->
 <script>
-// ---------- MÁSCARAS ----------
-function maskCPF(v){
-  v = v.replace(/\D/g,'').slice(0,11);
-  v = v.replace(/(\d{3})(\d)/,'$1.$2');
-  v = v.replace(/(\d{3})(\d)/,'$1.$2');
-  v = v.replace(/(\d{3})(\d{1,2})$/,'$1-$2');
-  return v;
-}
-function maskTel(v){
-  v = v.replace(/\D/g,'').slice(0,11);
-  if(v.length <= 10){
-    v = v.replace(/(\d{2})(\d)/,'($1) $2');
-    v = v.replace(/(\d{4})(\d)/,'$1-$2');
-  } else {
-    v = v.replace(/(\d{2})(\d)/,'($1) $2');
-    v = v.replace(/(\d{5})(\d)/,'$1-$2');
+  // ---------- MÁSCARAS ----------
+  function maskCPF(v){
+    v = v.replace(/\D/g,'').slice(0,11);
+    v = v.replace(/(\d{3})(\d)/,'$1.$2');
+    v = v.replace(/(\d{3})(\d)/,'$1.$2');
+    v = v.replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+    return v;
   }
-  return v;
-}
-function maskCEP(v){
-  v = v.replace(/\D/g,'').slice(0,8);
-  v = v.replace(/(\d{5})(\d{1,3})/,'$1-$2');
-  return v;
-}
-function maskCard(v){
-  v = v.replace(/\D/g,'').slice(0,16);
-  return v.replace(/(\d{4})(?=\d)/g,'$1 ');
-}
-function maskMMYY(v){
-  v = v.replace(/\D/g,'').slice(0,4);
-  v = v.replace(/(\d{2})(\d{1,2})/,'$1/$2');
-  return v;
-}
-
-// ---------- API IBGE ----------
-async function carregarEstados() {
-  const estadoSelect = document.getElementById("estado");
-  const cidadeSelect = document.getElementById("cidade");
-
-  const urlEstados = "https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome";
-  const estados = await fetch(urlEstados).then(r => r.json());
-
-  estadoSelect.innerHTML = '<option value="">Selecione...</option>';
-  estados.forEach(estado => {
-    const option = document.createElement("option");
-    option.value = estado.sigla;
-    option.textContent = estado.nome;
-    estadoSelect.appendChild(option);
-  });
-
-  estadoSelect.addEventListener("change", async () => {
-    if (!estadoSelect.value) {
-      cidadeSelect.innerHTML = '<option value="">Selecione o estado primeiro</option>';
-      return;
+  function maskTel(v){
+    v = v.replace(/\D/g,'').slice(0,11);
+    if(v.length <= 10){
+      v = v.replace(/(\d{2})(\d)/,'($1) $2');
+      v = v.replace(/(\d{4})(\d)/,'$1-$2');
+    } else {
+      v = v.replace(/(\d{2})(\d)/,'($1) $2');
+      v = v.replace(/(\d{5})(\d)/,'$1-$2');
     }
-    cidadeSelect.innerHTML = "<option>Carregando...</option>";
-    const urlCidades = `https://servicodados.ibge.gov.br/api/v1/localidades/estados/${estadoSelect.value}/municipios?orderBy=nome`;
-    const cidades = await fetch(urlCidades).then(r => r.json());
-
-    cidadeSelect.innerHTML = '<option value="">Selecione...</option>';
-    cidades.forEach(cidade => {
-      const option = document.createElement("option");
-      option.value = cidade.nome;
-      option.textContent = cidade.nome;
-      cidadeSelect.appendChild(option);
-    });
-  });
-}
-
-// ---------- MAIN ----------
-document.addEventListener("DOMContentLoaded", () => {
-  carregarEstados();
-
-  // Máscaras
-  const cpf = document.getElementById('cpf');
-  const tel = document.getElementById('telefone');
-  const cep = document.getElementById('cep');
-  const card = document.getElementById('cartao_num');
-  const val = document.getElementById('cartao_validade');
-
-  if(cpf) cpf.addEventListener('input', e => e.target.value = maskCPF(e.target.value));
-  if(tel) tel.addEventListener('input', e => e.target.value = maskTel(e.target.value));
-  if(cep) cep.addEventListener('input', e => e.target.value = maskCEP(e.target.value));
-  if(card) card.addEventListener('input', e => e.target.value = maskCard(e.target.value));
-  if(val) val.addEventListener('input', e => e.target.value = maskMMYY(e.target.value));
-
-  const enderecoFormWrapper = document.getElementById('enderecoFormWrapper');
-  const novoCartaoBox = document.getElementById('novoCartaoBox');
-
-  // ========== VALORES DO RESUMO ==========
-  const subtotal = {{ subtotal }};
-  const descontoAplicado = {{ desconto if desconto else 0 }};
+    return v;
+  }
+  function maskCEP(v){
+    v = v.replace(/\D/g,'').slice(0,8);
+    v = v.replace(/(\d{5})(\d{1,3})/,'$1-$2');
+    return v;
+  }
+  function maskCard(v){
+    v = v.replace(/\D/g,'').slice(0,16);
+    return v.replace(/(\d{4})(?=\d)/g,'$1 ');
+  }
+  function maskMMYY(v){
+    v = v.replace(/\D/g,'').slice(0,4);
+    v = v.replace(/(\d{2})(\d{1,2})/,'$1/$2');
+    return v;
+  }
   
-  // ✅ FUNÇÃO PARA ATUALIZAR FRETE (CORRIGIDA COM VALOR MÍNIMO)
-  function atualizarFrete() {
-    const estadoSelecionado = document.getElementById('estado').value;
-    const enderecoSalvoRadio = document.querySelector('input[name="endereco_selecionado"]:checked');
-    
-    let estadoFinal = '';
-    
-    // Verifica se está usando endereço salvo ou novo
-    if (enderecoSalvoRadio && enderecoSalvoRadio.value !== 'novo') {
-      // Pega o estado do endereço salvo
-      estadoFinal = enderecoSalvoRadio.getAttribute('data-estado') || '';
-    } else {
-      // Pega o estado do select
-      estadoFinal = estadoSelecionado;
-    }
-    
-    let frete = 12.00;
-    
-    // ✅ CORRIGIDO: Frete GRÁTIS para SC apenas se subtotal > R$ 129,90
-    if (estadoFinal.toUpperCase() === 'SC' && subtotal > 129.90) {
-      frete = 0.00;
-      document.getElementById('freteDisplay').innerHTML = '<span style="color: #28a745; font-weight: 600;">GRÁTIS</span>';
-    } else {
-      document.getElementById('freteDisplay').textContent = 'R$ ' + frete.toFixed(2);
-    }
-    
-    // Atualizar total
-    const total = subtotal + frete - descontoAplicado;
-    document.getElementById('totalDisplay').textContent = 'R$ ' + total.toFixed(2);
-    
-    console.log(`🔍 DEBUG: Estado="${estadoFinal}", Subtotal=R$ ${subtotal.toFixed(2)}, Frete=R$ ${frete.toFixed(2)}, Total=R$ ${total.toFixed(2)}`);
+  // ---------- API IBGE ----------
+  async function carregarEstados() {
+    const estadoSelect = document.getElementById("estado");
+    const cidadeSelect = document.getElementById("cidade");
+  
+    const urlEstados = "https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome";
+    const estados = await fetch(urlEstados).then(r => r.json());
+  
+    estadoSelect.innerHTML = '<option value="">Selecione...</option>';
+    estados.forEach(estado => {
+      const option = document.createElement("option");
+      option.value = estado.sigla;
+      option.textContent = estado.nome;
+      estadoSelect.appendChild(option);
+    });
+  
+    estadoSelect.addEventListener("change", async () => {
+      if (!estadoSelect.value) {
+        cidadeSelect.innerHTML = '<option value="">Selecione o estado primeiro</option>';
+        return;
+      }
+      cidadeSelect.innerHTML = "<option>Carregando...</option>";
+      const urlCidades = `https://servicodados.ibge.gov.br/api/v1/localidades/estados/${estadoSelect.value}/municipios?orderBy=nome`;
+      const cidades = await fetch(urlCidades).then(r => r.json());
+  
+      cidadeSelect.innerHTML = '<option value="">Selecione...</option>';
+      cidades.forEach(cidade => {
+        const option = document.createElement("option");
+        option.value = cidade.nome;
+        option.textContent = cidade.nome;
+        cidadeSelect.appendChild(option);
+      });
+    });
   }
-
-  // ========== ENDEREÇO ==========
-  const enderecosRadios = document.querySelectorAll('input[name="endereco_selecionado"]');
-  if (enderecosRadios.length > 0) {
-    const primeiroEndereco = enderecosRadios[0];
-    if (primeiroEndereco.checked && primeiroEndereco.value !== 'novo') {
-      enderecoFormWrapper.style.display = 'none';
-      document.getElementById('rua').required = false;
-      document.getElementById('numero').required = false;
-      document.getElementById('estado').required = false;
-      document.getElementById('cidade').required = false;
-      document.getElementById('cep').required = false;
+  
+  // ---------- MAIN ----------
+  document.addEventListener("DOMContentLoaded", () => {
+    carregarEstados();
+  
+    // Máscaras
+    const cpf = document.getElementById('cpf');
+    const tel = document.getElementById('telefone');
+    const cep = document.getElementById('cep');
+    const card = document.getElementById('cartao_num');
+    const val = document.getElementById('cartao_validade');
+  
+    if(cpf) cpf.addEventListener('input', e => e.target.value = maskCPF(e.target.value));
+    if(tel) tel.addEventListener('input', e => e.target.value = maskTel(e.target.value));
+    if(cep) cep.addEventListener('input', e => e.target.value = maskCEP(e.target.value));
+    if(card) card.addEventListener('input', e => e.target.value = maskCard(e.target.value));
+    if(val) val.addEventListener('input', e => e.target.value = maskMMYY(e.target.value));
+  
+    const enderecoFormWrapper = document.getElementById('enderecoFormWrapper');
+    const novoCartaoBox = document.getElementById('novoCartaoBox');
+  
+    // ========== VALORES DO RESUMO ==========
+    const valorTotalStr = "{{ '%.2f'|format(total) }}";
+    const subtotal = parseFloat("{{ '%.2f'|format(subtotal) }}".replace(',', '.'));
+    const descontoAplicado = parseFloat("{{ '%.2f'|format(desconto if desconto else 0) }}".replace(',', '.'));
+    let valorTotalAtual = parseFloat(valorTotalStr.replace(',', '.'));
+    
+    console.log("💰 Valores iniciais - Subtotal:", subtotal, "Desconto:", descontoAplicado, "Total:", valorTotalAtual);
+    
+    // ✅ FUNÇÃO PARA ATUALIZAR FRETE
+    function atualizarFrete() {
+      const estadoSelecionado = document.getElementById('estado').value;
+      const enderecoSalvoRadio = document.querySelector('input[name="endereco_selecionado"]:checked');
       
-      // ✅ Chamar função ao carregar
-      atualizarFrete();
-    }
-  }
-
-  document.querySelectorAll('input[name="endereco_selecionado"]').forEach(r => {
-    r.addEventListener('change', () => {
-      const selected = document.querySelector('input[name="endereco_selecionado"]:checked').value;
-      if (selected === 'novo') {
-        enderecoFormWrapper.style.display = 'block';
-        document.getElementById('rua').required = true;
-        document.getElementById('numero').required = true;
-        document.getElementById('estado').required = true;
-        document.getElementById('cidade').required = true;
-        document.getElementById('cep').required = true;
+      let estadoFinal = '';
+      
+      if (enderecoSalvoRadio && enderecoSalvoRadio.value !== 'novo') {
+        estadoFinal = enderecoSalvoRadio.getAttribute('data-estado') || '';
       } else {
+        estadoFinal = estadoSelecionado;
+      }
+      
+      let frete = 12.00;
+      
+      if (estadoFinal.toUpperCase() === 'SC' && subtotal > 129.90) {
+        frete = 0.00;
+        document.getElementById('freteDisplay').innerHTML = '<span style="color: #28a745; font-weight: 600;">GRÁTIS</span>';
+      } else {
+        document.getElementById('freteDisplay').textContent = 'R$ ' + frete.toFixed(2);
+      }
+      
+      valorTotalAtual = subtotal + frete - descontoAplicado;
+      document.getElementById('totalDisplay').textContent = 'R$ ' + valorTotalAtual.toFixed(2);
+      
+      // ✅ Atualizar parcelas SE estiver visível
+      atualizarParcelas();
+      
+      console.log(`🔍 Estado="${estadoFinal}", Subtotal=${subtotal.toFixed(2)}, Frete=${frete.toFixed(2)}, Total=${valorTotalAtual.toFixed(2)}`);
+    }
+  
+    // ========== 💳 SISTEMA DE PARCELAMENTO ==========
+    const parcelasContainer = document.getElementById('parcelas-container');
+    const parcelasSelect = document.getElementById('parcelas-select');
+    const infoParcela = document.getElementById('info-parcela');
+    
+    const maxParcelas = 12;
+    const parcelaMinima = 10.00;
+    
+    function atualizarParcelas() {
+      // ✅ SÓ atualiza se o container estiver VISÍVEL
+      if (!parcelasContainer || parcelasContainer.style.display === 'none') {
+        return;
+      }
+      
+      let numParcelas = Math.min(maxParcelas, Math.floor(valorTotalAtual / parcelaMinima));
+      if (numParcelas < 1) numParcelas = 1;
+      
+      console.log("📊 Atualizando parcelas - Total:", valorTotalAtual, "Num Parcelas:", numParcelas);
+      
+      parcelasSelect.innerHTML = '';
+      
+      for (let i = 1; i <= numParcelas; i++) {
+        const valorParcela = (valorTotalAtual / i).toFixed(2);
+        const option = document.createElement('option');
+        option.value = i;
+        
+        if (i === 1) {
+          option.text = `À vista - R$ ${valorParcela}`;
+        } else {
+          option.text = `${i}x de R$ ${valorParcela} sem juros`;
+        }
+        
+        parcelasSelect.appendChild(option);
+      }
+      
+      atualizarInfoParcela();
+    }
+    
+    function atualizarInfoParcela() {
+      const parcelas = parseInt(parcelasSelect.value);
+      const valorParcela = (valorTotalAtual / parcelas).toFixed(2);
+      
+      if (parcelas === 1) {
+        infoParcela.innerHTML = `✓ Pagamento à vista`;
+      } else {
+        infoParcela.innerHTML = `✓ Total: ${parcelas}x de R$ ${valorParcela} = R$ ${valorTotalAtual.toFixed(2)}`;
+      }
+    }
+    
+    if (parcelasSelect) {
+      parcelasSelect.addEventListener('change', atualizarInfoParcela);
+    }
+  
+    // ========== ENDEREÇO ==========
+    const enderecosRadios = document.querySelectorAll('input[name="endereco_selecionado"]');
+    if (enderecosRadios.length > 0) {
+      const primeiroEndereco = enderecosRadios[0];
+      if (primeiroEndereco.checked && primeiroEndereco.value !== 'novo') {
         enderecoFormWrapper.style.display = 'none';
         document.getElementById('rua').required = false;
         document.getElementById('numero').required = false;
         document.getElementById('estado').required = false;
         document.getElementById('cidade').required = false;
         document.getElementById('cep').required = false;
+        
+        atualizarFrete();
+      }
+    }
+  
+    document.querySelectorAll('input[name="endereco_selecionado"]').forEach(r => {
+      r.addEventListener('change', () => {
+        const selected = document.querySelector('input[name="endereco_selecionado"]:checked').value;
+        if (selected === 'novo') {
+          enderecoFormWrapper.style.display = 'block';
+          document.getElementById('rua').required = true;
+          document.getElementById('numero').required = true;
+          document.getElementById('estado').required = true;
+          document.getElementById('cidade').required = true;
+          document.getElementById('cep').required = true;
+        } else {
+          enderecoFormWrapper.style.display = 'none';
+          document.getElementById('rua').required = false;
+          document.getElementById('numero').required = false;
+          document.getElementById('estado').required = false;
+          document.getElementById('cidade').required = false;
+          document.getElementById('cep').required = false;
+        }
+        
+        atualizarFrete();
+      });
+    });
+    
+    const estadoSelect = document.getElementById('estado');
+    if (estadoSelect) {
+      estadoSelect.addEventListener('change', atualizarFrete);
+    }
+  
+    // ========== ✅ PAGAMENTO + PARCELAMENTO (CORRIGIDO) ==========
+    document.querySelectorAll('input[name="pagamento_selecionado"]').forEach(r => {
+      r.addEventListener('change', () => {
+        const sel = document.querySelector('input[name="pagamento_selecionado"]:checked');
+        const tipo = sel.getAttribute('data-tipo');
+        
+        console.log('🔄 Método selecionado:', sel.value, 'Tipo:', tipo);
+        
+        // Mostrar/ocultar formulário de novo cartão
+        if (sel.value === 'novo') {
+          novoCartaoBox.style.display = 'block';
+        } else {
+          novoCartaoBox.style.display = 'none';
+        }
+        
+        // ✅ MOSTRAR PARCELAS APENAS PARA CARTÃO
+        if (tipo === 'CARTAO' || sel.value === 'novo') {
+          console.log('💳 Mostrando parcelamento para CARTÃO');
+          parcelasContainer.style.display = 'block';
+          atualizarParcelas(); // Atualiza as opções
+        } else {
+          // PIX ou outro método - ESCONDER parcelas
+          console.log('🔷 Escondendo parcelamento (PIX selecionado)');
+          parcelasContainer.style.display = 'none';
+        }
+      });
+    });
+    
+    // ✅ INICIALIZAR: verificar qual método está selecionado ao carregar
+    const metodoInicial = document.querySelector('input[name="pagamento_selecionado"]:checked');
+    if (metodoInicial) {
+      const tipoInicial = metodoInicial.getAttribute('data-tipo');
+      
+      // Se for PIX (padrão), esconder parcelas
+      if (tipoInicial === 'PIX') {
+        parcelasContainer.style.display = 'none';
+        console.log('🔷 Inicializado com PIX - parcelas escondidas');
+      } else if (tipoInicial === 'CARTAO') {
+        parcelasContainer.style.display = 'block';
+        atualizarParcelas();
+        console.log('💳 Inicializado com CARTÃO - parcelas visíveis');
+      }
+    }
+  
+    // ========== SUBMIT ==========
+    const form = document.getElementById('checkoutForm');
+    
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const pagoSel = document.querySelector('input[name="pagamento_selecionado"]:checked');
+      
+      if (!pagoSel) {
+        alert('Por favor, selecione um método de pagamento.');
+        return;
       }
       
-      // ✅ Atualizar frete quando mudar endereço
-      atualizarFrete();
+      if (pagoSel.value === 'novo') {
+        const cartaoNum = document.getElementById('cartao_num').value.replace(/\s/g, '');
+        const cartaoNome = document.getElementById('cartao_nome').value.trim();
+        const cartaoVal = document.getElementById('cartao_validade').value.trim();
+        const cartaoCVV = document.getElementById('cartao_cvv').value.trim();
+        
+        if (!cartaoNum || cartaoNum.length < 12) {
+          alert('Número do cartão inválido.');
+          return;
+        }
+        if (!cartaoNome) {
+          alert('Informe o nome no cartão.');
+          return;
+        }
+        if (!cartaoVal || cartaoVal.length !== 5) {
+          alert('Informe a validade (MM/AA).');
+          return;
+        }
+        if (!cartaoCVV || cartaoCVV.length < 3) {
+          alert('Informe o CVV.');
+          return;
+        }
+      }
+      
+      const endSel = document.querySelector('input[name="endereco_selecionado"]:checked');
+      if (endSel && endSel.value === 'novo') {
+        if (!form.checkValidity()) {
+          form.reportValidity();
+          return;
+        }
+      }
+      
+      console.log('✅ Formulário válido - enviando...');
+      form.submit();
     });
   });
+  </script>
   
-  // ✅ Atualizar frete quando mudar o estado no select
-  const estadoSelect = document.getElementById('estado');
-  if (estadoSelect) {
-    estadoSelect.addEventListener('change', atualizarFrete);
-  }
-
-  // ========== PAGAMENTO ==========
-  document.querySelectorAll('input[name="pagamento_selecionado"]').forEach(r => {
-    r.addEventListener('change', () => {
-      const sel = document.querySelector('input[name="pagamento_selecionado"]:checked').value;
-      
-      if (sel === 'novo') {
-        novoCartaoBox.style.display = 'block';
-      } else {
-        novoCartaoBox.style.display = 'none';
-      }
-    });
-  });
-
-  // ========== SUBMIT ==========
-  const form = document.getElementById('checkoutForm');
   
-  form.addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const pagoSel = document.querySelector('input[name="pagamento_selecionado"]:checked');
-    
-    if (!pagoSel) {
-      alert('Por favor, selecione um método de pagamento.');
-      return;
-    }
-    
-    if (pagoSel.value === 'novo') {
-      const cartaoNum = document.getElementById('cartao_num').value.replace(/\s/g, '');
-      const cartaoNome = document.getElementById('cartao_nome').value.trim();
-      const cartaoVal = document.getElementById('cartao_validade').value.trim();
-      const cartaoCVV = document.getElementById('cartao_cvv').value.trim();
-      
-      if (!cartaoNum || cartaoNum.length < 12) {
-        alert('Número do cartão inválido.');
-        return;
-      }
-      if (!cartaoNome) {
-        alert('Informe o nome no cartão.');
-        return;
-      }
-      if (!cartaoVal || cartaoVal.length !== 5) {
-        alert('Informe a validade (MM/AA).');
-        return;
-      }
-      if (!cartaoCVV || cartaoCVV.length < 3) {
-        alert('Informe o CVV.');
-        return;
-      }
-    }
-    
-    const endSel = document.querySelector('input[name="endereco_selecionado"]:checked');
-    if (endSel && endSel.value === 'novo') {
-      if (!form.checkValidity()) {
-        form.reportValidity();
-        return;
-      }
-    }
-    
-    form.submit();
-  });
-});
-</script>
-
-{% endblock %}
+  {% endblock %}

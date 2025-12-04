@@ -552,7 +552,22 @@
                         <li><a href="/funcionario/estoque" class="nav-link"><span class="nav-icon">📋</span> Estoque</a></li>
                     </ul>
                 </div>
-
+                
+                <div class="nav-section">
+                    <div class="section-title">Operações</div>
+                    <ul class="nav-list">
+                        <li><a href="/funcionario/pedidos" class="nav-link"><span class="nav-icon">📦</span> Pedidos</a></li>
+                        <li><a href="/funcionario/estoque" class="nav-link"><span class="nav-icon">📋</span> Estoque</a></li>
+                        <li>
+                            <a href="/funcionario/chats" class="nav-link">
+                                <span class="nav-icon">💬</span> Chats Pendentes
+                                {% if total_chats_pendentes > 0 %}
+                                    <span class="badge-count">{{ total_chats_pendentes }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                    </ul>
+                </div>
                 <!-- CLIENTES -->
                 <div class="nav-section">
                     <div class="section-title">Clientes</div>

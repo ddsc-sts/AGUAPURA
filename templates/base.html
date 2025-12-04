@@ -432,6 +432,263 @@ body.home-page .chat-open-btn {
         font-size: 0.85rem;
     }
 }
+
+/* ========================================
+   SISTEMA DE NOTIFICAÇÕES - CSS
+   ======================================== */
+
+.top-right-icons {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.notif-button-header {
+    position: relative;
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #0891b2, #0e7490);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(8, 145, 178, 0.3);
+    transition: all 0.3s ease;
+    z-index: 99;
+    font-size: 1.5rem;
+    border: none;
+}
+
+.notif-button-header:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(8, 145, 178, 0.5);
+}
+
+.notif-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #ef4444;
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border: 2px solid white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.notif-panel {
+    position: fixed;
+    left: -400px;
+    top: 0;
+    width: 380px;
+    height: 100vh;
+    background: #1e293b;
+    border-right: 1px solid #2d3748;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+    transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.notif-panel.active {
+    left: 0;
+}
+
+.notif-overlay {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 998;
+}
+
+.notif-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.notif-header {
+    padding: 20px;
+    border-bottom: 1px solid #2d3748;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+}
+
+.notif-header h3 {
+    color: white;
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.notif-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+}
+
+.notif-close:hover {
+    transform: scale(1.2);
+}
+
+.notif-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.notif-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #64748b;
+    text-align: center;
+}
+
+.notif-item {
+    background: #0f172a;
+    border-left: 4px solid #0891b2;
+    padding: 16px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    animation: slideInUp 0.3s ease;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.notif-item:hover {
+    background: #1e293b;
+    transform: translateX(-5px);
+}
+
+.notif-item.nao-lida {
+    background: rgba(8, 145, 178, 0.15);
+    border-left-color: #22d3ee;
+}
+
+.notif-item.cancelamento {
+    border-left-color: #ef4444;
+}
+
+.notif-item.atualizacao_status {
+    border-left-color: #0891b2;
+}
+
+.notif-item.alerta {
+    border-left-color: #f59e0b;
+}
+
+.notif-titulo {
+    color: #e2e8f0;
+    font-weight: 600;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.notif-mensagem {
+    color: #94a3b8;
+    font-size: 0.9em;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    margin-bottom: 8px;
+}
+
+.notif-data {
+    color: #64748b;
+    font-size: 0.85em;
+}
+
+.notif-footer {
+    padding: 15px;
+    border-top: 1px solid #2d3748;
+    background: #0f172a;
+}
+
+.notif-clear-btn {
+    width: 100%;
+    padding: 10px;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    font-size: 0.9em;
+}
+
+.notif-clear-btn:hover {
+    background: #dc2626;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.notif-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.notif-list::-webkit-scrollbar-track {
+    background: #0f172a;
+}
+
+.notif-list::-webkit-scrollbar-thumb {
+    background: #2d3748;
+    border-radius: 10px;
+}
+
+.notif-list::-webkit-scrollbar-thumb:hover {
+    background: #374151;
+}
+
+@media (max-width: 768px) {
+    .notif-panel {
+        width: 100%;
+        left: -100%;
+    }
+
+    .notif-button-header {
+        width: 45px;
+        height: 45px;
+        font-size: 1.3rem;
+    }
+}
 </style>
 </head>
 
@@ -464,10 +721,20 @@ body.home-page .chat-open-btn {
         <form action="{{ url_for('buscar') }}" method="get" class="search-box">
             <input type="text" name="q" placeholder="O que você está buscando?" required>
         </form>
-        <a href="{{ url_for('carrinho') }}" class="cart">
-            <img src="{{ url_for('static', filename='icons/cart.svg') }}" class="cart-icon">
-            <span class="cart-count">{{ total_carrinho }}</span>
-        </a>
+        
+        <div class="top-right-icons">
+            <!-- BOTÃO DE NOTIFICAÇÕES -->
+            <button id="notif-button" class="notif-button-header" title="Suas notificações">
+                📬
+                <span class="notif-badge" id="notif-badge" style="display: none;">0</span>
+            </button>
+            
+            <!-- CARRINHO -->
+            <a href="{{ url_for('carrinho') }}" class="cart">
+                <img src="{{ url_for('static', filename='icons/cart.svg') }}" class="cart-icon">
+                <span class="cart-count">{{ total_carrinho }}</span>
+            </a>
+        </div>
     </div>
     
     <nav class="main-nav">
@@ -576,6 +843,29 @@ body.home-page .chat-open-btn {
     </div>
 </footer>
 
+<!-- ========================================
+     SISTEMA DE NOTIFICAÇÕES - HTML
+     ======================================== -->
+
+<!-- PAINEL DE NOTIFICAÇÕES -->
+<div id="notif-panel" class="notif-panel">
+    <div class="notif-header">
+        <h3>📬 Suas Notificações</h3>
+        <button id="notif-close" class="notif-close">&times;</button>
+    </div>
+    <div class="notif-list" id="notif-list">
+        <div class="notif-empty">
+            <p>📭 Nenhuma notificação</p>
+        </div>
+    </div>
+    <div class="notif-footer">
+        <button id="notif-clear" class="notif-clear-btn">🗑️ Limpar Tudo</button>
+    </div>
+</div>
+
+<!-- OVERLAY -->
+<div id="notif-overlay" class="notif-overlay"></div>
+
 <div id="chat-container" class="chat-container hidden">
     <div class="chat-header">
         <span>Atendimento Agua Pura</span>
@@ -594,32 +884,146 @@ body.home-page .chat-open-btn {
 
 <script src="{{ url_for('static', filename='script.js') }}"></script>
 
-<script>
-// Mensagens flash
-document.addEventListener("DOMContentLoaded", function () {
-    const mensagens = document.querySelectorAll(".msg");
-    if (mensagens.length > 0) {
-        setTimeout(() => {
-            mensagens.forEach(msg => {
-                msg.style.transition = "opacity 0.6s ease";
-                msg.style.opacity = "0";
-                setTimeout(() => msg.remove(), 600);
-            });
-        }, 1750);
-    }
-});
+<!-- ========================================
+     SISTEMA DE NOTIFICAÇÕES - JAVASCRIPT (PARTE 2)
+     ======================================== -->
 
-// Detecta se está na home e adiciona a classe para animações
-document.addEventListener('DOMContentLoaded', function() {
-    const currentPath = window.location.pathname;
-    const isHomePage = currentPath === '/' || currentPath === '/home' || currentPath === '';
-    
-    if (isHomePage) {
-        document.body.classList.add('home-page');
-        console.log('🎬 Animações da home ativadas!');
-    }
-});
-</script>
-
-</body>
-</html>
+     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const notifButton = document.getElementById('notif-button-header') || document.querySelector('.notif-button-header');
+            const notifPanel = document.getElementById('notif-panel');
+            const notifOverlay = document.getElementById('notif-overlay');
+            const notifClose = document.getElementById('notif-close');
+            const notifList = document.getElementById('notif-list');
+            const notifBadge = document.getElementById('notif-badge');
+            const notifClear = document.getElementById('notif-clear');
+        
+            // Carregar notificações ao abrir
+            function carregarNotificacoes() {
+                fetch('/api/notificacoes')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.notificacoes && data.notificacoes.length > 0) {
+                            renderizarNotificacoes(data.notificacoes);
+                        } else {
+                            notifList.innerHTML = '<div class="notif-empty"><p>📭 Nenhuma notificação</p></div>';
+                        }
+                        
+                        // Atualizar badge
+                        if (data.nao_lidas > 0) {
+                            notifBadge.textContent = data.nao_lidas;
+                            notifBadge.style.display = 'flex';
+                        } else {
+                            notifBadge.style.display = 'none';
+                        }
+                    })
+                    .catch(error => console.error('Erro ao carregar notificações:', error));
+            }
+        
+            // Renderizar notificações na lista
+            function renderizarNotificacoes(notificacoes) {
+                notifList.innerHTML = '';
+                
+                notificacoes.forEach(notif => {
+                    const notifItem = document.createElement('div');
+                    notifItem.className = `notif-item ${notif.status === 'nao_lida' ? 'nao_lida' : ''} ${notif.tipo}`;
+                    
+                    notifItem.innerHTML = `
+                        <div class="notif-titulo">
+                            <span>${notif.icone || '📬'}</span>
+                            <span>${notif.titulo}</span>
+                        </div>
+                        <div class="notif-mensagem">${notif.mensagem}</div>
+                        <div class="notif-data">${notif.data}</div>
+                    `;
+                    
+                    // Clicar para marcar como lida
+                    notifItem.addEventListener('click', function() {
+                        marcarComoLida(notif.id);
+                    });
+                    
+                    notifList.appendChild(notifItem);
+                });
+            }
+        
+            // Marcar como lida
+            function marcarComoLida(notifId) {
+                fetch(`/notificacoes/${notifId}/marcar-lida`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    carregarNotificacoes();
+                })
+                .catch(error => console.error('Erro ao marcar como lida:', error));
+            }
+        
+            // Abrir painel
+            if (notifButton) {
+                notifButton.addEventListener('click', function() {
+                    notifPanel.classList.add('active');
+                    notifOverlay.classList.add('active');
+                    carregarNotificacoes();
+                });
+            }
+        
+            // Fechar painel
+            function fecharPainel() {
+                notifPanel.classList.remove('active');
+                notifOverlay.classList.remove('active');
+            }
+        
+            if (notifClose) notifClose.addEventListener('click', fecharPainel);
+            if (notifOverlay) notifOverlay.addEventListener('click', fecharPainel);
+        
+            // Limpar todas as notificações
+            if (notifClear) {
+                notifClear.addEventListener('click', function() {
+                    if (confirm('Deseja limpar todas as notificações?')) {
+                        fetch('/notificacoes/limpar-todas', {
+                            method: 'POST'
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            carregarNotificacoes();
+                            fecharPainel();
+                        })
+                        .catch(error => console.error('Erro ao limpar notificações:', error));
+                    }
+                });
+            }
+        
+            // Verificar novas notificações a cada 30 segundos
+            setInterval(carregarNotificacoes, 30000);
+        });
+        </script>
+        
+        <!-- Mensagens flash -->
+        <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const mensagens = document.querySelectorAll(".msg");
+            if (mensagens.length > 0) {
+                setTimeout(() => {
+                    mensagens.forEach(msg => {
+                        msg.style.transition = "opacity 0.6s ease";
+                        msg.style.opacity = "0";
+                        setTimeout(() => msg.remove(), 600);
+                    });
+                }, 1750);
+            }
+        });
+        
+        // Detecta se está na home e adiciona a classe para animações
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            const isHomePage = currentPath === '/' || currentPath === '/home' || currentPath === '';
+            
+            if (isHomePage) {
+                document.body.classList.add('home-page');
+                console.log('🎬 Animações da home ativadas!');
+            }
+        });
+        </script>
+        
+        </body>
+        </html>

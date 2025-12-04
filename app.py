@@ -47,8 +47,8 @@ def conectar():
     return mysql.connector.connect(
         host="localhost",
         user="root",
-        port=3407,
-        password="root",   # altere se tiver senha
+        port=3306,
+        password="",   # altere se tiver senha
         database="aguapura"
     )
 
@@ -237,13 +237,54 @@ def funcionario_atualizar_status(pedido_id):
     novo_status = request.form["status"]
     
     db = conectar()
-    cursor = db.cursor()
+    cursor = db.cursor(dictionary=True)
     
-    cursor.execute("UPDATE pedidos SET status = %s WHERE id = %s", (novo_status, pedido_id))
-    db.commit()
+    try:
+        # Buscar dados do pedido ANTES de atualizar
+        cursor.execute("SELECT usuario_id, cliente_nome FROM pedidos WHERE id = %s", (pedido_id,))
+        pedido = cursor.fetchone()
+        
+        if not pedido:
+            flash("Pedido não encontrado!", "erro")
+            return redirect(f"/funcionario/pedido/{pedido_id}")
+        
+        # Atualizar status
+        cursor.execute("UPDATE pedidos SET status = %s WHERE id = %s", (novo_status, pedido_id))
+        db.commit()
+        
+        # ✅ CRIAR NOTIFICAÇÃO COM EMOJI E MENSAGEM PERSONALIZADA
+        status_messages = {
+            'aguardando_pagamento': ('⏳ Aguardando Pagamento', '⏳', 'Seu pedido está aguardando confirmação de pagamento.'),
+            'em_separacao': ('📦 Em Preparação', '📦', 'Seu pedido está sendo preparado para envio.'),
+            'enviado': ('🚚 Enviado', '🚚', 'Seu pedido foi enviado! Acompanhe o rastreio.'),
+            'entregue': ('✅ Entregue', '✅', 'Seu pedido foi entregue com sucesso! Obrigado pela compra.'),
+            'cancelado': ('❌ Cancelado', '❌', 'Seu pedido foi cancelado. Fale conosco para mais informações.')
+        }
+        
+        if novo_status in status_messages and pedido['usuario_id']:
+            titulo, icone, mensagem = status_messages[novo_status]
+            criar_notificacao(
+                usuario_id=pedido['usuario_id'],
+                pedido_id=pedido_id,
+                titulo=f"{titulo} - Pedido #{pedido_id}",
+                mensagem=f"{mensagem}\n\nCliente: {pedido['cliente_nome']}",
+                tipo='atualizacao_status',
+                icone=icone
+            )
+        
+        flash("Status atualizado com sucesso!", "sucesso")
+        return redirect(f"/funcionario/pedido/{pedido_id}")
+        
+    except Exception as e:
+        db.rollback()
+        flash(f"Erro ao atualizar status: {str(e)}", "erro")
+        print(f"Erro: {e}")
+        return redirect(f"/funcionario/pedido/{pedido_id}")
     
-    flash("Status atualizado com sucesso!", "sucesso")
-    return redirect(f"/funcionario/pedido/{pedido_id}")
+    finally:
+        cursor.close()
+        db.close()
+
 
 
 # ============================
@@ -788,38 +829,6 @@ def sincronizar_compras():
     db.close()
     
     return redirect("/admin/relatorios")
-@app.route("/admin/produtos/editar/<int:produto_id>", methods=["GET", "POST"])
-@admin_required
-def admin_editar_produto(produto_id):
-    db = conectar()
-    cursor = db.cursor(dictionary=True)
-
-    if request.method == "POST":
-        nome = request.form["nome"]
-        descricao = request.form["descricao"]
-        preco = request.form["preco"]
-        # REMOVIDO: estoque = request.form["estoque"]
-        categoria = request.form["categoria"]
-
-        # Atualizar SEM o estoque
-        cursor.execute("""
-            UPDATE produtos 
-            SET nome = %s, descricao = %s, preco = %s, categoria = %s
-            WHERE id = %s
-        """, (nome, descricao, preco, categoria, produto_id))
-        db.commit()
-
-        flash("Produto atualizado com sucesso!", "sucesso")
-        return redirect("/admin/produtos")
-
-    cursor.execute("SELECT * FROM produtos WHERE id = %s", (produto_id,))
-    produto = cursor.fetchone()
-
-    cursor.execute("SELECT * FROM categorias")
-    categorias = cursor.fetchall()
-
-    return render_template("admin/editar_produto.html", produto=produto, categorias=categorias)
-
 
 @app.route("/admin/produtos/excluir/<int:produto_id>")
 @admin_required
@@ -928,29 +937,38 @@ def home():
 
     return render_template('index.html', produtos=produtos)
 
-
 @app.route('/produto/<int:id>')
 def produto(id):
     db = conectar()
     cursor = db.cursor(dictionary=True)
 
-    # Produto atual
+    # Produto atual (pode estar inativo, mas pode ser visualizado se acessado diretamente)
     cursor.execute("SELECT * FROM produtos WHERE id = %s", (id,))
     produto = cursor.fetchone()
+
+    if not produto:
+        flash("Produto não encontrado!", "erro")
+        cursor.close()
+        db.close()
+        return redirect(url_for("home"))
 
     # Imagens adicionais
     cursor.execute("SELECT imagem FROM imagens_produto WHERE produto_id = %s", (id,))
     imagens = cursor.fetchall()
 
+    # MODIFICADO: Mostrar sugestões apenas de produtos ATIVOS
     # Se for Copo ou Garrafa → sugerir acessórios
     if produto["categoria"] in ("Copo", "Garrafa"):
-        cursor.execute("SELECT * FROM produtos WHERE categoria = 'Acessório' LIMIT 4")
+        cursor.execute("SELECT * FROM produtos WHERE categoria = 'Acessório' AND ativo = TRUE LIMIT 4")
         sugestoes = cursor.fetchall()
 
     # Se for Acessório → sugerir Copos e Garrafas
     else:
-        cursor.execute("SELECT * FROM produtos WHERE categoria IN ('Copo', 'Garrafa') LIMIT 4")
+        cursor.execute("SELECT * FROM produtos WHERE categoria IN ('Copo', 'Garrafa') AND ativo = TRUE LIMIT 4")
         sugestoes = cursor.fetchall()
+
+    cursor.close()
+    db.close()
 
     return render_template(
         'produto.html',
@@ -958,7 +976,6 @@ def produto(id):
         imagens=imagens,
         sugestoes=sugestoes
     )
-
 
 
 
@@ -971,33 +988,42 @@ def copos():
     db = conectar()
     cursor = db.cursor(dictionary=True)
 
-    cursor.execute("SELECT * FROM produtos WHERE categoria = 'Copo'")
+    # MODIFICADO: Adicionar filtro ativo = TRUE
+    cursor.execute("SELECT * FROM produtos WHERE categoria = 'Copo' AND ativo = TRUE")
     produtos = cursor.fetchall()
+    
+    cursor.close()
+    db.close()
 
     return render_template('copos.html', produtos=produtos)
-
 
 @app.route('/garrafas')
 def garrafas():
     db = conectar()
     cursor = db.cursor(dictionary=True)
 
-    cursor.execute("SELECT * FROM produtos WHERE categoria = 'Garrafa'")
+    # MODIFICADO: Adicionar filtro ativo = TRUE
+    cursor.execute("SELECT * FROM produtos WHERE categoria = 'Garrafa' AND ativo = TRUE")
     produtos = cursor.fetchall()
+    
+    cursor.close()
+    db.close()
 
     return render_template('garrafas.html', produtos=produtos)
-
 
 @app.route('/acessorios')
 def acessorios():
     db = conectar()
     cursor = db.cursor(dictionary=True)
 
-    cursor.execute("SELECT * FROM produtos WHERE categoria = 'Acessório'")
+    # MODIFICADO: Adicionar filtro ativo = TRUE
+    cursor.execute("SELECT * FROM produtos WHERE categoria = 'Acessório' AND ativo = TRUE")
     produtos = cursor.fetchall()
+    
+    cursor.close()
+    db.close()
 
     return render_template('acessorios.html', produtos=produtos)
-
 
 # ============================
 # OUTRAS PÁGINAS
@@ -1362,12 +1388,14 @@ def admin_produtos():
     db = conectar()
     cursor = db.cursor(dictionary=True)
 
-    # removido categoria_id porque NÃO existe no banco
+    # Admin vê TODOS os produtos (ativos e inativos)
     cursor.execute("SELECT * FROM produtos ORDER BY id DESC")
     produtos = cursor.fetchall()
 
-    return render_template("admin/produtos.html", produtos=produtos)
+    cursor.close()
+    db.close()
 
+    return render_template("admin/produtos.html", produtos=produtos)
 
 @app.route("/admin/produtos/novo", methods=["GET", "POST"])
 def admin_novo_produto():
@@ -1539,18 +1567,21 @@ def buscar():
     termo = request.args.get("q", "").strip()
 
     if termo == "":
-        return redirect(url_for("index"))
+        return redirect(url_for("home"))
 
     db = conectar()
     cursor = db.cursor(dictionary=True)
 
-    # Busca por nome OU parte do nome
+    # MODIFICADO: Adicionar filtro ativo = TRUE
     cursor.execute("""
         SELECT * FROM produtos 
-        WHERE nome LIKE %s
+        WHERE nome LIKE %s AND ativo = TRUE
     """, (f"%{termo}%", ))
 
     resultados = cursor.fetchall()
+    
+    cursor.close()
+    db.close()
 
     return render_template("buscar.html", termo=termo, resultados=resultados)
 
@@ -3190,8 +3221,746 @@ def api_pedidos():
 
 
 
+@app.route("/admin/produtos/editar/<int:produto_id>", methods=["GET", "POST"])
+@admin_required
+def admin_editar_produto(produto_id):
+    db = conectar()
+    cursor = db.cursor(dictionary=True)
 
+    if request.method == "POST":
+        nome = request.form["nome"]
+        descricao = request.form["descricao"]
+        preco = request.form["preco"]
+        categoria = request.form["categoria"]
+
+        # Atualizar SEM o estoque
+        cursor.execute("""
+            UPDATE produtos 
+            SET nome = %s, descricao = %s, preco = %s, categoria = %s
+            WHERE id = %s
+        """, (nome, descricao, preco, categoria, produto_id))
+        db.commit()
+
+        flash("✅ Produto atualizado com sucesso!", "sucesso")
+        return redirect("/admin/produtos")
+
+    cursor.execute("SELECT * FROM produtos WHERE id = %s", (produto_id,))
+    produto = cursor.fetchone()
+
+    cursor.execute("SELECT * FROM categorias")
+    categorias = cursor.fetchall()
+
+    cursor.close()
+    db.close()
+
+    return render_template("admin/editar_produto.html", produto=produto, categorias=categorias)
+
+    # ====================================================================
+# FUNÇÃO: Criar Notificação
+# ====================================================================
+
+def criar_notificacao(usuario_id, titulo, mensagem, tipo='info', pedido_id=None, icone='mail'):
+    """
+    Cria uma notificação para o usuário
+    """
+    try:
+        db = conectar()
+        cursor = db.cursor()
+        
+        cursor.execute("""
+            INSERT INTO notificacoes (usuario_id, pedido_id, titulo, mensagem, tipo, icone, status)
+            VALUES (%s, %s, %s, %s, %s, %s, 'nao_lida')
+        """, (usuario_id, pedido_id, titulo, mensagem, tipo, icone))
+        
+        db.commit()
+        cursor.close()
+        db.close()
+        
+        print(f"✅ Notificação criada para usuário {usuario_id}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Erro ao criar notificação: {e}")
+        return False
+
+
+# ====================================================================
+# ROTA: Desativar Produto (VERSÃO CORRIGIDA)
+# ====================================================================
+
+@app.route("/admin/produtos/desativar/<int:produto_id>", methods=["POST"])
+@admin_required
+def desativar_produto(produto_id):
+    """Desativa um produto e cancela pedidos pendentes"""
     
+    try:
+        motivo = request.form.get("motivo", "Produto descontinuado").strip()
+        
+        db = conectar()
+        cursor = db.cursor(dictionary=True)
+        
+        # Buscar informações do produto
+        cursor.execute("SELECT nome FROM produtos WHERE id = %s", (produto_id,))
+        produto = cursor.fetchone()
+        
+        if not produto:
+            flash("Produto não encontrado!", "erro")
+            cursor.close()
+            db.close()
+            return redirect("/admin/produtos")
+        
+        nome_produto = produto['nome']
+        
+        print(f"\n{'='*60}")
+        print(f"🔍 DESATIVANDO PRODUTO: {nome_produto} (ID: {produto_id})")
+        print(f"{'='*60}")
+        
+        # ========== DEBUG: Ver todos os pedidos com este produto ==========
+        cursor.execute("""
+            SELECT DISTINCT p.id, p.usuario_id, p.status, p.criado_em
+            FROM pedidos p
+            INNER JOIN pedido_itens pi ON p.id = pi.pedido_id
+            WHERE pi.produto_id = %s
+            ORDER BY p.criado_em DESC
+        """, (produto_id,))
+        
+        todos_pedidos = cursor.fetchall()
+        print(f"\n📊 TODOS OS PEDIDOS COM ESTE PRODUTO:")
+        for ped in todos_pedidos:
+            print(f"   - Pedido #{ped['id']}: Status='{ped['status']}' | Usuário={ped['usuario_id']} | Data={ped['criado_em']}")
+        
+        # ========== BUSCAR PEDIDOS NÃO CANCELADOS/NÃO ENTREGUES ==========
+        cursor.execute("""
+            SELECT DISTINCT p.id, p.usuario_id, p.status
+            FROM pedidos p
+            INNER JOIN pedido_itens pi ON p.id = pi.pedido_id
+            WHERE pi.produto_id = %s 
+            AND p.status NOT IN ('cancelado', 'entregue', 'concluido')
+        """, (produto_id,))
+        
+        pedidos_cancelar = cursor.fetchall()
+        total_cancelados = len(pedidos_cancelar)
+        
+        print(f"\n🎯 PEDIDOS A CANCELAR: {total_cancelados}")
+        for ped in pedidos_cancelar:
+            print(f"   - Pedido #{ped['id']}: Status='{ped['status']}' | Usuário={ped['usuario_id']}")
+        
+        # ========== DESATIVAR PRODUTO ==========
+        cursor.execute("""
+            UPDATE produtos 
+            SET ativo = FALSE, 
+                motivo_desativacao = %s, 
+                desativado_em = NOW()
+            WHERE id = %s
+        """, (motivo, produto_id))
+        
+        db.commit()
+        
+        print(f"\n✅ Produto '{nome_produto}' desativado no banco!")
+        
+        # ========== CANCELAR PEDIDOS E ENVIAR NOTIFICAÇÕES ==========
+        for pedido in pedidos_cancelar:
+            pedido_id = pedido['id']
+            usuario_id = pedido['usuario_id']
+            status_anterior = pedido['status']
+            
+            # Cancelar pedido
+            cursor.execute("""
+                UPDATE pedidos 
+                SET status = 'cancelado'
+                WHERE id = %s
+            """, (pedido_id,))
+            
+            db.commit()
+            
+            print(f"   ❌ Pedido #{pedido_id} cancelado (Status anterior: {status_anterior})")
+            
+            # ========== ENVIAR NOTIFICAÇÃO AO CLIENTE ==========
+            if usuario_id:
+                titulo = "⚠️ Pedido Cancelado"
+                mensagem = f"""Seu pedido #{pedido_id} foi cancelado automaticamente.
+
+🛍️ Produto: {nome_produto}
+📌 Motivo: {motivo}
+
+Entre em contato com nosso suporte para mais informações:
+📞 WhatsApp: (47) 99231-5501
+📧 Email: suporte@aguapura.com.br
+
+Obrigado!"""
+                
+                sucesso = criar_notificacao(
+                    usuario_id=usuario_id,
+                    titulo=titulo,
+                    mensagem=mensagem,
+                    tipo='cancelamento',
+                    pedido_id=pedido_id,
+                    icone='cancel'
+                )
+                
+                if sucesso:
+                    print(f"   📬 Notificação enviada ao usuário {usuario_id}")
+                else:
+                    print(f"   ❌ Erro ao enviar notificação ao usuário {usuario_id}")
+        
+        cursor.close()
+        db.close()
+        
+        print(f"\n{'='*60}\n")
+        
+        if total_cancelados > 0:
+            flash(f"✅ Produto desativado! {total_cancelados} pedido(s) cancelado(s) e notificação(ões) enviada(s).", "sucesso")
+        else:
+            flash(f"✅ Produto desativado! Nenhum pedido pendente para cancelar.", "info")
+        
+        return redirect("/admin/produtos")
+        
+    except Exception as e:
+        db.rollback()
+        cursor.close()
+        db.close()
+        print(f"❌ Erro ao desativar produto: {e}")
+        import traceback
+        traceback.print_exc()
+        print(f"{'='*60}\n")
+        flash(f"❌ Erro ao desativar: {str(e)}", "erro")
+        return redirect("/admin/produtos")
+
+
+# ====================================================================
+# ROTA: Ativar Produto
+# ====================================================================
+
+@app.route("/admin/produtos/ativar/<int:produto_id>", methods=["POST"])
+@admin_required
+def ativar_produto(produto_id):
+    """Ativa um produto novamente"""
+    
+    try:
+        db = conectar()
+        cursor = db.cursor(dictionary=True)
+        
+        # Buscar informações do produto
+        cursor.execute("SELECT nome FROM produtos WHERE id = %s", (produto_id,))
+        produto = cursor.fetchone()
+        
+        if not produto:
+            flash("Produto não encontrado!", "erro")
+            cursor.close()
+            db.close()
+            return redirect("/admin/produtos")
+        
+        nome_produto = produto['nome']
+        
+        # Ativar produto
+        cursor.execute("""
+            UPDATE produtos 
+            SET ativo = TRUE, 
+                motivo_desativacao = NULL, 
+                desativado_em = NULL
+            WHERE id = %s
+        """, (produto_id,))
+        
+        db.commit()
+        cursor.close()
+        db.close()
+        
+        print(f"✅ Produto '{nome_produto}' ativado novamente!")
+        flash(f"✅ Produto '{nome_produto}' foi ativado com sucesso!", "sucesso")
+        
+        return redirect("/admin/produtos")
+        
+    except Exception as e:
+        db.rollback()
+        cursor.close()
+        db.close()
+        print(f"❌ Erro ao ativar produto: {e}")
+        import traceback
+        traceback.print_exc()
+        flash(f"❌ Erro ao ativar: {str(e)}", "erro")
+        return redirect("/admin/produtos")
+
+
+# ====================================================================
+# API: Retornar Notificações do Usuário
+# ====================================================================
+
+@app.route('/api/notificacoes')
+@login_required
+def api_notificacoes():
+    """Retorna notificações não lidas e recentes do usuário"""
+    try:
+        usuario_id = session['usuario_id']
+        
+        db = conectar()
+        cursor = db.cursor(dictionary=True)
+        
+        cursor.execute("""
+            SELECT id, titulo, mensagem, tipo, status, icone, data_criacao, pedido_id
+            FROM notificacoes
+            WHERE usuario_id = %s
+            ORDER BY data_criacao DESC
+            LIMIT 10
+        """, (usuario_id,))
+        
+        notificacoes = cursor.fetchall()
+        
+        cursor.execute("""
+            SELECT COUNT(*) as total FROM notificacoes
+            WHERE usuario_id = %s AND status = 'nao_lida'
+        """, (usuario_id,))
+        
+        nao_lidas = cursor.fetchone()['total']
+        
+        cursor.close()
+        db.close()
+        
+        notif_list = []
+        for n in notificacoes:
+            notif_list.append({
+                'id': n['id'],
+                'titulo': n['titulo'],
+                'mensagem': n['mensagem'],
+                'tipo': n['tipo'],
+                'status': n['status'],
+                'icone': n['icone'],
+                'data': n['data_criacao'].strftime('%d/%m/%Y %H:%M'),
+                'pedido_id': n['pedido_id']
+            })
+        
+        return jsonify({
+            'notificacoes': notif_list,
+            'nao_lidas': nao_lidas
+        })
+        
+    except Exception as e:
+        print(f"Erro /api/notificacoes: {e}")
+        return jsonify({'erro': str(e)}), 500
+
+
+# ====================================================================
+# ROTA: Marcar Notificação como Lida
+# ====================================================================
+
+@app.route('/notificacoes/<int:notif_id>/marcar-lida', methods=['POST'])
+@login_required
+def marcar_notificacao_lida(notif_id):
+    """Marca uma notificação como lida"""
+    try:
+        usuario_id = session['usuario_id']
+        
+        db = conectar()
+        cursor = db.cursor()
+        
+        cursor.execute("SELECT usuario_id FROM notificacoes WHERE id = %s", (notif_id,))
+        notif = cursor.fetchone()
+        
+        if not notif or notif[0] != usuario_id:
+            cursor.close()
+            db.close()
+            return jsonify({'erro': 'Não autorizado'}), 403
+        
+        cursor.execute("""
+            UPDATE notificacoes 
+            SET status = 'lida', data_leitura = NOW()
+            WHERE id = %s
+        """, (notif_id,))
+        
+        db.commit()
+        cursor.close()
+        db.close()
+        
+        return jsonify({'sucesso': True})
+        
+    except Exception as e:
+        print(f"Erro ao marcar como lida: {e}")
+        return jsonify({'erro': str(e)}), 500
+
+
+# ====================================================================
+# ROTA: Limpar Todas as Notificações
+# ====================================================================
+
+@app.route('/notificacoes/limpar-todas', methods=['POST'])
+@login_required
+def limpar_notificacoes():
+    """Remove todas as notificações do usuário"""
+    try:
+        usuario_id = session['usuario_id']
+        
+        db = conectar()
+        cursor = db.cursor()
+        
+        cursor.execute("DELETE FROM notificacoes WHERE usuario_id = %s", (usuario_id,))
+        
+        db.commit()
+        cursor.close()
+        db.close()
+        
+        return jsonify({'sucesso': True, 'mensagem': 'Notificações limpas'})
+        
+    except Exception as e:
+        print(f"Erro ao limpar notificações: {e}")
+        return jsonify({'erro': str(e)}), 500
+
+# ====================================================================
+# SISTEMA DE CHAT COM ATENDENTE HUMANO
+# ====================================================================
+
+@app.route('/api/solicitar-atendente', methods=['POST'])
+@login_required
+def solicitar_atendente():
+    """Cliente solicita atendimento humano"""
+    try:
+        usuario_id = session['usuario_id']
+        
+        db = conectar()
+        cursor = db.cursor(dictionary=True)
+        
+        # Verificar se já existe chat pendente ou em atendimento
+        cursor.execute("""
+            SELECT id FROM chats_suporte 
+            WHERE usuario_id = %s 
+            AND status IN ('pendente', 'em_atendimento')
+            ORDER BY criado_em DESC LIMIT 1
+        """, (usuario_id,))
+        
+        chat_existente = cursor.fetchone()
+        
+        if chat_existente:
+            cursor.close()
+            db.close()
+            return jsonify({
+                'sucesso': True,
+                'chat_id': chat_existente['id']
+            })
+        
+        # Criar novo chat
+        cursor.execute("""
+            INSERT INTO chats_suporte (usuario_id, status)
+            VALUES (%s, 'pendente')
+        """, (usuario_id,))
+        
+        chat_id = cursor.lastrowid
+        
+        # Adicionar mensagem automática
+        cursor.execute("""
+            INSERT INTO mensagens_chat (chat_id, remetente_id, mensagem)
+            VALUES (%s, %s, %s)
+        """, (chat_id, usuario_id, "Olá! Preciso de ajuda com um atendente."))
+        
+        db.commit()
+        cursor.close()
+        db.close()
+        
+        return jsonify({
+            'sucesso': True,
+            'chat_id': chat_id
+        })
+        
+    except Exception as e:
+        print(f"Erro ao solicitar atendente: {e}")
+        return jsonify({
+            'sucesso': False,
+            'erro': str(e)
+        }), 500
+
+
+@app.route('/chat/<int:chat_id>')
+@login_required
+def pagina_chat(chat_id):
+    """Página de chat entre cliente e atendente"""
+    try:
+        usuario_id = session['usuario_id']
+        
+        db = conectar()
+        cursor = db.cursor(dictionary=True)
+        
+        # Buscar informações do chat
+        cursor.execute("""
+            SELECT c.*, u.nome as cliente_nome, u.avatar as cliente_avatar,
+                   f.nome as funcionario_nome, f.avatar as funcionario_avatar
+            FROM chats_suporte c
+            LEFT JOIN usuarios u ON u.id = c.usuario_id
+            LEFT JOIN usuarios f ON f.id = c.funcionario_id
+            WHERE c.id = %s
+        """, (chat_id,))
+        
+        chat = cursor.fetchone()
+        
+        if not chat:
+            flash("Chat não encontrado!", "erro")
+            cursor.close()
+            db.close()
+            return redirect("/")
+        
+        # Verificar permissão
+        tipo_usuario = session.get('tipo', 'cliente')
+        if chat['usuario_id'] != usuario_id and tipo_usuario not in ['funcionario', 'admin']:
+            flash("Você não tem permissão para acessar este chat!", "erro")
+            cursor.close()
+            db.close()
+            return redirect("/")
+        
+        # Buscar mensagens
+        cursor.execute("""
+            SELECT m.*, u.nome as remetente_nome, u.avatar as remetente_avatar
+            FROM mensagens_chat m
+            LEFT JOIN usuarios u ON u.id = m.remetente_id
+            WHERE m.chat_id = %s
+            ORDER BY m.criado_em ASC
+        """, (chat_id,))
+        
+        mensagens = cursor.fetchall()
+        
+        # Marcar mensagens como lidas se for atendente ou se for o cliente vendo suas próprias mensagens
+        if tipo_usuario in ['funcionario', 'admin']:
+            cursor.execute("""
+                UPDATE mensagens_chat 
+                SET lida = TRUE 
+                WHERE chat_id = %s AND remetente_id != %s
+            """, (chat_id, usuario_id))
+            db.commit()
+        
+        cursor.close()
+        db.close()
+        
+        return render_template('chat.html', 
+                             chat=chat, 
+                             mensagens=mensagens,
+                             usuario_id=usuario_id)
+        
+    except Exception as e:
+        print(f"Erro ao carregar chat: {e}")
+        flash("Erro ao carregar chat!", "erro")
+        return redirect("/")
+
+
+@app.route('/api/chat/<int:chat_id>/mensagens')
+@login_required
+def api_mensagens_chat(chat_id):
+    """API para buscar mensagens do chat (polling)"""
+    try:
+        usuario_id = session['usuario_id']
+        
+        db = conectar()
+        cursor = db.cursor(dictionary=True)
+        
+        # Verificar permissão
+        cursor.execute("""
+            SELECT usuario_id, funcionario_id FROM chats_suporte WHERE id = %s
+        """, (chat_id,))
+        
+        chat = cursor.fetchone()
+        tipo_usuario = session.get('tipo', 'cliente')
+        
+        if not chat or (chat['usuario_id'] != usuario_id and tipo_usuario not in ['funcionario', 'admin']):
+            cursor.close()
+            db.close()
+            return jsonify({'erro': 'Não autorizado'}), 403
+        
+        # Buscar mensagens
+        cursor.execute("""
+            SELECT m.*, u.nome as remetente_nome, u.avatar as remetente_avatar
+            FROM mensagens_chat m
+            LEFT JOIN usuarios u ON u.id = m.remetente_id
+            WHERE m.chat_id = %s
+            ORDER BY m.criado_em ASC
+        """, (chat_id,))
+        
+        mensagens = cursor.fetchall()
+        
+        mensagens_list = []
+        for m in mensagens:
+            mensagens_list.append({
+                'id': m['id'],
+                'remetente_id': m['remetente_id'],
+                'remetente_nome': m['remetente_nome'],
+                'remetente_avatar': m['remetente_avatar'] or 'uploads/avatars/user.png',
+                'mensagem': m['mensagem'],
+                'criado_em': m['criado_em'].strftime('%H:%M'),
+                'lida': m['lida']
+            })
+        
+        cursor.close()
+        db.close()
+        
+        return jsonify({'mensagens': mensagens_list})
+        
+    except Exception as e:
+        print(f"Erro API mensagens: {e}")
+        return jsonify({'erro': str(e)}), 500
+
+
+@app.route('/api/chat/<int:chat_id>/enviar', methods=['POST'])
+@login_required
+def enviar_mensagem_chat(chat_id):
+    """Envia mensagem no chat"""
+    try:
+        usuario_id = session['usuario_id']
+        mensagem = request.json.get('mensagem', '').strip()
+        
+        if not mensagem:
+            return jsonify({'erro': 'Mensagem vazia'}), 400
+        
+        db = conectar()
+        cursor = db.cursor(dictionary=True)
+        
+        # Verificar permissão
+        cursor.execute("""
+            SELECT usuario_id, funcionario_id, status FROM chats_suporte WHERE id = %s
+        """, (chat_id,))
+        
+        chat = cursor.fetchone()
+        tipo_usuario = session.get('tipo', 'cliente')
+        
+        if not chat or (chat['usuario_id'] != usuario_id and tipo_usuario not in ['funcionario', 'admin']):
+            cursor.close()
+            db.close()
+            return jsonify({'erro': 'Não autorizado'}), 403
+        
+        # Se funcionário enviou mensagem, atualizar status para "em_atendimento"
+        if tipo_usuario in ['funcionario', 'admin'] and chat['status'] == 'pendente':
+            cursor.execute("""
+                UPDATE chats_suporte 
+                SET status = 'em_atendimento', funcionario_id = %s
+                WHERE id = %s
+            """, (usuario_id, chat_id))
+        
+        # Inserir mensagem
+        cursor.execute("""
+            INSERT INTO mensagens_chat (chat_id, remetente_id, mensagem)
+            VALUES (%s, %s, %s)
+        """, (chat_id, usuario_id, mensagem))
+        
+        db.commit()
+        cursor.close()
+        db.close()
+        
+        return jsonify({'sucesso': True})
+        
+    except Exception as e:
+        print(f"Erro ao enviar mensagem: {e}")
+        return jsonify({'erro': str(e)}), 500
+
+
+@app.route('/api/chat/<int:chat_id>/finalizar', methods=['POST'])
+@login_required
+def finalizar_chat(chat_id):
+    """Finaliza o chat"""
+    try:
+        usuario_id = session['usuario_id']
+        tipo_usuario = session.get('tipo', 'cliente')
+        
+        db = conectar()
+        cursor = db.cursor(dictionary=True)
+        
+        # Verificar permissão
+        cursor.execute("""
+            SELECT usuario_id FROM chats_suporte WHERE id = %s
+        """, (chat_id,))
+        
+        chat = cursor.fetchone()
+        
+        if not chat or (chat['usuario_id'] != usuario_id and tipo_usuario not in ['funcionario', 'admin']):
+            cursor.close()
+            db.close()
+            return jsonify({'erro': 'Não autorizado'}), 403
+        
+        # Atualizar status
+        cursor.execute("""
+            UPDATE chats_suporte 
+            SET status = 'finalizado'
+            WHERE id = %s
+        """, (chat_id,))
+        
+        db.commit()
+        cursor.close()
+        db.close()
+        
+        return jsonify({'sucesso': True})
+        
+    except Exception as e:
+        print(f"Erro ao finalizar chat: {e}")
+        return jsonify({'erro': str(e)}), 500
+
+
+# ====================================================================
+# ROTA: CHATS PENDENTES (PARA FUNCIONÁRIOS)
+# ====================================================================
+
+@app.route('/funcionario/chats')
+@funcionario_required
+def funcionario_chats():
+    """Lista de chats pendentes para funcionários"""
+    try:
+        db = conectar()
+        cursor = db.cursor(dictionary=True)
+        
+        # Buscar chats pendentes e em atendimento
+        cursor.execute("""
+            SELECT c.*, u.nome as cliente_nome, u.avatar as cliente_avatar,
+                   (SELECT COUNT(*) FROM mensagens_chat 
+                    WHERE chat_id = c.id AND lida = FALSE 
+                    AND remetente_id != %s) as mensagens_nao_lidas,
+                   (SELECT mensagem FROM mensagens_chat 
+                    WHERE chat_id = c.id 
+                    ORDER BY criado_em DESC LIMIT 1) as ultima_mensagem,
+                   (SELECT criado_em FROM mensagens_chat 
+                    WHERE chat_id = c.id 
+                    ORDER BY criado_em DESC LIMIT 1) as ultima_msg_data
+            FROM chats_suporte c
+            LEFT JOIN usuarios u ON u.id = c.usuario_id
+            WHERE c.status IN ('pendente', 'em_atendimento')
+            ORDER BY 
+                CASE WHEN c.status = 'pendente' THEN 0 ELSE 1 END,
+                c.atualizado_em DESC
+        """, (session['usuario_id'],))
+        
+        chats = cursor.fetchall()
+        
+        # Contar totais
+        pendentes = sum(1 for c in chats if c['status'] == 'pendente')
+        em_atendimento = sum(1 for c in chats if c['status'] == 'em_atendimento')
+        
+        cursor.close()
+        db.close()
+        
+        return render_template('funcionario/chats.html',
+                             chats=chats,
+                             total_pendentes=pendentes,
+                             total_atendimento=em_atendimento)
+        
+    except Exception as e:
+        print(f"Erro ao carregar chats: {e}")
+        flash("Erro ao carregar chats!", "erro")
+        return redirect("/funcionario/painel")
+
+@app.context_processor
+def contador_chats_pendentes():
+    """Conta chats pendentes para o menu do funcionário"""
+    if session.get('tipo') in ['funcionario', 'admin']:
+        try:
+            db = conectar()
+            cursor = db.cursor(dictionary=True)
+            
+            cursor.execute("""
+                SELECT COUNT(*) as total FROM chats_suporte 
+                WHERE status IN ('pendente', 'em_atendimento')
+            """)
+            
+            result = cursor.fetchone()
+            total = result['total'] if result else 0
+            
+            cursor.close()
+            db.close()
+            
+            return {"total_chats_pendentes": total}
+        except:
+            return {"total_chats_pendentes": 0}
+    
+    return {"total_chats_pendentes": 0}
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
