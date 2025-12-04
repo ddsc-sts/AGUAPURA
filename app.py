@@ -47,8 +47,8 @@ def conectar():
     return mysql.connector.connect(
         host="localhost",
         user="root",
-        port=3306,
-        password="",   # altere se tiver senha
+        port=3407,
+        password="root",   # altere se tiver senha
         database="aguapura"
     )
 
@@ -1585,6 +1585,62 @@ def buscar():
 
     return render_template("buscar.html", termo=termo, resultados=resultados)
 
+# ================================
+# FUNÇÃO: Extrair apenas a nota fiscal do HTML
+# ================================
+def extrair_nota_fiscal_html(html):
+    inicio = html.find('<div id="notaFiscal"')
+    if inicio == -1:
+        return html  # fallback: envia tudo
+
+    fim = html.find('</div>', inicio)
+    if fim == -1:
+        return html
+
+    fim += len('</div>')
+    return html[inicio:fim]
+
+
+# ================================
+# FUNÇÃO: Enviar email com nota fiscal HTML
+# ================================
+def enviar_email_nota(destino_email, nome_cliente, pedido_id, html_nf):
+    if not SMTP_USER or not SMTP_PASS:
+        print("ERRO SMTP: credenciais não definidas.")
+        return False
+
+    assunto = f"Nota Fiscal — Pedido #{pedido_id}"
+
+    corpo_html = f"""
+    <html>
+      <body style="font-family:Arial,Helvetica,sans-serif;background:#f5f5f5;padding:20px;">
+        <div style="max-width:700px;margin:auto;background:#fff;padding:20px;border-radius:10px;border:1px solid #ddd;">
+          <h2 style="text-align:center;color:#0d6efd;">Nota Fiscal - AGUAPURA</h2>
+          <p>Olá <strong>{nome_cliente}</strong>,</p>
+          <p>Abaixo está sua nota fiscal referente ao pedido <strong>#{pedido_id}</strong>:</p>
+          <hr style="margin:20px 0;">
+          {html_nf}
+          <hr style="margin:20px 0;">
+          <p>Obrigado por comprar conosco!</p>
+        </div>
+      </body>
+    </html>
+    """
+
+    msg = EmailMessage()
+    msg["Subject"] = assunto
+    msg["From"] = SMTP_USER
+    msg["To"] = destino_email
+
+    msg.set_content("Sua nota fiscal está em HTML. Use um cliente compatível.")
+    msg.add_alternative(corpo_html, subtype='html')
+
+    context = ssl.create_default_context()
+    with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=context) as smtp:
+        smtp.login(SMTP_USER, SMTP_PASS)
+        smtp.send_message(msg)
+
+    return True
 
 
 @app.route("/checkout", methods=["GET", "POST"])
@@ -1605,33 +1661,24 @@ def checkout():
     itens = cursor.fetchall()
 
     if request.method == "GET":
-        # Se não houver itens, redireciona
         if not itens:
             flash("Seu carrinho está vazio.", "erro")
             cursor.close()
             db.close()
             return redirect(url_for("home"))
 
-        # ========== CALCULA SUBTOTAL CONSIDERANDO PERSONALIZAÇÃO E ESTAMPA ==========
         subtotal = Decimal("0.00")
         for item in itens:
             preco_base = Decimal(item["preco"])
             qtd = int(item["quantidade"])
-            
-            # Adicionar R$10 se tiver personalização com nome
-            extra_nome = Decimal("10.00") if item.get("personalizacao") else Decimal("0.00")
-            
-            # Adicionar R$20 se tiver estampa
-            extra_estampa = Decimal("20.00") if item.get("estampa") else Decimal("0.00")
-            
-            preco_total_item = (preco_base + extra_nome + extra_estampa) * qtd
-            subtotal += preco_total_item
 
-        # ========== FRETE - Provisório para SC (será ajustado se endereço for informado) ==========
-        # Por padrão, assume R$12 - mas na tela pode ser ajustado via JS se o usuário selecionar SC
+            extra_nome = Decimal("10.00") if item.get("personalizacao") else Decimal("0.00")
+            extra_estampa = Decimal("20.00") if item.get("estampa") else Decimal("0.00")
+
+            subtotal += (preco_base + extra_nome + extra_estampa) * qtd
+
         frete = Decimal("12.00")
-        
-        # Se o usuário tiver endereço salvo em SC e subtotal > 129.90, já mostra frete grátis
+
         if "usuario_id" in session:
             user_id = session["usuario_id"]
             cursor.execute("""
@@ -1640,14 +1687,13 @@ def checkout():
                 ORDER BY criado_em DESC LIMIT 1
             """, (user_id,))
             endereco_padrao = cursor.fetchone()
-            
+
             if endereco_padrao and endereco_padrao["estado"].strip().upper() == "SC" and subtotal > Decimal("129.90"):
                 frete = Decimal("0.00")
-        
-        # ========== VERIFICAR CUPOM APLICADO ==========
+
         desconto = Decimal("0.00")
         cupom_info = None
-        
+
         if 'cupom_codigo' in session:
             cursor.execute("""
                 SELECT * FROM cupons 
@@ -1656,33 +1702,31 @@ def checkout():
                 AND (uso_maximo IS NULL OR uso_atual < uso_maximo)
             """, (session['cupom_codigo'],))
             cupom = cursor.fetchone()
-            
+
             if cupom:
                 if cupom['tipo'] == 'percentual':
                     desconto = subtotal * (Decimal(cupom['valor']) / Decimal("100"))
-                else:  # fixo
+                else:
                     desconto = Decimal(cupom['valor'])
-                
+
                 cupom_info = {
                     'codigo': cupom['codigo'],
                     'tipo': cupom['tipo'],
                     'valor': cupom['valor']
                 }
             else:
-                # Cupom inválido, remover da sessão
                 session.pop('cupom_codigo', None)
-        
+
         total = subtotal + frete - desconto
         if total < 0:
             total = Decimal("0.00")
 
-        # Se usuário logado, buscar endereços e pagamentos salvos
         enderecos = []
         pagamentos = []
+
         if "usuario_id" in session:
             user_id = session["usuario_id"]
-            
-            # Endereços
+
             cursor.execute("""
                 SELECT id, nome_destinatario, cpf, rua, numero, bairro, cidade, estado, cep
                 FROM enderecos_usuarios
@@ -1691,7 +1735,6 @@ def checkout():
             """, (user_id,))
             enderecos = cursor.fetchall()
 
-            # Pagamentos
             cursor.execute("""
                 SELECT id, tipo, nome_impresso, numero_mascarado, validade, chave_pix
                 FROM pagamentos_usuarios
@@ -1713,21 +1756,16 @@ def checkout():
                                enderecos=enderecos,
                                pagamentos=pagamentos)
 
-    # ============================================================
-    # ---------------- POST - PROCESSAR PEDIDO -------------------
-    # ============================================================
-    
-    # Dados básicos do cliente
+    # -------- POST ---------
+
     nome = request.form.get("nome", "").strip()
     cpf = request.form.get("cpf", "").strip()
     email = request.form.get("email", "").strip()
     telefone = request.form.get("telefone", "").strip()
 
-    # ========== ENDEREÇO ==========
     endereco_selecionado = request.form.get("endereco_selecionado", "novo")
 
     if endereco_selecionado != "novo":
-        # Usa endereço salvo
         cursor.execute("SELECT * FROM enderecos_usuarios WHERE id = %s", (endereco_selecionado,))
         endereco_row = cursor.fetchone()
         if endereco_row:
@@ -1745,7 +1783,6 @@ def checkout():
             db.close()
             return redirect(url_for("checkout"))
     else:
-        # Usa endereço novo do formulário
         rua = request.form.get("rua", "").strip()
         numero = request.form.get("numero", "").strip()
         bairro = request.form.get("bairro", "").strip()
@@ -1754,35 +1791,42 @@ def checkout():
         cep = request.form.get("cep", "").strip()
         nome_destinatario = nome
 
-    # ========== PAGAMENTO ==========
     pagamento_selecionado = request.form.get("pagamento_selecionado", "pix_padrao")
-    
-    # Determinar método de pagamento
+
     metodo_pagamento = None
     pix_chave = None
     cartao_info = {}
+    parcelas = 1  # Padrão é 1 parcela
 
     if pagamento_selecionado == "pix_padrao":
-        # PIX padrão (sem chave salva)
         metodo_pagamento = "PIX"
-        
+
     elif pagamento_selecionado == "novo":
-        # Novo cartão
         metodo_pagamento = "CARTAO"
         
+        # Capturar número de parcelas
+        parcelas_str = request.form.get("parcelas", "1").strip()
+        try:
+            parcelas = int(parcelas_str)
+            if parcelas < 1:
+                parcelas = 1
+            if parcelas > 12:  # Limitar a 12 parcelas
+                parcelas = 12
+        except:
+            parcelas = 1
+
         cartao_num = request.form.get("cartao_num", "").strip()
         cartao_nome = request.form.get("cartao_nome", "").strip()
         cartao_validade = request.form.get("cartao_validade", "").strip()
         cartao_cvv = request.form.get("cartao_cvv", "").strip()
-        
-        # Validação básica
+
         cartao_num_digits = re.sub(r"\D", "", cartao_num)
         if len(cartao_num_digits) < 12:
             flash("Número do cartão inválido.", "erro")
             cursor.close()
             db.close()
             return redirect(url_for("checkout"))
-        
+
         cartao_info = {
             "nome_impresso": cartao_nome,
             "numero": cartao_num_digits,
@@ -1790,14 +1834,26 @@ def checkout():
             "validade": cartao_validade,
             "cvv": cartao_cvv
         }
-            
+
     else:
-        # Método salvo - buscar no banco
         cursor.execute("SELECT * FROM pagamentos_usuarios WHERE id = %s", (pagamento_selecionado,))
         p_row = cursor.fetchone()
-        
+
         if p_row:
             metodo_pagamento = p_row.get("tipo")
+            
+            # Se for cartão salvo, também capturar parcelas
+            if metodo_pagamento == "CARTAO":
+                parcelas_str = request.form.get("parcelas", "1").strip()
+                try:
+                    parcelas = int(parcelas_str)
+                    if parcelas < 1:
+                        parcelas = 1
+                    if parcelas > 12:
+                        parcelas = 12
+                except:
+                    parcelas = 1
+                    
             if metodo_pagamento == "PIX":
                 pix_chave = p_row.get("chave_pix")
             else:
@@ -1812,73 +1868,68 @@ def checkout():
             db.close()
             return redirect(url_for("checkout"))
 
-    # Validações básicas
     if not nome or not cpf or not rua or not numero or not estado or not cidade or not cep or not metodo_pagamento:
         flash("Preencha todos os campos obrigatórios.", "erro")
         cursor.close()
         db.close()
         return redirect(url_for("checkout"))
 
-    # Normaliza cpf/cep
     cpf_digits = re.sub(r"\D", "", cpf)
     cep_digits = re.sub(r"\D", "", cep)
 
     if len(cpf_digits) != 11:
-        flash("CPF inválido. Verifique o formato.", "erro")
-        cursor.close()
-        db.close()
-        return redirect(url_for("checkout"))
-    if len(cep_digits) != 8:
-        flash("CEP inválido. Verifique o formato.", "erro")
+        flash("CPF inválido.", "erro")
         cursor.close()
         db.close()
         return redirect(url_for("checkout"))
 
-    # ========== RECALCULAR TOTAL COM PERSONALIZAÇÃO, ESTAMPA E VALIDAR ESTOQUE ==========
+    if len(cep_digits) != 8:
+        flash("CEP inválido.", "erro")
+        cursor.close()
+        db.close()
+        return redirect(url_for("checkout"))
+
     subtotal = Decimal("0.00")
     for item in itens:
         preco = Decimal(item["preco"])
         qtd = int(item["quantidade"])
-        
-        # Adicionar R$10 se tiver personalização com nome
+
         extra_nome = Decimal("10.00") if item.get("personalizacao") else Decimal("0.00")
-        
-        # Adicionar valor da estampa se existir
         extra_estampa = Decimal("20.00") if item.get("estampa") else Decimal("0.00")
-        
+
         preco_total_item = (preco + extra_nome + extra_estampa) * qtd
-        
+
         cursor.execute("SELECT estoque FROM produtos WHERE id = %s", (item["produto_id"],))
         estoque_row = cursor.fetchone()
+
         if not estoque_row:
-            flash("Produto não encontrado durante checkout.", "erro")
+            flash("Produto não encontrado.", "erro")
             cursor.close()
             db.close()
             return redirect(url_for("carrinho"))
+
         estoque = int(estoque_row["estoque"])
         if qtd > estoque:
             flash(f"Quantidade do produto {item['nome']} maior que o estoque ({estoque}).", "erro")
             cursor.close()
             db.close()
             return redirect(url_for("carrinho"))
-        
+
         subtotal += preco_total_item
 
-    # ========== CALCULAR FRETE (GRÁTIS EM SC ACIMA DE R$129,90, R$12 PARA FORA) ==========
+    # CÁLCULO CORRETO DO FRETE
     frete = Decimal("12.00")
     estado_limpo = estado.strip().upper()
-    
-    # Frete grátis para SC apenas se subtotal for maior que R$ 129,90
+
+    # Frete grátis apenas se: estado é SC E subtotal > 129.90
     if estado_limpo == "SC" and subtotal > Decimal("129.90"):
         frete = Decimal("0.00")
-    else:
-        frete = Decimal("12.00")
-    
-    # ========== APLICAR CUPOM DE DESCONTO ==========
+    # Caso contrário, frete é sempre 12.00
+
     desconto = Decimal("0.00")
     cupom_usado = None
     cupom_id = None
-    
+
     if 'cupom_codigo' in session:
         cursor.execute("""
             SELECT * FROM cupons 
@@ -1887,25 +1938,22 @@ def checkout():
             AND (uso_maximo IS NULL OR uso_atual < uso_maximo)
         """, (session['cupom_codigo'],))
         cupom = cursor.fetchone()
-        
+
         if cupom:
             if cupom['tipo'] == 'percentual':
                 desconto = subtotal * (Decimal(cupom['valor']) / Decimal("100"))
-            else:  # fixo
+            else:
                 desconto = Decimal(cupom['valor'])
-            
+
             cupom_usado = cupom['codigo']
             cupom_id = cupom['id']
-    
-    # Calcular total final
+
     total = subtotal + frete - desconto
     if total < 0:
         total = Decimal("0.00")
 
-    # Monta endereço completo
     endereco_texto = f"{rua}, {numero}" + (f" - {bairro}" if bairro else "") + f" - {cidade}/{estado} - CEP {cep_digits}"
 
-    # ========== SALVAR ENDEREÇO SE MARCADO ==========
     lembrar_endereco = request.form.get("lembrar_endereco")
     user_id = session.get("usuario_id")
 
@@ -1917,34 +1965,79 @@ def checkout():
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (user_id, nome_destinatario, cpf_digits, rua, numero, bairro, cidade, estado, cep_digits))
             db.commit()
-        except Exception as e:
-            print("Erro salvando endereço:", e)
+        except:
             db.rollback()
 
-    # ========== CRIAR PEDIDO COM CUPOM ==========
     try:
         usuario_for_insert = user_id if user_id else None
 
+        # INSERIR PEDIDO COM FRETE E PARCELAS
         cursor.execute("""
             INSERT INTO pedidos (usuario_id, valor_total, status, pagamento_metodo, 
                                  cliente_nome, cliente_cpf, cliente_endereco, 
-                                 cupom_usado)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                                 cupom_usado, frete, desconto, parcelas)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """, (usuario_for_insert, str(total), "aguardando_pagamento", metodo_pagamento, 
               nome_destinatario or nome, cpf_digits, endereco_texto, 
-              cupom_usado))
+              cupom_usado, str(frete), str(desconto), parcelas))
         db.commit()
     except Exception as e:
         db.rollback()
-        flash("Erro ao criar pedido. Tente novamente.", "erro")
-        print("Erro INSERT pedidos:", e)
+        flash("Erro ao criar pedido.", "erro")
         cursor.close()
         db.close()
         return redirect(url_for("checkout"))
 
     pedido_id = cursor.lastrowid
 
-    # ========== INSERIR ITENS COM PERSONALIZAÇÃO, ESTAMPA, COR E REDUZIR ESTOQUE ==========
+    # =============================================================
+    # =========== ENVIO DO E-MAIL COM NOTA FISCAL =================
+    # =============================================================
+    try:
+        # Reabrir conexão rápida para buscar o pedido e itens
+        db_nf = conectar()
+        cur_nf = db_nf.cursor(dictionary=True)
+
+        # ----- Buscar pedido -----
+        cur_nf.execute("""
+            SELECT * FROM pedidos WHERE id = %s
+        """, (pedido_id,))
+        pedido = cur_nf.fetchone()
+
+        # ----- Buscar itens do pedido -----
+        cur_nf.execute("""
+            SELECT pi.*, p.nome, p.imagem_principal 
+            FROM pedido_itens pi
+            JOIN produtos p ON p.id = pi.produto_id
+            WHERE pi.pedido_id = %s
+        """, (pedido_id,))
+        itens_pedido = cur_nf.fetchall()
+
+        cur_nf.close()
+        db_nf.close()
+
+        # Renderizar a nota fiscal corretamente
+        html_nf = render_template(
+            "email_nota_fiscal.html",
+            pedido=pedido,
+            itens=itens_pedido,
+            total=total,
+            nome_cliente=nome,
+            email=email
+        )
+
+        enviar_email_nota(
+            destino_email=email,
+            nome_cliente=nome,
+            pedido_id=pedido_id,
+            html_nf=html_nf
+        )
+
+    except Exception as e:
+        print("Erro ao enviar nota fiscal por e-mail:", e)
+
+    # ======================== FIM DO BLOCO ========================
+
     try:
         for item in itens:
             produto_id = item["produto_id"]
@@ -1953,8 +2046,7 @@ def checkout():
             personalizacao = item.get("personalizacao")
             estampa = item.get("estampa")
             cor = item.get("cor")
-            
-            # Calcular valor unitário (com personalização e estampa)
+
             extra_nome = Decimal("10.00") if personalizacao else Decimal("0.00")
             extra_estampa = Decimal("20.00") if estampa else Decimal("0.00")
             valor_unitario = preco + extra_nome + extra_estampa
@@ -1964,17 +2056,14 @@ def checkout():
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
             """, (pedido_id, produto_id, qtd, str(valor_unitario), personalizacao, estampa, cor))
 
-            # Reduzir estoque
             cursor.execute("UPDATE produtos SET estoque = estoque - %s WHERE id = %s", (qtd, produto_id))
 
-        # ========== INCREMENTAR USO DO CUPOM ==========
         if cupom_id:
             cursor.execute("""
                 UPDATE cupons SET uso_atual = uso_atual + 1 
                 WHERE id = %s
             """, (cupom_id,))
 
-        # ========== SALVAR MÉTODO DE PAGAMENTO SE MARCADO ==========
         lembrar_pagamento = request.form.get("lembrar_pagamento")
 
         if lembrar_pagamento and user_id and pagamento_selecionado == "novo":
@@ -1984,18 +2073,15 @@ def checkout():
                     VALUES (%s, %s, %s, %s, %s)
                 """, (user_id, 'CARTAO', cartao_info["nome_impresso"], cartao_info["numero_mascarado"], cartao_info["validade"]))
 
-        # Limpar carrinho
         cursor.execute("DELETE FROM carrinho WHERE session_id = %s", (session_id,))
-        
-        # Remover cupom da sessão após usar
+
         session.pop('cupom_codigo', None)
-        
+
         db.commit()
 
     except Exception as e:
         db.rollback()
-        flash("Erro ao processar itens do pedido. Contate o suporte.", "erro")
-        print("Erro pedido_itens/estoque:", e)
+        flash("Erro ao processar itens.", "erro")
         cursor.close()
         db.close()
         return redirect(url_for("carrinho"))
@@ -2004,13 +2090,14 @@ def checkout():
     db.close()
 
     flash("Pedido criado com sucesso!", "sucesso")
-    
-    # Se for PIX, redireciona para página de pagamento PIX
+
     if metodo_pagamento == "PIX":
         return redirect(url_for("pagamento_pix", pedido_id=pedido_id))
     else:
-        # Se for CARTÃO, vai direto para pedido finalizado com flag de pagamento
         return redirect(url_for("pedido_finalizado", pedido_id=pedido_id) + "?pago=true")
+
+
+
 # ============================================================
 # ROTA: PÁGINA DE PAGAMENTO PIX
 # ============================================================

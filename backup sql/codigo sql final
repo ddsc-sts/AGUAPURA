@@ -1,3 +1,4 @@
+
 -- ===============================================
 --   CRIAÇÃO DO BANCO DE DADOS
 -- ===============================================
@@ -28,9 +29,10 @@ INSERT INTO usuarios VALUES
  
 (2,'daniel','teste@teste.com',
  'scrypt:32768:8:1$8wRrR5kCYscW53Rv$df2a6f41c305f1854908af5f3d0eba7bdd7f1910ec387001baff74255c4556f61cf0c7582c9cb7273616aad87d0cc5db075ca4ab4862b837d8fed82442e1c9d7',
- 'uploads/avatars/user.png','cliente','2025-11-24 19:12:44'),
+ 'uploads/avatars/user.png','cliente','2025-11-24 19:12:44');
  
- (3,'Funcionario','funcionario@aguapura.com',
+ INSERT INTO usuarios VALUES
+ (20,'Funcionario','funcionario@aguapura.com',
  'scrypt:32768:8:1$so3Bg6a8P0OXkBQg$d336d5fe08059bf79b0d3ae47e11260030706a2c9b010b1d1dd66ae79cac169e4040b74cd8a888bbac3a6f2eff263749a018e4084310bb8cc69fd3785b3f5bc6',
  'uploads/avatars/user_admin.png','funcionario','2025-11-24 18:43:17');
 
@@ -242,5 +244,65 @@ CREATE TABLE IF NOT EXISTS recuperacao_senha (
     CONSTRAINT fk_recup_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- ====================================================================
+-- TABELAS DO SISTEMA DE CHAT COM ATENDENTE HUMANO
+-- ====================================================================
+
+-- Tabela de chats de suporte
+CREATE TABLE chats_suporte (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT NOT NULL,
+    funcionario_id INT NULL,
+    status ENUM('pendente', 'em_atendimento', 'finalizado') DEFAULT 'pendente',
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    FOREIGN KEY (funcionario_id) REFERENCES usuarios(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Tabela de mensagens do chat
+CREATE TABLE mensagens_chat (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    chat_id INT NOT NULL,
+    remetente_id INT NOT NULL,
+    mensagem TEXT NOT NULL,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    lida TINYINT(1) DEFAULT 0,
+    FOREIGN KEY (chat_id) REFERENCES chats_suporte(id) ON DELETE CASCADE,
+    FOREIGN KEY (remetente_id) REFERENCES usuarios(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Índices para melhor performance
+CREATE INDEX idx_chat_status ON chats_suporte(status);
+CREATE INDEX idx_chat_usuario ON chats_suporte(usuario_id);
+CREATE INDEX idx_chat_funcionario ON chats_suporte(funcionario_id);
+CREATE INDEX idx_mensagem_chat ON mensagens_chat(chat_id);
+CREATE INDEX idx_mensagem_lida ON mensagens_chat(lida);
+
+
+ALTER TABLE produtos ADD COLUMN ativo BOOLEAN DEFAULT TRUE AFTER estoque;
+
+-- 2. Adicionar coluna 'motivo_desativacao' para guardar o motivo
+ALTER TABLE produtos ADD COLUMN motivo_desativacao TEXT DEFAULT NULL AFTER ativo;
+
+-- 3. Adicionar coluna 'desativado_em' para guardar quando foi desativado
+ALTER TABLE produtos ADD COLUMN desativado_em TIMESTAMP DEFAULT NULL AFTER motivo_desativacao;
+
+CREATE TABLE notificacoes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT NOT NULL,
+    pedido_id INT,
+    titulo VARCHAR(100) NOT NULL,
+    mensagem TEXT NOT NULL,
+    tipo ENUM('cancelamento', 'atualizacao_status', 'alerta', 'info') DEFAULT 'info',
+    status ENUM('nao_lida', 'lida') DEFAULT 'nao_lida',
+    icone VARCHAR(50),
+    data_criacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    data_leitura DATETIME DEFAULT NULL,
+    CONSTRAINT fk_notif_usuario FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    CONSTRAINT fk_notif_pedido FOREIGN KEY (pedido_id) REFERENCES pedidos(id) ON DELETE SET NULL,
+    INDEX idx_usuario_status (usuario_id, status),
+    INDEX idx_data_criacao (data_criacao DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
