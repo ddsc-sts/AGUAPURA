@@ -305,4 +305,13 @@ CREATE TABLE notificacoes (
     INDEX idx_data_criacao (data_criacao DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Adicionar coluna frete na tabela pedidos
+ALTER TABLE pedidos 
+ADD COLUMN frete DECIMAL(10,2) DEFAULT 12.00 AFTER desconto;
+
+-- Adicionar coluna parcelas na tabela pedidos
+ALTER TABLE pedidos 
+ADD COLUMN parcelas INT DEFAULT 1 AFTER frete;
+
+
 
